@@ -15,7 +15,7 @@ var (
 	symbols map[string]binanceapi.Symbol
 )
 
-func New() {
+func init() {
 	// Building binance http client
 	buildBinanceClients()
 	// Getting binance exchange symbols
@@ -35,7 +35,7 @@ func initExchangeSymbols() {
 		return
 	}
 
-	log.Println("Registering trading symbols...")
+	log.Println("Registering trading symbols")
 	symbols = make(map[string]binanceapi.Symbol)
 	for _, symbol := range res.Symbols {
 		symbols[symbol.Symbol] = symbol

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -23,9 +24,25 @@ type Config struct {
 		SecretKey  string `yaml:"secretKey"`
 		UseTestnet bool   `yaml:"useTestnet"`
 	} `yaml:"binanceApi"`
+	MongoDb struct {
+		Uri string `yaml:"uri"`
+	} `yaml:"mongoDb"`
 }
 
-func ParseConfig(testnet bool) (Config, error) {
+func init() {
+	// Parsing command line
+	testnet := flag.Bool("testnet", false, "if present, application runs on testnet")
+	flag.Parse()
+
+	// Parsing config
+	_, err := parseConfig(*testnet)
+	if err != nil {
+		log.Fatalf(err.Error())
+		return
+	}
+}
+
+func parseConfig(testnet bool) (Config, error) {
 	if (Config{}) != AppConfig {
 		return AppConfig, nil
 	}
