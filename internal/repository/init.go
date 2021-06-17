@@ -11,28 +11,36 @@ import (
 )
 
 var (
-	mongoClient *mongo.Client
-	ctx         context.Context
+	ctx context.Context
+
+	mongoClient            *mongo.Client
+	miniMarketsStatColName string = "mini-markets-stat"
+	miniMarketsStatCol     *mongo.Collection
 )
 
 func init() {
-	log.Printf("Connecting to mongodb cluster %s", config.AppConfig.MongoDb.Uri)
-	clientOptions := options.Client().ApplyURI(config.AppConfig.MongoDb.Uri)
+	// Connecting to db
+	log.Printf("Connecting to mongodb cluster %s", config.AppConfig.MongoDbConfig.Uri)
+	clientOptions := options.Client().ApplyURI(config.AppConfig.MongoDbConfig.Uri)
 	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	mongoClient = client
-}
 
-func Disconnect() {
-	log.Printf("Disconnecting from mongodb cluster %s", config.AppConfig.MongoDb.Uri)
-	mongoClient.Disconnect(ctx)
-}
-
-func Ping() {
-	err := mongoClient.Ping(ctx, readpref.Primary())
+	// Pinging db to test connection
+	err = mongoClient.Ping(ctx, readpref.Primary())
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Bilding collection handles
+	miniMarketsStatCol = client.
+		Database(config.AppConfig.MongoDbConfig.Database).
+		Collection(miniMarketsStatColName)
+}
+
+func Disconnect() {
+	log.Printf("Disconnecting from mongodb cluster %s", config.AppConfig.MongoDbConfig.Uri)
+	mongoClient.Disconnect(ctx)
 }

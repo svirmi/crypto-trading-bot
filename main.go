@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/valerioferretti92/trading-bot-demo/internal/binance"
 	"github.com/valerioferretti92/trading-bot-demo/internal/repository"
 )
 
@@ -9,7 +10,7 @@ func main() {
 
 	// Parsing command line
 
-	//binance.BookTickerServe()
+	binance.MiniMarketsStatServe()
 	//binance.SendMarketOrder("ETH", "USDT", 1)
 	//time.Sleep(2 * time.Second)
 	//binance.GetAccout()
@@ -18,5 +19,4 @@ func main() {
 	//time.Sleep(2 * time.Second)
 	//binance.GetAccout()
 	//binance.GetExchangeInfo()
-	repository.Ping()
 }

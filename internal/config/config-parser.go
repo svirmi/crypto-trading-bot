@@ -24,9 +24,10 @@ type Config struct {
 		SecretKey  string `yaml:"secretKey"`
 		UseTestnet bool   `yaml:"useTestnet"`
 	} `yaml:"binanceApi"`
-	MongoDb struct {
-		Uri string `yaml:"uri"`
-	} `yaml:"mongoDb"`
+	MongoDbConfig struct {
+		Uri      string `yaml:"uri"`
+		Database string `yaml:"database"`
+	} `yaml:"mongoDbConfig"`
 }
 
 func init() {
