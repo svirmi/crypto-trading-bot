@@ -12,9 +12,7 @@ import (
 var (
 	config_testnet_path = "resources/config-testnet.yaml"
 	config_path         = "resources/config.yaml"
-)
 
-var (
 	AppConfig Config
 )
 
@@ -61,7 +59,7 @@ func parseConfig(testnet bool) (Config, error) {
 	}
 	defer f.Close()
 
-	log.Printf("Parsing config file %s", configPath)
+	log.Printf("parsing config file %s", configPath)
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(&AppConfig)
 	if err != nil {

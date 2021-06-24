@@ -3,8 +3,11 @@ package binance
 import (
 	"context"
 	"fmt"
+	"log"
+	"strconv"
 
 	binanceapi "github.com/adshao/go-binance/v2"
+	"github.com/valerioferretti92/trading-bot-demo/internal/repository"
 )
 
 func GetAccout() {
@@ -32,9 +35,20 @@ func SendMarketOrder(base, quote string, qty float64) error {
 
 	if dfound {
 		sendMarketOrder(base, quote, qty, binanceapi.SideTypeBuy, dsymbol)
-	} else {
-		sendMarketOrder(quote, base, qty, binanceapi.SideTypeSell, isymbol)
+		return nil
 	}
+
+	symbol, err := repository.FindBySymbol(quote + base)
+	if err != nil {
+		log.Printf("could not handle symbol %s%s\n", base, quote)
+		return err
+	}
+	iprice, err := strconv.ParseFloat(symbol.LastPrice, 64)
+	if err != nil {
+		log.Printf("unable to parse price into float: %s", err.Error())
+		return err
+	}
+	sendMarketOrder(quote, base, qty*(1/iprice), binanceapi.SideTypeSell, isymbol)
 	return nil
 }
 

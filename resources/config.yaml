@@ -1,0 +1,10 @@
+
+# testnet configuration
+
+binanceApi:
+  apiKey: apiKey 
+  secretKey: secretKey 
+  useTestnet: false
+mongoDbConfig:
+  uri: mongodb://localhost:27017
+  database: trading-bot-demo

@@ -10,7 +10,7 @@ import (
 
 func MiniMarketsStatServe() {
 	wsBookTickerEventHandler := func(marketEvent binanceapi.WsAllMiniMarketsStatEvent) {
-		repository.Insert(marketEvent)
+		repository.Upsert(marketEvent)
 	}
 	errHandler := func(err error) {
 		fmt.Println(err)

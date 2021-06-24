@@ -1,0 +1,9 @@
+# testnet configuration
+
+binanceApi:
+  apiKey: fkAHgTpxMVBWXueZfAyYK2NnR4SZdTNPR45mlJivVg4dNEnoWSbODTUQHDkiNjN6
+  secretKey: 4yFKwURuMG7onlVoqFeV4Fz3I7ZNcNFMmDTRrlUk45IbbudFEWJtXAQGhqJEJtPg
+  useTestnet: true
+mongoDbConfig:
+  uri: mongodb://localhost:27017
+  database: trading-bot-demo-testnet

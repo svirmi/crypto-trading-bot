@@ -11,6 +11,11 @@ func main() {
 	// Parsing command line
 
 	binance.MiniMarketsStatServe()
+	binance.GetAccout()
+	binance.SendMarketOrder("BTC", "USDT", 0.01)
+	binance.GetAccout()
+	binance.SendMarketOrder("USDT", "BTC", 1000)
+	binance.GetAccout()
 	//binance.SendMarketOrder("ETH", "USDT", 1)
 	//time.Sleep(2 * time.Second)
 	//binance.GetAccout()
