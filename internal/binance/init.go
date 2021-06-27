@@ -2,8 +2,8 @@ package binance
 
 import (
 	"context"
-	"fmt"
 	"log"
+	"time"
 
 	binanceapi "github.com/adshao/go-binance/v2"
 	"github.com/valerioferretti92/trading-bot-demo/internal/config"
@@ -16,6 +16,9 @@ var (
 )
 
 func init() {
+	// Web socket keep alive set up
+	binanceapi.WebsocketKeepalive = false
+	binanceapi.WebsocketTimeout = time.Second * 60
 	// Building binance http client
 	buildBinanceClients()
 	// Getting binance exchange symbols
@@ -31,11 +34,10 @@ func buildBinanceClients() {
 func initExchangeSymbols() {
 	res, err := httpClient.NewExchangeInfoService().Do(context.Background())
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatalf("%s\n", err.Error())
 	}
 
-	log.Println("Registering trading symbols")
+	log.Println("registering trading symbols")
 	symbols = make(map[string]binanceapi.Symbol)
 	for _, symbol := range res.Symbols {
 		symbols[symbol.Symbol] = symbol

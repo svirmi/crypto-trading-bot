@@ -20,18 +20,18 @@ var (
 
 func init() {
 	// Connecting to db
-	log.Printf("Connecting to mongodb cluster %s", config.AppConfig.MongoDbConfig.Uri)
+	log.Printf("connecting to %s", config.AppConfig.MongoDbConfig.Uri)
 	clientOptions := options.Client().ApplyURI(config.AppConfig.MongoDbConfig.Uri)
 	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatalf("%s\n", err.Error())
 	}
 	mongoClient = client
 
 	// Pinging db to test connection
 	err = mongoClient.Ping(ctx, readpref.Primary())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%s\n", err.Error())
 	}
 
 	// Bilding collection handles
@@ -41,6 +41,6 @@ func init() {
 }
 
 func Disconnect() {
-	log.Printf("Disconnecting from mongodb cluster %s", config.AppConfig.MongoDbConfig.Uri)
+	log.Printf("disconnecting from %s", config.AppConfig.MongoDbConfig.Uri)
 	mongoClient.Disconnect(ctx)
 }

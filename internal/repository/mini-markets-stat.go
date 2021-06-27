@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	binanceapi "github.com/adshao/go-binance/v2"
@@ -10,12 +11,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func Upsert(miniMarketsStat binanceapi.WsAllMiniMarketsStatEvent) {
+func UpsertMiniMarketsStat(miniMarketsStat binanceapi.WsAllMiniMarketsStatEvent) error {
 	models := make([]mongo.WriteModel, 0, len(miniMarketsStat))
 	for _, miniMarketStat := range miniMarketsStat {
-		doc, err := toDoc(miniMarketStat)
+		doc, err := wsMiniMarketsStatEventToDoc(miniMarketStat)
 		if err != nil {
-			log.Printf("%s: skipping price update of %s\f", err.Error(), miniMarketStat.Symbol)
+			log.Printf("%s: skipping %s price update\n", err.Error(), miniMarketStat.Symbol)
 			continue
 		}
 
@@ -29,25 +30,27 @@ func Upsert(miniMarketsStat binanceapi.WsAllMiniMarketsStatEvent) {
 	opts := options.BulkWrite().SetOrdered(false)
 	res, err := miniMarketsStatCol.BulkWrite(context.TODO(), models, opts)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("%s\n", err.Error())
+		return fmt.Errorf("bulk price update failed")
 	}
 
 	log.Printf("%d price updates saved into %s", res.ModifiedCount, miniMarketsStatColName)
+	return nil
 }
 
-func FindBySymbol(symbol string) (binanceapi.WsMiniMarketsStatEvent, error) {
+func FindSymbolByPair(symbol string) (binanceapi.WsMiniMarketsStatEvent, error) {
 	var miniMarketStat binanceapi.WsMiniMarketsStatEvent
 	err := miniMarketsStatCol.FindOne(context.TODO(), bson.D{{"symbol", symbol}}).
 		Decode(&miniMarketStat)
 	if err != nil {
-		log.Printf("failed to query %s to get %s's last price: %s\n",
-			miniMarketsStatColName, symbol, err.Error())
+		log.Printf("%s\n", err.Error())
+		err = fmt.Errorf("failed to retrieve %s's lastest price", symbol)
 		return binanceapi.WsMiniMarketsStatEvent{}, err
 	}
 	return miniMarketStat, nil
 }
 
-func toDoc(miniMarketStat *binanceapi.WsMiniMarketsStatEvent) (doc *bson.D, err error) {
+func wsMiniMarketsStatEventToDoc(miniMarketStat *binanceapi.WsMiniMarketsStatEvent) (doc *bson.D, err error) {
 	data, err := bson.Marshal(miniMarketStat)
 	if err != nil {
 		return nil, err

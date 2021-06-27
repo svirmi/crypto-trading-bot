@@ -1,29 +1,30 @@
 package binance
 
 import (
-	"fmt"
-	"time"
+	"log"
 
 	binanceapi "github.com/adshao/go-binance/v2"
-	"github.com/valerioferretti92/trading-bot-demo/internal/repository"
 )
 
-func MiniMarketsStatServe() {
-	wsBookTickerEventHandler := func(marketEvent binanceapi.WsAllMiniMarketsStatEvent) {
-		repository.Upsert(marketEvent)
-	}
+var (
+	doneC, stopC chan struct{}
+	err          error
+)
+
+func MiniMarketsStatServe(handler func(binanceapi.WsAllMiniMarketsStatEvent)) error {
 	errHandler := func(err error) {
-		fmt.Println(err)
+		log.Printf("%s\n", err.Error())
 	}
-	doneC, stopC, err := binanceapi.WsAllMiniMarketsStatServe(wsBookTickerEventHandler, errHandler)
+	doneC, stopC, err = binanceapi.WsAllMiniMarketsStatServe(handler, errHandler)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatalf("%s", err.Error())
+		return err
 	}
-	// use stopC to exit
-	go func() {
-		time.Sleep(10 * time.Second)
-		stopC <- struct{}{}
-	}()
+	return nil
+}
+
+func Close() {
+	log.Printf("closing price update web socket")
+	stopC <- struct{}{}
 	<-doneC
 }

@@ -2,7 +2,6 @@ package config
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 
@@ -37,7 +36,6 @@ func init() {
 	_, err := parseConfig(*testnet)
 	if err != nil {
 		log.Fatalf(err.Error())
-		return
 	}
 }
 
@@ -55,7 +53,7 @@ func parseConfig(testnet bool) (Config, error) {
 
 	f, err := os.Open(configPath)
 	if err != nil {
-		return (Config{}), fmt.Errorf("could not open %s", configPath)
+		log.Fatalf("could not open %s", configPath)
 	}
 	defer f.Close()
 
@@ -63,7 +61,7 @@ func parseConfig(testnet bool) (Config, error) {
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(&AppConfig)
 	if err != nil {
-		return (Config{}), fmt.Errorf("could not parse %s", configPath)
+		log.Fatalf("could not parse %s", configPath)
 	}
 	return AppConfig, nil
 }
