@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 
 	binanceapi "github.com/adshao/go-binance/v2"
-	"github.com/valerioferretti92/trading-bot-demo/internal/repository"
 )
 
+// GetAccount returns account inforamtion
 func GetAccout() (*binanceapi.Account, error) {
 	account, err := httpClient.NewGetAccountService().Do(context.Background())
 	if err != nil {
@@ -19,38 +18,35 @@ func GetAccout() (*binanceapi.Account, error) {
 	return account, nil
 }
 
-func SendMarketOrder(base, quote string, qty float64) (err error) {
-	dsymbol, dfound := symbols[base+quote]
-	isymbol, ifound := symbols[quote+base]
+// SendMarketOrder places a market order to obtain qty units of target
+// currency, paying with exchange currency. Internally, it will map
+// the target - exchange pair into a binance base - quote pair.
+func SendMarketOrder(target, exchange string, qty float64) (err error) {
+	_, dfound := symbols[target+exchange]
+	_, ifound := symbols[exchange+target]
 	if !dfound && !ifound {
-		err = fmt.Errorf("currency pair %s%s missing from symbol map", base, quote)
+		err = fmt.Errorf("neither %s%s nor %s%s is a valid exchange symbol",
+			target, exchange, exchange, target)
 		return err
 	}
 
 	if dfound {
-		sendMarketOrder(base, quote, qty, binanceapi.SideTypeBuy, dsymbol)
-		return nil
+		return sendMarketOrder(target, exchange, qty, true, binanceapi.SideTypeBuy)
+	} else {
+		return sendMarketOrder(exchange, target, qty, false, binanceapi.SideTypeSell)
 	}
-
-	symbol, err := repository.FindSymbolByPair(quote + base)
-	if err != nil {
-		log.Printf("%s\n", err.Error())
-		return fmt.Errorf("unable to get a price for %s%s", quote, base)
-	}
-	iprice, err := strconv.ParseFloat(symbol.LastPrice, 64)
-	if err != nil {
-		log.Printf("%s\n", err.Error())
-		return fmt.Errorf("unable to parse price %s into a float", symbol.LastPrice)
-	}
-	return sendMarketOrder(quote, base, qty*(1/iprice), binanceapi.SideTypeSell, isymbol)
 }
 
-func sendMarketOrder(base, quote string, qty float64, side binanceapi.SideType, symbol binanceapi.Symbol) error {
+func sendMarketOrder(base, quote string, qty float64, regular bool, side binanceapi.SideType) error {
 	ordersvc := httpClient.NewCreateOrderService().
 		Symbol(base + quote).
 		Type(binanceapi.OrderTypeMarket).
-		Side(side).
-		Quantity(fmt.Sprintf("%f", qty))
+		Side(side)
+	if regular {
+		ordersvc.Quantity(fmt.Sprintf("%f", qty))
+	} else {
+		ordersvc.QuoteOrderQty(fmt.Sprintf("%f", qty))
+	}
 
 	order, err := ordersvc.Do(context.Background())
 	if err != nil {
