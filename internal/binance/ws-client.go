@@ -24,6 +24,10 @@ func MiniMarketsStatServe(handler func(binanceapi.WsAllMiniMarketsStatEvent)) er
 }
 
 func Close() {
+	if doneC == nil && stopC == nil {
+		return
+	}
+
 	log.Printf("closing price update web socket")
 	stopC <- struct{}{}
 	<-doneC

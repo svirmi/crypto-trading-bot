@@ -16,6 +16,10 @@ var (
 	mongoClient            *mongo.Client
 	miniMarketsStatColName string = "mini-markets-stat"
 	miniMarketsStatCol     *mongo.Collection
+	operationsColName      string = "operations"
+	operationsCol          *mongo.Collection
+	executionsColName      string = "executions"
+	executionsCol          *mongo.Collection
 )
 
 func init() {
@@ -38,9 +42,21 @@ func init() {
 	miniMarketsStatCol = client.
 		Database(config.AppConfig.MongoDbConfig.Database).
 		Collection(miniMarketsStatColName)
+	// Bilding collection handles
+	operationsCol = client.
+		Database(config.AppConfig.MongoDbConfig.Database).
+		Collection(operationsColName)
+	// Bilding collection handles
+	executionsCol = client.
+		Database(config.AppConfig.MongoDbConfig.Database).
+		Collection(executionsColName)
 }
 
 func Disconnect() {
+	if mongoClient == nil {
+		return
+	}
+
 	log.Printf("disconnecting from %s", config.AppConfig.MongoDbConfig.Uri)
 	mongoClient.Disconnect(ctx)
 }

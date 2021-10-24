@@ -1,10 +1,14 @@
 package handler
 
 import (
+	"log"
+
 	binanceapi "github.com/adshao/go-binance/v2"
-	"github.com/valerioferretti92/trading-bot-demo/internal/repository"
 )
 
 func HandlePriceUpdate(marketEvent binanceapi.WsAllMiniMarketsStatEvent) {
-	repository.UpsertMiniMarketsStat(marketEvent)
+	msg := "received price update: %s = %s UDS"
+	for i := range marketEvent {
+		log.Printf(msg, marketEvent[i].Symbol, marketEvent[i].LastPrice)
+	}
 }

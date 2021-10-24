@@ -6,16 +6,17 @@ import (
 	"log"
 
 	binanceapi "github.com/adshao/go-binance/v2"
+	"github.com/valerioferretti92/trading-bot-demo/internal/model"
 )
 
 // GetAccount returns account inforamtion
-func GetAccout() (*binanceapi.Account, error) {
+func GetAccout() (model.Account, error) {
 	account, err := httpClient.NewGetAccountService().Do(context.Background())
 	if err != nil {
 		log.Printf("%s\n", err.Error())
-		return nil, fmt.Errorf("failed to retrieve account information")
+		return model.Account{}, fmt.Errorf("failed to retrieve account information")
 	}
-	return account, nil
+	return toAccount(account), nil
 }
 
 // SendMarketOrder places a market order to obtain qty units of target
@@ -55,4 +56,20 @@ func sendMarketOrder(base, quote string, qty float64, regular bool, side binance
 	}
 	log.Printf("symbol: %s, side: %s, qty: %f, status: %s\n", order.Symbol, order.Side, qty, order.Status)
 	return nil
+}
+
+func toAccount(account *binanceapi.Account) model.Account {
+	balances := make([]model.Balance, 0, len(account.Balances))
+	for i := range account.Balances {
+		balances = append(balances, model.Balance{
+			Asset:  account.Balances[i].Asset,
+			Amount: account.Balances[i].Free})
+	}
+
+	return model.Account{
+		MakerCommission:  account.MakerCommission,
+		TakerCommission:  account.TakerCommission,
+		BuyerCommission:  account.BuyerCommission,
+		SellerCommission: account.SellerCommission,
+		Balances:         balances}
 }
