@@ -13,13 +13,11 @@ import (
 var (
 	ctx context.Context
 
-	mongoClient            *mongo.Client
-	miniMarketsStatColName string = "mini-markets-stat"
-	miniMarketsStatCol     *mongo.Collection
-	operationsColName      string = "operations"
-	operationsCol          *mongo.Collection
-	executionsColName      string = "executions"
-	executionsCol          *mongo.Collection
+	mongoClient       *mongo.Client
+	operationsColName string = "operations"
+	operationsCol     *mongo.Collection
+	executionsColName string = "executions"
+	executionsCol     *mongo.Collection
 )
 
 func init() {
@@ -38,10 +36,6 @@ func init() {
 		log.Fatalf("%s\n", err.Error())
 	}
 
-	// Bilding collection handles
-	miniMarketsStatCol = client.
-		Database(config.AppConfig.MongoDbConfig.Database).
-		Collection(miniMarketsStatColName)
 	// Bilding collection handles
 	operationsCol = client.
 		Database(config.AppConfig.MongoDbConfig.Database).

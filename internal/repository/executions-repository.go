@@ -27,10 +27,9 @@ func FindAllLatestExecution() ([]model.Execution, error) {
 		{"_id", 0}}}}
 
 	// Parsing results
-	var err error
-	var cursor *mongo.Cursor
 	var results []model.Execution
-	if cursor, err = executionsCol.Aggregate(ctx, mongo.Pipeline{sort, group, project}); err != nil {
+	cursor, err := executionsCol.Aggregate(ctx, mongo.Pipeline{sort, group, project})
+	if err != nil {
 		return nil, err
 	}
 	if err = cursor.All(ctx, &results); err != nil {
