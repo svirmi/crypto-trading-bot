@@ -1,4 +1,4 @@
-package execution
+package executions
 
 import (
 	"fmt"
@@ -8,12 +8,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/valerioferretti92/trading-bot-demo/internal/binance"
 	"github.com/valerioferretti92/trading-bot-demo/internal/model"
-	"github.com/valerioferretti92/trading-bot-demo/internal/repository"
 )
 
 func CreateOrResumeExecution() (model.Execution, error) {
 	// Check if execution needs to be resumed
-	exes, err := repository.FindAllLatestExecution()
+	exes, err := FindAllLatestExecution()
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -37,7 +36,7 @@ func CreateOrResumeExecution() (model.Execution, error) {
 	exe = buildExecution(account)
 	log.Printf("starting execution %s", exe.ExeId)
 	log.Printf("crypto to be traded: %v", exe.Symbols)
-	if repository.InsertOneExecution(exe); err != nil {
+	if InsertOneExecution(exe); err != nil {
 		return model.Execution{}, err
 	}
 

@@ -1,6 +1,8 @@
-package repository
+package operations
 
 import (
+	"context"
+
 	"github.com/valerioferretti92/trading-bot-demo/internal/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,7 +16,7 @@ func InsertManyOperations(ops []model.Operation) error {
 	}
 
 	opts := options.InsertMany().SetOrdered(false)
-	_, err := operationsCol.InsertMany(ctx, payload, opts)
+	_, err := collection.InsertMany(context.TODO(), payload, opts)
 	return err
 }
 
@@ -43,11 +45,11 @@ func FindLatestOperations(exeId string, symbols []string) ([]model.Operation, er
 
 	// Parsing results
 	var results []model.Operation
-	cursor, err := operationsCol.Aggregate(ctx, mongo.Pipeline{match, sort, group, project})
+	cursor, err := collection.Aggregate(context.TODO(), mongo.Pipeline{match, sort, group, project})
 	if err != nil {
 		return nil, err
 	}
-	if err = cursor.All(ctx, &results); err != nil {
+	if err = cursor.All(context.TODO(), &results); err != nil {
 		return nil, err
 	}
 	return results, nil

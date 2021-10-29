@@ -8,13 +8,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var (
-	config_testnet_path = "resources/config-testnet.yaml"
-	config_path         = "resources/config.yaml"
-
-	AppConfig Config
-)
-
 type Config struct {
 	BinanceApi struct {
 		ApiKey     string `yaml:"apiKey"`
@@ -27,25 +20,28 @@ type Config struct {
 	} `yaml:"mongoDbConfig"`
 }
 
+var (
+	AppConfig           Config
+	config_testnet_path = "resources/config-testnet.yaml"
+	config_path         = "resources/config.yaml"
+)
+
 func init() {
 	// Parsing command line
 	testnet := flag.Bool("testnet", false, "if present, application runs on testnet")
 	flag.Parse()
 
 	// Parsing config
-	_, err := parseConfig(*testnet)
+	config, err := parseConfig(testnet)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
+	AppConfig = config
 }
 
-func parseConfig(testnet bool) (Config, error) {
-	if (Config{}) != AppConfig {
-		return AppConfig, nil
-	}
-
+func parseConfig(testnet *bool) (Config, error) {
 	var configPath string
-	if testnet {
+	if *testnet {
 		configPath = config_testnet_path
 	} else {
 		configPath = config_path

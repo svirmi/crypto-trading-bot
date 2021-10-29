@@ -4,20 +4,19 @@ import (
 	"log"
 
 	"github.com/valerioferretti92/trading-bot-demo/internal/binance"
-	"github.com/valerioferretti92/trading-bot-demo/internal/execution"
-	"github.com/valerioferretti92/trading-bot-demo/internal/repository"
+	"github.com/valerioferretti92/trading-bot-demo/internal/executions"
+	"github.com/valerioferretti92/trading-bot-demo/internal/operations"
 )
 
 func main() {
 	defer shutdown()
 
-	exe, err := execution.CreateOrResumeExecution()
+	exe, err := executions.CreateOrResumeExecution()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	log.Printf("execution: exeId=%s", exe.ExeId)
 
-	ops, err := repository.FindLatestOperations(exe.ExeId, exe.Symbols)
+	ops, err := operations.FindLatestOperations(exe.ExeId, exe.Symbols)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -29,5 +28,4 @@ func main() {
 
 func shutdown() {
 	binance.Close()
-	repository.Disconnect()
 }

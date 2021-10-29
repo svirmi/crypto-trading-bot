@@ -1,13 +1,15 @@
-package repository
+package executions
 
 import (
+	"context"
+
 	"github.com/valerioferretti92/trading-bot-demo/internal/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func InsertOneExecution(exe model.Execution) error {
-	_, err := executionsCol.InsertOne(ctx, exe)
+	_, err := collection.InsertOne(context.TODO(), exe)
 	return err
 }
 
@@ -28,11 +30,11 @@ func FindAllLatestExecution() ([]model.Execution, error) {
 
 	// Parsing results
 	var results []model.Execution
-	cursor, err := executionsCol.Aggregate(ctx, mongo.Pipeline{sort, group, project})
+	cursor, err := collection.Aggregate(context.TODO(), mongo.Pipeline{sort, group, project})
 	if err != nil {
 		return nil, err
 	}
-	if err = cursor.All(ctx, &results); err != nil {
+	if err = cursor.All(context.TODO(), &results); err != nil {
 		return nil, err
 	}
 	return results, nil
