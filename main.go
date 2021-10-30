@@ -11,7 +11,7 @@ import (
 func main() {
 	defer shutdown()
 
-	exe, err := executions.CreateOrResumeExecution()
+	exe, err := executions.CreateOrRestoreExecution()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

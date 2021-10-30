@@ -3,10 +3,10 @@ package model
 import "reflect"
 
 const (
-	EXE_INIT    = "EXE_INIT"    // Execution started
-	EXE_PAUSED  = "EXE_PAUSED"  // Execution paused, manual operations enabled
-	EXE_RESUMED = "EXE_RESUMED" // Execution resumed, manual operations disabled
-	EXE_DONE    = "EXE_DONE"    // Execution terminated and cryptos sold off
+	EXE_STARTED    = "EXE_STARTED"    // Execution started
+	EXE_PAUSED     = "EXE_PAUSED"     // Execution paused, manual operations enabled
+	EXE_RESUMED    = "EXE_RESUMED"    // Execution resumed, manual operations disabled
+	EXE_TERMINATED = "EXE_TERMINATED" // Execution terminated and cryptos sold off
 )
 
 type Execution struct {
