@@ -8,12 +8,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func InsertOneExecution(exe model.Execution) error {
+func InsertOne(exe model.Execution) error {
 	_, err := collection.InsertOne(context.TODO(), exe)
 	return err
 }
 
-func FindAllLatestExecution() ([]model.Execution, error) {
+func FindActive() ([]model.Execution, error) {
 	// Querying executions collection
 	sort := bson.D{{"$sort", bson.D{{"timestamp", 1}}}}
 	group := bson.D{{"$group", bson.D{
@@ -27,10 +27,11 @@ func FindAllLatestExecution() ([]model.Execution, error) {
 		{"status", 1},
 		{"exeId", "$_id"},
 		{"_id", 0}}}}
+	filter := bson.D{{"$match", bson.D{{"status", bson.D{{"$ne", "TERMINATED"}}}}}}
 
 	// Parsing results
 	var results []model.Execution
-	cursor, err := collection.Aggregate(context.TODO(), mongo.Pipeline{sort, group, project})
+	cursor, err := collection.Aggregate(context.TODO(), mongo.Pipeline{sort, group, project, filter})
 	if err != nil {
 		return nil, err
 	}

@@ -5,13 +5,24 @@ import (
 
 	"github.com/valerioferretti92/trading-bot-demo/internal/binance"
 	"github.com/valerioferretti92/trading-bot-demo/internal/executions"
+	"github.com/valerioferretti92/trading-bot-demo/internal/laccount"
 	"github.com/valerioferretti92/trading-bot-demo/internal/operations"
 )
 
 func main() {
 	defer shutdown()
 
-	exe, err := executions.CreateOrRestoreExecution()
+	raccount, err := binance.GetAccout()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	exe, err := executions.CreateOrRestore(raccount)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	_, err = laccount.CreateOrRestore(exe.ExeId, raccount)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -20,9 +31,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	for i := range ops {
+	for _, op := range ops {
 		log.Printf("operation: symbol=%s, type=%s, timestamp=%v",
-			ops[i].Symbol, ops[i].Type, ops[i].Timestamp)
+			op.Base+op.Quote, op.Type, op.Timestamp)
 	}
 }
 

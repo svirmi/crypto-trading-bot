@@ -10,11 +10,11 @@ import (
 )
 
 // GetAccount returns account inforamtion
-func GetAccout() (model.Account, error) {
+func GetAccout() (model.RemoteAccount, error) {
 	account, err := httpClient.NewGetAccountService().Do(context.Background())
 	if err != nil {
 		log.Printf("%s\n", err.Error())
-		return model.Account{}, fmt.Errorf("failed to retrieve account information")
+		return model.RemoteAccount{}, fmt.Errorf("failed to retrieve account information")
 	}
 	return toAccount(account), nil
 }
@@ -58,15 +58,15 @@ func sendMarketOrder(base, quote string, qty float64, regular bool, side binance
 	return nil
 }
 
-func toAccount(account *binanceapi.Account) model.Account {
-	balances := make([]model.Balance, 0, len(account.Balances))
+func toAccount(account *binanceapi.Account) model.RemoteAccount {
+	balances := make([]model.RemoteBalance, 0, len(account.Balances))
 	for i := range account.Balances {
-		balances = append(balances, model.Balance{
+		balances = append(balances, model.RemoteBalance{
 			Asset:  account.Balances[i].Asset,
 			Amount: account.Balances[i].Free})
 	}
 
-	return model.Account{
+	return model.RemoteAccount{
 		MakerCommission:  account.MakerCommission,
 		TakerCommission:  account.TakerCommission,
 		BuyerCommission:  account.BuyerCommission,

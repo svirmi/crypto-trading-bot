@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/valerioferretti92/trading-bot-demo/internal/binance"
 	"github.com/valerioferretti92/trading-bot-demo/internal/model"
 )
 
@@ -17,7 +16,7 @@ type ExecutionCache struct {
 
 var cache ExecutionCache
 
-func GetExecution() (model.Execution, error) {
+func Get() (model.Execution, error) {
 	if cache.valid {
 		return cache.exe, nil
 	}
@@ -31,7 +30,7 @@ func GetExecution() (model.Execution, error) {
 	return exe, nil
 }
 
-func CreateOrRestoreExecution() (model.Execution, error) {
+func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 	// Invaidating cache
 	cache.valid = false
 
@@ -49,15 +48,14 @@ func CreateOrRestoreExecution() (model.Execution, error) {
 	}
 
 	// No active execution found, starting a new one
-	account, err := binance.GetAccout()
-	if err != nil {
-		return model.Execution{}, err
+	if raccount.IsEmpty() {
+		return model.Execution{}, fmt.Errorf("empty remote account received")
 	}
 
-	exe = buildExecution(account)
+	exe = buildExecution(raccount)
 	log.Printf("starting execution %s", exe.ExeId)
 	log.Printf("crypto to be traded: %v", exe.Symbols)
-	if InsertOneExecution(exe); err != nil {
+	if InsertOne(exe); err != nil {
 		return model.Execution{}, err
 	}
 	return exe, nil
@@ -68,8 +66,8 @@ func CreateOrRestoreExecution() (model.Execution, error) {
 // PAUSED --> PAUSED forbidden
 // TERMINATED --> PAUSED forbidden
 // Once the execution is paused, the bot will stop automatic
-// trading of cryptocurrencies and awill llow manual operations.
-func PauseExecution() (model.Execution, error) {
+// trading of cryptocurrencies and will allow manual operations.
+func Pause() (model.Execution, error) {
 	// Invalidating cache
 	cache.valid = false
 
@@ -91,7 +89,7 @@ func PauseExecution() (model.Execution, error) {
 	}
 
 	exe.Status = model.EXE_PAUSED
-	if err := InsertOneExecution(exe); err != nil {
+	if err := InsertOne(exe); err != nil {
 		return model.Execution{}, err
 	}
 	return exe, nil
@@ -104,7 +102,7 @@ func PauseExecution() (model.Execution, error) {
 // Once the execution is resumed, the bot will start trading
 // cryptocurrencies and manual intervention will be no longer
 // allowed.
-func ResumeExecution() (model.Execution, error) {
+func Resume() (model.Execution, error) {
 	// Invaidating cache
 	cache.valid = false
 
@@ -126,7 +124,7 @@ func ResumeExecution() (model.Execution, error) {
 	}
 
 	exe.Status = model.EXE_RESUMED
-	if err := InsertOneExecution(exe); err != nil {
+	if err := InsertOne(exe); err != nil {
 		return model.Execution{}, err
 	}
 	return exe, nil
@@ -139,7 +137,7 @@ func ResumeExecution() (model.Execution, error) {
 // Once the execution is terminated, it can not be resumed.
 // Cryptocurrencies are sold into USDT and to resume
 // automatic trading, a new execution will have to be created.
-func TerminateExecution() (model.Execution, error) {
+func Terminate() (model.Execution, error) {
 	// Invaidating cache
 	cache.valid = false
 
@@ -157,7 +155,7 @@ func TerminateExecution() (model.Execution, error) {
 	}
 
 	exe.Status = model.EXE_TERMINATED
-	if err := InsertOneExecution(exe); err != nil {
+	if err := InsertOne(exe); err != nil {
 		return model.Execution{}, err
 	}
 	return exe, nil
@@ -165,7 +163,7 @@ func TerminateExecution() (model.Execution, error) {
 
 // Builds and returns an execution struct based on
 // the account object and whose status is EXE_STARTED
-func buildExecution(account model.Account) model.Execution {
+func buildExecution(account model.RemoteAccount) model.Execution {
 	symbols := make([]string, 0, len(account.Balances))
 	for i := range account.Balances {
 		symbols = append(symbols, account.Balances[i].Asset)
@@ -181,22 +179,17 @@ func buildExecution(account model.Account) model.Execution {
 // Returns active execution found read from DB. Empty
 // execution struct, if nothing is found
 func getActiveExecution() (model.Execution, error) {
-	exes, err := FindAllLatestExecution()
+	exes, err := FindActive()
 	if err != nil {
 		return model.Execution{}, err
 	}
-
-	var current model.Execution = model.Execution{}
-	for i := range exes {
-		if exes[i].Status == model.EXE_TERMINATED {
-			continue
-		}
-		if current.IsEmpty() {
-			current = exes[i]
-		} else {
-			errorTemplate := "found two executions concurrently active: %s, %s"
-			return model.Execution{}, fmt.Errorf(errorTemplate, current.ExeId, exes[i].ExeId)
-		}
+	if len(exes) > 1 {
+		err = fmt.Errorf("found %d active executions", len(exes))
+		return model.Execution{}, err
 	}
-	return current, nil
+	if len(exes) == 0 {
+		return model.Execution{}, nil
+	} else {
+		return exes[0], nil
+	}
 }
