@@ -5,11 +5,12 @@ import (
 
 	"github.com/valerioferretti92/trading-bot-demo/internal/model"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func InsertManyOperations(ops []model.Operation) error {
+// Inserts operations in DB
+// Returns an error if computation failed
+func InsertMany(ops []model.Operation) error {
 	var payload []interface{}
 	for i := range ops {
 		payload = append(payload, ops[i])
@@ -20,37 +21,32 @@ func InsertManyOperations(ops []model.Operation) error {
 	return err
 }
 
-func FindLatestOperations(exeId string, symbols []string) ([]model.Operation, error) {
-	match := bson.D{{"$match", bson.D{{"exeId", exeId}, {"symbol", bson.D{{"$in", symbols}}}}}}
-	sort := bson.D{{"$sort", bson.D{{"timestamp", 1}}}}
-	group := bson.D{{"$group", bson.D{
-		{"_id", "$symbol"},
-		{"opId", bson.D{{"$last", "$opId"}}},
-		{"exeId", bson.D{{"$last", "$exeId"}}},
-		{"type", bson.D{{"$last", "$type"}}},
-		{"price", bson.D{{"$last", "$price"}}},
-		{"forcastedQty", bson.D{{"$last", "$forcastedQty"}}},
-		{"qty", bson.D{{"$last", "$qty"}}},
-		{"timestamp", bson.D{{"$last", "$timestamp"}}}}}}
-	project := bson.D{{"$project", bson.D{
-		{"opId", 1},
-		{"exeId", 1},
-		{"type", 1},
-		{"price", 1},
-		{"forcastedQty", 1},
-		{"qty", 1},
-		{"timestamp", 1},
-		{"symbol", "$_id"},
-		{"_id", 0}}}}
+// Inserts an operation in DB
+// Returns an error if computation failed
+func Insert(op model.Operation) error {
+	_, err := collection.InsertOne(context.TODO(), op)
+	return err
+}
 
-	// Parsing results
+// Finds all operation by execution id exeId
+// Returns list of operation, if any was found, nil
+// oterwise
+// Returns an error if computation failed
+func FindByExeId(exeId string) ([]model.Operation, error) {
+	// Defining query
+	options := options.Find().SetSort(bson.D{{"timestamp", 1}})
+	filter := bson.D{{"exeId", exeId}}
+
+	// Querying DB
 	var results []model.Operation
-	cursor, err := collection.Aggregate(context.TODO(), mongo.Pipeline{match, sort, group, project})
+	cursor, err := collection.Find(context.TODO(), filter, options)
 	if err != nil {
 		return nil, err
 	}
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		return nil, err
 	}
+
+	// Returning results
 	return results, nil
 }

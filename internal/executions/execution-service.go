@@ -9,33 +9,26 @@ import (
 	"github.com/valerioferretti92/trading-bot-demo/internal/model"
 )
 
-type ExecutionCache struct {
-	valid bool
-	exe   model.Execution
-}
-
-var cache ExecutionCache
-
-func Get() (model.Execution, error) {
-	if cache.valid {
-		return cache.exe, nil
-	}
-
-	exe, err := getActiveExecution()
+// Gets active execution object by execution id.
+// Returns the execution object, if found, an empty execution
+// object if nothing was found, or an error was thrown.
+// Returns an error if computation failed
+func GetCurrentlyActive(exeId string) (model.Execution, error) {
+	exe, err := FindCurrentlyActiveByExeId(exeId)
 	if err != nil {
 		return model.Execution{}, err
 	}
-	cache.valid = true
-	cache.exe = exe
 	return exe, nil
 }
 
+// Creates an new execution based on a remote wallet object, or
+// restors a previous active execution.
+// Returns the newly created execution object, or the active execution
+// object found in DB.
+// Returns an error if computation failed or an error was thrown.
 func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
-	// Invaidating cache
-	cache.valid = false
-
 	// Get current active execution from DB
-	exe, err := getActiveExecution()
+	exe, err := FindCurrentlyActive()
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -43,7 +36,8 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 	// Active execution found, restoring it
 	if !exe.IsEmpty() {
 		log.Printf("restoring execution %s", exe.ExeId)
-		log.Printf("exe status: %s, exe symbols: %v", exe.Status, exe.Symbols)
+		log.Printf("execution status: %s", exe.Status)
+		log.Printf("assets to be traded: %v", exe.Symbols)
 		return exe, nil
 	}
 
@@ -54,24 +48,26 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 
 	exe = buildExecution(raccount)
 	log.Printf("starting execution %s", exe.ExeId)
-	log.Printf("crypto to be traded: %v", exe.Symbols)
+	log.Printf("assets to be traded: %v", exe.Symbols)
 	if InsertOne(exe); err != nil {
 		return model.Execution{}, err
 	}
 	return exe, nil
 }
 
+// Changes execution status to PAUSED
 // STARTED --> PAUSED allowed
 // RESUMED --> PAUSED allowed
 // PAUSED --> PAUSED forbidden
 // TERMINATED --> PAUSED forbidden
 // Once the execution is paused, the bot will stop automatic
 // trading of cryptocurrencies and will allow manual operations.
-func Pause() (model.Execution, error) {
-	// Invalidating cache
-	cache.valid = false
-
-	exe, err := getActiveExecution()
+// Returns the modified execution object or an empty execution
+// object if checks failed, or an error was thrown.
+// Returns an error if computation failed or checks did not
+// succeed
+func Pause(exeId string) (model.Execution, error) {
+	exe, err := FindCurrentlyActiveByExeId(exeId)
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -95,6 +91,7 @@ func Pause() (model.Execution, error) {
 	return exe, nil
 }
 
+// Changes the execution statues to RESUMED
 // PAUSED --> RESUMED allowed
 // STARTED --> RESUMED allowed
 // RESUMED --> RESUMED allowed
@@ -102,11 +99,12 @@ func Pause() (model.Execution, error) {
 // Once the execution is resumed, the bot will start trading
 // cryptocurrencies and manual intervention will be no longer
 // allowed.
-func Resume() (model.Execution, error) {
-	// Invaidating cache
-	cache.valid = false
-
-	exe, err := getActiveExecution()
+// Returns the modified execution object or an empty execution
+// object if checks failed, or an error was thrown.
+// Returns an error if computation failed or checks did not
+// succeed
+func Resume(exeId string) (model.Execution, error) {
+	exe, err := FindCurrentlyActiveByExeId(exeId)
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -130,6 +128,7 @@ func Resume() (model.Execution, error) {
 	return exe, nil
 }
 
+// Changes the execution status to TERMINATED
 // STARTED --> TERMINATED allowed
 // RESUMED --> TERMINATED allowed
 // PAUSED --> TERMINATED allowed
@@ -137,11 +136,12 @@ func Resume() (model.Execution, error) {
 // Once the execution is terminated, it can not be resumed.
 // Cryptocurrencies are sold into USDT and to resume
 // automatic trading, a new execution will have to be created.
-func Terminate() (model.Execution, error) {
-	// Invaidating cache
-	cache.valid = false
-
-	exe, err := getActiveExecution()
+// Returns the modified execution object or an empty execution
+// object if checks failed, or an error was thrown.
+// Returns an error if computation failed or checks did not
+// succeed
+func Terminate(exeId string) (model.Execution, error) {
+	exe, err := FindCurrentlyActiveByExeId(exeId)
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -161,8 +161,6 @@ func Terminate() (model.Execution, error) {
 	return exe, nil
 }
 
-// Builds and returns an execution struct based on
-// the account object and whose status is EXE_STARTED
 func buildExecution(account model.RemoteAccount) model.Execution {
 	symbols := make([]string, 0, len(account.Balances))
 	for i := range account.Balances {
@@ -174,22 +172,4 @@ func buildExecution(account model.RemoteAccount) model.Execution {
 		Status:    model.EXE_STARTED,
 		Symbols:   symbols,
 		Timestamp: time.Now().UnixMilli()}
-}
-
-// Returns active execution found read from DB. Empty
-// execution struct, if nothing is found
-func getActiveExecution() (model.Execution, error) {
-	exes, err := FindActive()
-	if err != nil {
-		return model.Execution{}, err
-	}
-	if len(exes) > 1 {
-		err = fmt.Errorf("found %d active executions", len(exes))
-		return model.Execution{}, err
-	}
-	if len(exes) == 0 {
-		return model.Execution{}, nil
-	} else {
-		return exes[0], nil
-	}
 }

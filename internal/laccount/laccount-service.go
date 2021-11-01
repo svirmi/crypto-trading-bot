@@ -6,9 +6,17 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/valerioferretti92/trading-bot-demo/internal/model"
 )
 
+// Creates a local account based on the remote account, or restores
+// account already in DB linked to a currently active execution
+// identified by exeId.
+// Returns local account object or an empty local account if an
+// error was thrown.
+// Returns an error if computation failed
+// TRUSTS that exeId correspond to an active execution
 func CreateOrRestore(exeId string, raccount model.RemoteAccount) (model.LocalAccount, error) {
 	// Get current local account from DB by execution id
 	laccount, err := FindLatest(exeId)
@@ -18,6 +26,7 @@ func CreateOrRestore(exeId string, raccount model.RemoteAccount) (model.LocalAcc
 
 	// Restore existing local account
 	if !laccount.IsEmpty() {
+		log.Printf("restoring local account %s", laccount.AccountId)
 		return laccount, nil
 	}
 
@@ -36,9 +45,16 @@ func CreateOrRestore(exeId string, raccount model.RemoteAccount) (model.LocalAcc
 	if err := Insert(laccount); err != nil {
 		return model.LocalAccount{}, err
 	}
+	log.Printf("registering local account %s", laccount.AccountId)
 	return laccount, nil
 }
 
+// Updates local account identified by the execution id exeId
+// with an executed operation
+// Returns local account object or an empty local account if an
+// error was thrown or checks did not succeed.
+// Returns an error if computation failed or checks did not succeed
+// TRUSTS that exeId correspond to an active execution
 func RecordTradingOperation(exeId string, operation model.Operation) (model.LocalAccount, error) {
 	// Getting local account from DB
 	laccount, err := FindLatest(exeId)
@@ -74,7 +90,13 @@ func RecordTradingOperation(exeId string, operation model.Operation) (model.Loca
 	return laccount, nil
 }
 
-func Get(exeId string) (model.LocalAccount, error) {
+// Gets latest version of local wallet linked to the execution
+// identified by exeId
+// Returns local account object or an empty local account if an
+// error was thrown
+// Returns an error if computation failed or checks did not succeed
+// TRUSTS that exeId correspond to an active execution
+func GetLatest(exeId string) (model.LocalAccount, error) {
 	laccount, err := FindLatest(exeId)
 
 	if err != nil {
@@ -82,7 +104,7 @@ func Get(exeId string) (model.LocalAccount, error) {
 	}
 	if laccount.IsEmpty() {
 		err = fmt.Errorf("no local account for execution id %s could be found", exeId)
-		return laccount, err
+		return model.LocalAccount{}, err
 	}
 	return laccount, nil
 }
@@ -130,6 +152,7 @@ func buildLocalAccount(exeId string, raccount model.RemoteAccount) (model.LocalA
 	}
 
 	laccount := model.LocalAccount{
+		AccountId: uuid.NewString(),
 		ExeId:     exeId,
 		Balances:  balances,
 		Timestamp: time.Now().UnixMilli()}

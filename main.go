@@ -27,13 +27,9 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	ops, err := operations.FindLatestOperations(exe.ExeId, exe.Symbols)
+	_, err = operations.Initialize(exe.ExeId, raccount)
 	if err != nil {
-		log.Fatal(err.Error())
-	}
-	for _, op := range ops {
-		log.Printf("operation: symbol=%s, type=%s, timestamp=%v",
-			op.Base+op.Quote, op.Type, op.Timestamp)
+		log.Fatalf(err.Error())
 	}
 }
 

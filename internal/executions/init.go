@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/valerioferretti92/trading-bot-demo/internal/config"
-	"github.com/valerioferretti92/trading-bot-demo/internal/model"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -34,8 +33,4 @@ func init() {
 	collection = mongoClient.
 		Database(config.AppConfig.MongoDbConfig.Database).
 		Collection(executionsColName)
-
-	// Setting up execution cache
-	cache.valid = false
-	cache.exe = model.Execution{}
 }

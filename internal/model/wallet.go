@@ -26,6 +26,7 @@ func (b RemoteBalance) IsEmpty() bool {
 
 // Representation of local wallet
 type LocalAccount struct {
+	AccountId string                  `bson:"accountId"` // Local account object id
 	ExeId     string                  `bson:"exeId"`     // Execution id this local wallet is bound to
 	Balances  map[string]LocalBalance `bson:"balances"`  // Map local balances
 	Timestamp int64                   `bson:"timestamp"` // Timestamp
