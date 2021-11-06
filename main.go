@@ -6,7 +6,7 @@ import (
 	"github.com/valerioferretti92/trading-bot-demo/internal/binance"
 	"github.com/valerioferretti92/trading-bot-demo/internal/executions"
 	"github.com/valerioferretti92/trading-bot-demo/internal/laccount"
-	"github.com/valerioferretti92/trading-bot-demo/internal/operations"
+	"github.com/valerioferretti92/trading-bot-demo/internal/model"
 )
 
 func main() {
@@ -22,12 +22,7 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	_, err = laccount.CreateOrRestore(exe.ExeId, raccount)
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-
-	_, err = operations.Initialize(exe.ExeId, raccount)
+	_, err = laccount.CreateOrRestore(exe.ExeId, raccount, model.FIXED_THRESHOLD_STRATEGY)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

@@ -7,7 +7,6 @@ import (
 	"github.com/valerioferretti92/trading-bot-demo/internal/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Inserts a new execution object.
@@ -15,29 +14,8 @@ import (
 // was already terminated
 // Returns an error if computation failed or checks did not succeed
 func InsertOne(exe model.Execution) error {
-	// Defining query
-	query := bson.D{{"exeId", exe.ExeId}}
-	options := options.Find().
-		SetSort(bson.D{{"timestamp", -1}}).
-		SetLimit(1)
-
-	// Querying DB
-	var results []model.Execution
-	cursor, err := collection.Find(context.TODO(), query, options)
-	if err != nil {
-		return err
-	}
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return err
-	}
-
-	//Checking results
-	if len(results) == 1 && results[0].Status == model.EXE_TERMINATED {
-		return fmt.Errorf("execution %s has already been terminated", exe.ExeId)
-	}
-
 	// Inserting new execution object
-	_, err = collection.InsertOne(context.TODO(), exe)
+	_, err := collection.InsertOne(context.TODO(), exe)
 	return err
 }
 

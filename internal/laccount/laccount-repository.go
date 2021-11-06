@@ -10,7 +10,7 @@ import (
 
 // Inserts a new local account object
 // Returns an error, if computation failed
-func Insert(laccout model.LocalAccount) error {
+func Insert(laccout model.ILocalAccount) error {
 	_, err := collection.InsertOne(context.TODO(), laccout)
 	return err
 }
@@ -20,7 +20,7 @@ func Insert(laccout model.LocalAccount) error {
 // Returns a local wallet or en empty wallet if nothing was
 // found or an error was thrown.
 // Returns an error if computation failed
-func FindLatest(exeId string) (model.LocalAccount, error) {
+func FindLatest(exeId string) (model.ILocalAccount, error) {
 	// Defining query
 	filter := bson.D{{"exeId", exeId}}
 	options := options.Find()
@@ -28,18 +28,18 @@ func FindLatest(exeId string) (model.LocalAccount, error) {
 	options.SetLimit(1)
 
 	// Querying DB
-	var results []model.LocalAccount
+	var results []model.ILocalAccount
 	cursor, err := collection.Find(context.TODO(), filter, options)
 	if err != nil {
-		return model.LocalAccount{}, err
+		return nil, err
 	}
 	if err = cursor.All(context.TODO(), &results); err != nil {
-		return model.LocalAccount{}, err
+		return nil, err
 	}
 
 	// Returning results
 	if len(results) == 0 {
-		return model.LocalAccount{}, nil
+		return nil, nil
 	}
 	return results[0], nil
 }
@@ -48,14 +48,14 @@ func FindLatest(exeId string) (model.LocalAccount, error) {
 // returns the list of local wallet versions, a nil slice if
 // nothing was found or an error was thorwn
 // Returns an error if computation failed
-func FindAll(exeId string) ([]model.LocalAccount, error) {
+func FindAll(exeId string) ([]model.ILocalAccount, error) {
 	// Defining query
 	filter := bson.D{{"exeId", exeId}}
 	options := options.Find()
 	options.SetSort(bson.D{{"timestamp", -1}})
 
 	// Querying DB
-	var results []model.LocalAccount
+	var results []model.ILocalAccount
 	cursor, err := collection.Find(context.TODO(), filter, options)
 	if err != nil {
 		return nil, nil

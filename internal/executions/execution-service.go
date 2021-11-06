@@ -55,11 +55,7 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 	return exe, nil
 }
 
-// Changes execution status to PAUSED
-// STARTED --> PAUSED allowed
-// RESUMED --> PAUSED allowed
-// PAUSED --> PAUSED forbidden
-// TERMINATED --> PAUSED forbidden
+// Changes execution status from ACTIVE to PAUSED
 // Once the execution is paused, the bot will stop automatic
 // trading of cryptocurrencies and will allow manual operations.
 // Returns the modified execution object or an empty execution
@@ -91,11 +87,7 @@ func Pause(exeId string) (model.Execution, error) {
 	return exe, nil
 }
 
-// Changes the execution statues to RESUMED
-// PAUSED --> RESUMED allowed
-// STARTED --> RESUMED allowed
-// RESUMED --> RESUMED allowed
-// TERMINATED --> RESUMED forbidden
+// Changes the execution status from PAUSED to ACTIVE
 // Once the execution is resumed, the bot will start trading
 // cryptocurrencies and manual intervention will be no longer
 // allowed.
@@ -112,8 +104,8 @@ func Resume(exeId string) (model.Execution, error) {
 		err = fmt.Errorf("no active execution found")
 		return model.Execution{}, err
 	}
-	if exe.Status == model.EXE_RESUMED {
-		err = fmt.Errorf("execution %s is already RESMUED", exe.ExeId)
+	if exe.Status == model.EXE_ACTIVE {
+		err = fmt.Errorf("execution %s is already ACTIVE", exe.ExeId)
 		return model.Execution{}, err
 	}
 	if exe.Status == model.EXE_TERMINATED {
@@ -121,18 +113,14 @@ func Resume(exeId string) (model.Execution, error) {
 		return model.Execution{}, err
 	}
 
-	exe.Status = model.EXE_RESUMED
+	exe.Status = model.EXE_ACTIVE
 	if err := InsertOne(exe); err != nil {
 		return model.Execution{}, err
 	}
 	return exe, nil
 }
 
-// Changes the execution status to TERMINATED
-// STARTED --> TERMINATED allowed
-// RESUMED --> TERMINATED allowed
-// PAUSED --> TERMINATED allowed
-// TERMINATED --> TERMINATED forbidden
+// Changes the execution status from ACTIVE or PAUSED to TERMINATED
 // Once the execution is terminated, it can not be resumed.
 // Cryptocurrencies are sold into USDT and to resume
 // automatic trading, a new execution will have to be created.
@@ -169,7 +157,7 @@ func buildExecution(account model.RemoteAccount) model.Execution {
 
 	return model.Execution{
 		ExeId:     uuid.NewString(),
-		Status:    model.EXE_STARTED,
+		Status:    model.EXE_ACTIVE,
 		Symbols:   symbols,
 		Timestamp: time.Now().UnixMilli()}
 }

@@ -3,9 +3,8 @@ package model
 import "reflect"
 
 const (
-	EXE_STARTED    = "EXE_STARTED"    // Execution started
+	EXE_ACTIVE     = "EXE_ACTIVE"     // Execution started
 	EXE_PAUSED     = "EXE_PAUSED"     // Execution paused, manual operations enabled
-	EXE_RESUMED    = "EXE_RESUMED"    // Execution resumed, manual operations disabled
 	EXE_TERMINATED = "EXE_TERMINATED" // Execution terminated and cryptos sold off
 )
 

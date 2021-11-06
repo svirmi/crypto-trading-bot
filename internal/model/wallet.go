@@ -24,25 +24,44 @@ func (b RemoteBalance) IsEmpty() bool {
 	return reflect.DeepEqual(b, RemoteBalance{})
 }
 
-// Representation of local wallet
-type LocalAccount struct {
-	AccountId string                  `bson:"accountId"` // Local account object id
-	ExeId     string                  `bson:"exeId"`     // Execution id this local wallet is bound to
-	Balances  map[string]LocalBalance `bson:"balances"`  // Map local balances
-	Timestamp int64                   `bson:"timestamp"` // Timestamp
+const (
+	FIXED_THRESHOLD_STRATEGY = "FIXED_THRESHOLD_STRATEGY"
+)
+
+type ILocalAccount interface {
+	GetAccountId() string
+	GetExeId() string
+	GetStrategyType() string
+	GetTimestamp() int64
 }
 
-func (a LocalAccount) IsEmpty() bool {
-	return reflect.DeepEqual(a, LocalAccount{})
+// Abstract local account representation
+// It contains fields that are common to all strategy dependant
+// local wallet representations. To be composed with those
+// strategy dependant types
+type LocalAccountMetadata struct {
+	AccountId    string `bson:"accountId"`    // Local account object id
+	ExeId        string `bson:"exeId"`        // Execution id this local wallet is bound to
+	StrategyType string `bson:"strategyType"` // Strategy type
+	Timestamp    int64  `bson:"timestamp"`    // Timestamp
 }
 
-type LocalBalance struct {
-	Asset        string   `bson:"asset"`         // Asset being tracked
-	Amount       float32  `bson:"amount"`        // Amount of "asset" currently owned
-	Usdt         float32  `bson:"usdt"`          // Usdt gotten by trading "asset"
-	OperationIds []string `bson:"operationsIds"` // Operations where "asset" was traded back and forth for USDT
+func (a LocalAccountMetadata) GetAccountId() string {
+	return a.AccountId
 }
 
-func (b LocalBalance) IsEmpty() bool {
-	return reflect.DeepEqual(b, LocalBalance{})
+func (a LocalAccountMetadata) GetExeId() string {
+	return a.ExeId
+}
+
+func (a LocalAccountMetadata) GetStrategyType() string {
+	return a.StrategyType
+}
+
+func (a LocalAccountFTS) GetTimestamp() int64 {
+	return a.Timestamp
+}
+
+func (a LocalAccountMetadata) IsEmpty() bool {
+	return reflect.DeepEqual(a, LocalAccountMetadata{})
 }
