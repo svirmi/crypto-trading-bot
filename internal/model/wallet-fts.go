@@ -21,8 +21,8 @@ func (a AssetStatusFTS) IsEmpty() bool {
 
 type LocalAccountFTS struct {
 	LocalAccountMetadata `bson:"metadata"`
-	FrozenUsdt           float32                   `bson:"frozenUsdt"` // Usdt not to be invested
-	Assets               map[string]AssetStatusFTS `bson:"assets"`     // Value allocation across assets
+	Ignored              map[string]float32        `bson:"ignored"` // Usdt not to be invested
+	Assets               map[string]AssetStatusFTS `bson:"assets"`  // Value allocation across assets
 }
 
 func (a LocalAccountFTS) IsEmpty() bool {

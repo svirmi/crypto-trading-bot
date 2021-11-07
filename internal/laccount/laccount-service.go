@@ -14,30 +14,30 @@ import (
 // error was thrown.
 // Returns an error if computation failed
 // TRUSTS that exeId corresponds to an active execution
-func CreateOrRestore(exeId string, raccount model.RemoteAccount, strategyType string) (model.ILocalAccount, error) {
+func CreateOrRestore(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
 	// Get current local account from DB by execution id
-	laccount, err := FindLatest(exeId)
+	laccount, err := FindLatest(creationRequest.ExeId)
 	if err != nil {
 		return nil, err
 	}
 
 	// Restore existing local account
-	if laccount != nil && laccount.GetStrategyType() != strategyType {
-		err = fmt.Errorf("strategy type mismatch for exeId %s", exeId)
+	if laccount != nil && laccount.GetStrategyType() != creationRequest.StrategyType {
+		err = fmt.Errorf("strategy type mismatch for exeId %s", creationRequest.ExeId)
 		return nil, err
 	}
-	if laccount != nil && laccount.GetStrategyType() == strategyType {
+	if laccount != nil && laccount.GetStrategyType() == creationRequest.StrategyType {
 		log.Printf("restoring local account %s", laccount.GetAccountId())
 		return laccount, nil
 	}
 
 	// Create new local account
-	laccount, err = buildLocalAccount(exeId, raccount, strategyType)
+	laccount, err = buildLocalAccount(creationRequest)
 	if err != nil {
 		return nil, err
 	}
 	if laccount == nil {
-		err = fmt.Errorf("failed to build local account from remote account %v", raccount)
+		err = fmt.Errorf("failed to build local account from remote account")
 		return nil, err
 	}
 	if err := Insert(laccount); err != nil {
@@ -47,11 +47,11 @@ func CreateOrRestore(exeId string, raccount model.RemoteAccount, strategyType st
 	return laccount, nil
 }
 
-func buildLocalAccount(exeId string, raccount model.RemoteAccount, strategyType string) (model.ILocalAccount, error) {
-	if strategyType == model.FIXED_THRESHOLD_STRATEGY {
-		return buildLocalAccountFTS(exeId, raccount)
+func buildLocalAccount(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
+	if creationRequest.StrategyType == model.FIXED_THRESHOLD_STRATEGY {
+		return buildLocalAccountFTS(creationRequest)
 	} else {
-		err := fmt.Errorf("unknwon strategy type %s", strategyType)
+		err := fmt.Errorf("unknwon strategy type %s", creationRequest.StrategyType)
 		return nil, err
 	}
 }

@@ -1,27 +1,25 @@
 package laccount
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/valerioferretti92/trading-bot-demo/internal/model"
+	"github.com/valerioferretti92/trading-bot-demo/internal/utils"
 )
 
-func buildLocalAccountFTS(exeId string, raccount model.RemoteAccount) (model.LocalAccountFTS, error) {
-	var frozenUsdt float32 = 0
+func buildLocalAccountFTS(creationRequest model.LocalAccountInit) (model.LocalAccountFTS, error) {
+	var ignored = make(map[string]float32)
 	var assets = make(map[string]model.AssetStatusFTS)
 
-	for _, rbalance := range raccount.Balances {
-		amount, err := parseFloat32(rbalance.Amount)
-		if err != nil {
-			return model.LocalAccountFTS{}, err
-		}
-		if rbalance.Asset == "USDT" {
-			frozenUsdt = amount
+	for _, rbalance := range creationRequest.RAccount.Balances {
+		symbol := utils.GetSymbolFromAsset(rbalance.Asset)
+		price, found := creationRequest.TradableAssetsPrice[symbol]
+		if !found {
+			ignored[rbalance.Asset] = rbalance.Amount
 			continue
 		}
-		assetStatus, err := buildAssetStatusFTS(rbalance)
+		assetStatus, err := buildAssetStatusFTS(rbalance, price)
 		if err != nil {
 			return model.LocalAccountFTS{}, err
 		}
@@ -31,31 +29,18 @@ func buildLocalAccountFTS(exeId string, raccount model.RemoteAccount) (model.Loc
 	return model.LocalAccountFTS{
 		LocalAccountMetadata: model.LocalAccountMetadata{
 			AccountId:    uuid.NewString(),
-			ExeId:        exeId,
+			ExeId:        creationRequest.ExeId,
 			StrategyType: model.FIXED_THRESHOLD_STRATEGY,
 			Timestamp:    time.Now().UnixMilli()},
-		FrozenUsdt: frozenUsdt,
-		Assets:     assets}, nil
+		Ignored: ignored,
+		Assets:  assets}, nil
 }
 
-func buildAssetStatusFTS(rbalance model.RemoteBalance) (model.AssetStatusFTS, error) {
-	amount, err := parseFloat32(rbalance.Amount)
-	if err != nil {
-		return model.AssetStatusFTS{}, err
-	}
-
+func buildAssetStatusFTS(rbalance model.RemoteBalance, price model.SymbolPrice) (model.AssetStatusFTS, error) {
 	return model.AssetStatusFTS{
 		Asset:             rbalance.Asset,
-		Amount:            amount,
+		Amount:            rbalance.Amount,
 		Usdt:              0,
 		LastOperationType: model.OP_BUY_FTS,
-		LastOperationRate: 0}, nil
-}
-
-func parseFloat32(payload string) (float32, error) {
-	value, err := strconv.ParseFloat(payload, 32)
-	if err != nil {
-		return 0, err
-	}
-	return float32(value), nil
+		LastOperationRate: price.Price}, nil
 }

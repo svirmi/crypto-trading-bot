@@ -7,16 +7,44 @@ import (
 
 	binanceapi "github.com/adshao/go-binance/v2"
 	"github.com/valerioferretti92/trading-bot-demo/internal/model"
+	"github.com/valerioferretti92/trading-bot-demo/internal/utils"
 )
+
+func GetAssetsValueUsdt(bases []string) (map[string]model.SymbolPrice, error) {
+	lprices := make(map[string]model.SymbolPrice)
+
+	pricesService := httpClient.NewListPricesService()
+	for _, base := range bases {
+		symbol := utils.GetSymbolFromAsset(base)
+		_, found := symbols[symbol]
+		if !found {
+			log.Printf("%s is not a tradable asset: skipped", base)
+			continue
+		}
+
+		rprices, err := pricesService.Symbol(symbol).Do(context.TODO())
+		if err != nil {
+			return nil, err
+		}
+
+		lprice, err := toCCTBSymbolPrice(rprices[0])
+		if err != nil {
+			return nil, err
+		} else {
+			lprices[lprice.Symbol] = lprice
+		}
+	}
+	return lprices, nil
+}
 
 // GetAccount returns account inforamtion
 func GetAccout() (model.RemoteAccount, error) {
-	account, err := httpClient.NewGetAccountService().Do(context.Background())
+	account, err := httpClient.NewGetAccountService().Do(context.TODO())
 	if err != nil {
 		log.Printf("%s\n", err.Error())
 		return model.RemoteAccount{}, fmt.Errorf("failed to retrieve account information")
 	}
-	return toAccount(account), nil
+	return toCCTBRemoteAccount(account)
 }
 
 // SendMarketOrder places a market order to obtain qty units of target
@@ -49,7 +77,7 @@ func sendMarketOrder(base, quote string, qty float64, regular bool, side binance
 		ordersvc.QuoteOrderQty(fmt.Sprintf("%f", qty))
 	}
 
-	order, err := ordersvc.Do(context.Background())
+	order, err := ordersvc.Do(context.TODO())
 	if err != nil {
 		log.Printf("%s\n", err.Error())
 		return fmt.Errorf("failed to place market order %s%s", base, quote)
@@ -58,12 +86,30 @@ func sendMarketOrder(base, quote string, qty float64, regular bool, side binance
 	return nil
 }
 
-func toAccount(account *binanceapi.Account) model.RemoteAccount {
+/********************** Mapping to local representation **********************/
+
+func toCCTBSymbolPrice(rprice *binanceapi.SymbolPrice) (model.SymbolPrice, error) {
+	amount, err := utils.ParseFloat32(rprice.Price)
+	if err != nil {
+		return model.SymbolPrice{}, err
+	}
+
+	return model.SymbolPrice{
+		Symbol: rprice.Symbol,
+		Price:  amount}, nil
+}
+
+func toCCTBRemoteAccount(account *binanceapi.Account) (model.RemoteAccount, error) {
 	balances := make([]model.RemoteBalance, 0, len(account.Balances))
-	for i := range account.Balances {
+	for _, rbalance := range account.Balances {
+		amount, err := utils.ParseFloat32(rbalance.Free)
+		if err != nil {
+			return model.RemoteAccount{}, err
+		}
+
 		balances = append(balances, model.RemoteBalance{
-			Asset:  account.Balances[i].Asset,
-			Amount: account.Balances[i].Free})
+			Asset:  rbalance.Asset,
+			Amount: amount})
 	}
 
 	return model.RemoteAccount{
@@ -71,5 +117,5 @@ func toAccount(account *binanceapi.Account) model.RemoteAccount {
 		TakerCommission:  account.TakerCommission,
 		BuyerCommission:  account.BuyerCommission,
 		SellerCommission: account.SellerCommission,
-		Balances:         balances}
+		Balances:         balances}, nil
 }

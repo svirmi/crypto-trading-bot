@@ -17,11 +17,20 @@ func (a RemoteAccount) IsEmpty() bool {
 
 type RemoteBalance struct {
 	Asset  string
-	Amount string
+	Amount float32
 }
 
 func (b RemoteBalance) IsEmpty() bool {
 	return reflect.DeepEqual(b, RemoteBalance{})
+}
+
+type SymbolPrice struct {
+	Symbol string
+	Price  float32
+}
+
+func (p SymbolPrice) IsEmpty() bool {
+	return reflect.DeepEqual(p, SymbolPrice{})
 }
 
 const (
@@ -64,4 +73,15 @@ func (a LocalAccountFTS) GetTimestamp() int64 {
 
 func (a LocalAccountMetadata) IsEmpty() bool {
 	return reflect.DeepEqual(a, LocalAccountMetadata{})
+}
+
+type LocalAccountInit struct {
+	ExeId               string
+	RAccount            RemoteAccount
+	TradableAssetsPrice map[string]SymbolPrice
+	StrategyType        string
+}
+
+func (acr LocalAccountInit) IsEmpty() bool {
+	return reflect.DeepEqual(acr, LocalAccountInit{})
 }

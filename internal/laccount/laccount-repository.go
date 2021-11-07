@@ -22,9 +22,9 @@ func Insert(laccout model.ILocalAccount) error {
 // Returns an error if computation failed
 func FindLatest(exeId string) (model.ILocalAccount, error) {
 	// Defining query
-	filter := bson.D{{"exeId", exeId}}
+	filter := bson.D{{"metadata.exeId", exeId}}
 	options := options.Find()
-	options.SetSort(bson.D{{"timestamp", -1}})
+	options.SetSort(bson.D{{"metadata.timestamp", -1}})
 	options.SetLimit(1)
 
 	// Querying DB
@@ -50,9 +50,9 @@ func FindLatest(exeId string) (model.ILocalAccount, error) {
 // Returns an error if computation failed
 func FindAll(exeId string) ([]model.ILocalAccount, error) {
 	// Defining query
-	filter := bson.D{{"exeId", exeId}}
+	filter := bson.D{{"metadata.exeId", exeId}}
 	options := options.Find()
-	options.SetSort(bson.D{{"timestamp", -1}})
+	options.SetSort(bson.D{{"metadata.timestamp", -1}})
 
 	// Querying DB
 	var results []model.ILocalAccount

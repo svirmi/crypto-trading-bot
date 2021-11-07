@@ -22,7 +22,17 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	_, err = laccount.CreateOrRestore(exe.ExeId, raccount, model.FIXED_THRESHOLD_STRATEGY)
+	prices, err := binance.GetAssetsValueUsdt(exe.Symbols)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	laCreationRequest := model.LocalAccountInit{
+		ExeId:               exe.ExeId,
+		RAccount:            raccount,
+		StrategyType:        model.FIXED_THRESHOLD_STRATEGY,
+		TradableAssetsPrice: prices}
+	_, err = laccount.CreateOrRestore(laCreationRequest)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
