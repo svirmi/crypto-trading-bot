@@ -10,18 +10,28 @@ import (
 	"github.com/valerioferretti92/trading-bot-demo/internal/utils"
 )
 
+func FilterTradableSymbols(bases []string) []string {
+	// An asset is considered to be tradable, if it can be
+	// exchanged for USDT directly
+	tradables := make([]string, 0)
+	for _, base := range bases {
+		_, found := symbols[base+"USDT"]
+		if !found {
+			log.Printf("%s is not a tradable asset", base)
+			continue
+		}
+		tradables = append(tradables, base)
+	}
+	return tradables
+}
+
 func GetAssetsValueUsdt(bases []string) (map[string]model.SymbolPrice, error) {
 	lprices := make(map[string]model.SymbolPrice)
+	bases = FilterTradableSymbols(bases)
 
 	pricesService := httpClient.NewListPricesService()
 	for _, base := range bases {
-		symbol := utils.GetSymbolFromAsset(base)
-		_, found := symbols[symbol]
-		if !found {
-			log.Printf("%s is not a tradable asset: skipped", base)
-			continue
-		}
-
+		symbol := base + "USDT"
 		rprices, err := pricesService.Symbol(symbol).Do(context.TODO())
 		if err != nil {
 			return nil, err
