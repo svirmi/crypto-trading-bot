@@ -46,7 +46,7 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 		return model.Execution{}, fmt.Errorf("empty remote account received")
 	}
 
-	exe = buildExecution(raccount)
+	exe = build_execution(raccount)
 	log.Printf("starting execution %s", exe.ExeId)
 	log.Printf("assets to be traded: %v", exe.Symbols)
 	if InsertOne(exe); err != nil {
@@ -149,7 +149,7 @@ func Terminate(exeId string) (model.Execution, error) {
 	return exe, nil
 }
 
-func buildExecution(account model.RemoteAccount) model.Execution {
+func build_execution(account model.RemoteAccount) model.Execution {
 	symbols := make([]string, 0, len(account.Balances))
 	for i := range account.Balances {
 		symbols = append(symbols, account.Balances[i].Asset)

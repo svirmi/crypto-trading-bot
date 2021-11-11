@@ -35,7 +35,7 @@ func FindLatest(exeId string) (model.ILocalAccount, error) {
 		return nil, err
 	}
 
-	results, err := decodeMany(cursor)
+	results, err := decode_many(cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -64,18 +64,18 @@ func FindAll(exeId string) ([]model.ILocalAccount, error) {
 	}
 
 	// Returning query results
-	results, err := decodeMany(cursor)
+	results, err := decode_many(cursor)
 	if err != nil {
 		return nil, err
 	}
 	return results, nil
 }
 
-func decodeMany(cursor *mongo.Cursor) ([]model.ILocalAccount, error) {
+func decode_many(cursor *mongo.Cursor) ([]model.ILocalAccount, error) {
 	laccounts := make([]model.ILocalAccount, 0)
 	for cursor.Next(context.TODO()) {
 		raw := cursor.Current
-		laccount, err := decodeOne(raw)
+		laccount, err := decode_one(raw)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +84,7 @@ func decodeMany(cursor *mongo.Cursor) ([]model.ILocalAccount, error) {
 	return laccounts, nil
 }
 
-func decodeOne(raw bson.Raw) (model.ILocalAccount, error) {
+func decode_one(raw bson.Raw) (model.ILocalAccount, error) {
 	payload := struct {
 		model.LocalAccountMetadata `bson:"metadata"`
 	}{}

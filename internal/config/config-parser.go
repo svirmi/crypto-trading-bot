@@ -32,14 +32,14 @@ func init() {
 	flag.Parse()
 
 	// Parsing config
-	config, err := parseConfig(testnet)
+	config, err := parse_config(testnet)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
 	AppConfig = config
 }
 
-func parseConfig(testnet *bool) (Config, error) {
+func parse_config(testnet *bool) (Config, error) {
 	var configPath string
 	if *testnet {
 		configPath = config_testnet_path

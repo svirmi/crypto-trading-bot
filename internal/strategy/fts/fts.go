@@ -47,7 +47,7 @@ func InitLocalAccountFTS(creationRequest model.LocalAccountInit) (LocalAccountFT
 			ignored[rbalance.Asset] = rbalance.Amount
 			continue
 		}
-		assetStatus, err := initAssetStatusFTS(rbalance, price)
+		assetStatus, err := init_asset_status_FTS(rbalance, price)
 		if err != nil {
 			return LocalAccountFTS{}, err
 		}
@@ -64,7 +64,7 @@ func InitLocalAccountFTS(creationRequest model.LocalAccountInit) (LocalAccountFT
 		Assets:  assets}, nil
 }
 
-func initAssetStatusFTS(rbalance model.RemoteBalance, price model.SymbolPrice) (AssetStatusFTS, error) {
+func init_asset_status_FTS(rbalance model.RemoteBalance, price model.SymbolPrice) (AssetStatusFTS, error) {
 	return AssetStatusFTS{
 		Asset:             rbalance.Asset,
 		Amount:            rbalance.Amount,

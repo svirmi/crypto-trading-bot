@@ -27,7 +27,7 @@ func GetAssetsValueUsdt(bases []string) (map[string]model.SymbolPrice, error) {
 			return nil, err
 		}
 
-		lprice, err := toCCTBSymbolPrice(rprices[0])
+		lprice, err := to_CCTB_symbol_price(rprices[0])
 		if err != nil {
 			return nil, err
 		} else {
@@ -44,7 +44,7 @@ func GetAccout() (model.RemoteAccount, error) {
 		log.Printf("%s\n", err.Error())
 		return model.RemoteAccount{}, fmt.Errorf("failed to retrieve account information")
 	}
-	return toCCTBRemoteAccount(account)
+	return to_CCTB_remote_account(account)
 }
 
 // SendMarketOrder places a market order to obtain qty units of target
@@ -88,7 +88,7 @@ func sendMarketOrder(base, quote string, qty float64, regular bool, side binance
 
 /********************** Mapping to local representation **********************/
 
-func toCCTBSymbolPrice(rprice *binanceapi.SymbolPrice) (model.SymbolPrice, error) {
+func to_CCTB_symbol_price(rprice *binanceapi.SymbolPrice) (model.SymbolPrice, error) {
 	amount, err := utils.ParseFloat32(rprice.Price)
 	if err != nil {
 		return model.SymbolPrice{}, err
@@ -99,7 +99,7 @@ func toCCTBSymbolPrice(rprice *binanceapi.SymbolPrice) (model.SymbolPrice, error
 		Price:  amount}, nil
 }
 
-func toCCTBRemoteAccount(account *binanceapi.Account) (model.RemoteAccount, error) {
+func to_CCTB_remote_account(account *binanceapi.Account) (model.RemoteAccount, error) {
 	balances := make([]model.RemoteBalance, 0, len(account.Balances))
 	for _, rbalance := range account.Balances {
 		amount, err := utils.ParseFloat32(rbalance.Free)

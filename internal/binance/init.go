@@ -20,18 +20,18 @@ func init() {
 	binanceapi.WebsocketKeepalive = false
 	binanceapi.WebsocketTimeout = time.Second * 60
 	// Building binance http client
-	buildBinanceClients()
+	build_binance_clients()
 	// Getting binance exchange symbols
-	initExchangeSymbols()
+	init_exchange_symbols()
 }
 
-func buildBinanceClients() {
+func build_binance_clients() {
 	binanceConfig := config.AppConfig.BinanceApi
 	binanceapi.UseTestnet = binanceConfig.UseTestnet
 	httpClient = binanceapi.NewClient(binanceConfig.ApiKey, binanceConfig.SecretKey)
 }
 
-func initExchangeSymbols() {
+func init_exchange_symbols() {
 	res, err := httpClient.NewExchangeInfoService().Do(context.Background())
 	if err != nil {
 		log.Fatalf("%s\n", err.Error())
