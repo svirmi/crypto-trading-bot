@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/valerioferretti92/trading-bot-demo/internal/model"
+	"github.com/valerioferretti92/trading-bot-demo/internal/strategy"
 )
 
 // Creates a local account based on the remote account, or restores
@@ -32,7 +33,7 @@ func CreateOrRestore(creationRequest model.LocalAccountInit) (model.ILocalAccoun
 	}
 
 	// Create new local account
-	laccount, err = buildLocalAccount(creationRequest)
+	laccount, err = strategy.InitLocalAccount(creationRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -45,13 +46,4 @@ func CreateOrRestore(creationRequest model.LocalAccountInit) (model.ILocalAccoun
 	}
 	log.Printf("registering local account %s", laccount.GetAccountId())
 	return laccount, nil
-}
-
-func buildLocalAccount(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
-	if creationRequest.StrategyType == model.FIXED_THRESHOLD_STRATEGY {
-		return buildLocalAccountFTS(creationRequest)
-	} else {
-		err := fmt.Errorf("unknwon strategy type %s", creationRequest.StrategyType)
-		return nil, err
-	}
 }

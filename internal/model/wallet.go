@@ -1,6 +1,8 @@
 package model
 
-import "reflect"
+import (
+	"reflect"
+)
 
 // Representation of remote Binance wallet
 type RemoteAccount struct {
@@ -67,7 +69,7 @@ func (a LocalAccountMetadata) GetStrategyType() string {
 	return a.StrategyType
 }
 
-func (a LocalAccountFTS) GetTimestamp() int64 {
+func (a LocalAccountMetadata) GetTimestamp() int64 {
 	return a.Timestamp
 }
 

@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/valerioferretti92/trading-bot-demo/internal/model"
+	"github.com/valerioferretti92/trading-bot-demo/internal/strategy"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -28,12 +30,13 @@ func FindLatest(exeId string) (model.ILocalAccount, error) {
 	options.SetLimit(1)
 
 	// Querying DB
-	var results []model.ILocalAccount
 	cursor, err := collection.Find(context.TODO(), filter, options)
 	if err != nil {
 		return nil, err
 	}
-	if err = cursor.All(context.TODO(), &results); err != nil {
+
+	results, err := decodeMany(cursor)
+	if err != nil {
 		return nil, err
 	}
 
@@ -55,15 +58,40 @@ func FindAll(exeId string) ([]model.ILocalAccount, error) {
 	options.SetSort(bson.D{{"metadata.timestamp", -1}})
 
 	// Querying DB
-	var results []model.ILocalAccount
 	cursor, err := collection.Find(context.TODO(), filter, options)
 	if err != nil {
 		return nil, nil
 	}
 
 	// Returning query results
-	if err = cursor.All(context.TODO(), &results); err != nil {
+	results, err := decodeMany(cursor)
+	if err != nil {
 		return nil, err
 	}
 	return results, nil
+}
+
+func decodeMany(cursor *mongo.Cursor) ([]model.ILocalAccount, error) {
+	laccounts := make([]model.ILocalAccount, 0)
+	for cursor.Next(context.TODO()) {
+		raw := cursor.Current
+		laccount, err := decodeOne(raw)
+		if err != nil {
+			return nil, err
+		}
+		laccounts = append(laccounts, laccount)
+	}
+	return laccounts, nil
+}
+
+func decodeOne(raw bson.Raw) (model.ILocalAccount, error) {
+	payload := struct {
+		model.LocalAccountMetadata `bson:"metadata"`
+	}{}
+
+	err := bson.Unmarshal(raw, &payload)
+	if err != nil {
+		return nil, err
+	}
+	return strategy.DecodeLocalAccount(raw, payload.StrategyType)
 }
