@@ -34,3 +34,10 @@ func init() {
 		Database(config.AppConfig.MongoDbConfig.Database).
 		Collection(operationsColName)
 }
+
+func Close() {
+	if collection == nil {
+		return
+	}
+	collection.Database().Client().Disconnect(context.TODO())
+}
