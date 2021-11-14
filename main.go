@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/valerioferretti92/trading-bot-demo/internal/binance"
 	"github.com/valerioferretti92/trading-bot-demo/internal/executions"
@@ -22,7 +23,8 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	prices, err := binance.GetAssetsValueUsdt(exe.Symbols)
+	tradableSymbols := binance.FilterTradableSymbols(exe.Symbols)
+	prices, err := binance.GetAssetsValueUsdt(tradableSymbols)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -36,8 +38,15 @@ func main() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
+
+	symbols := make(map[string]bool)
+	symbols["ETHUSDT"] = true
+	symbols["BTCUSDT"] = true
+	binance.MiniMarketsStatsServe(symbols)
+	time.Sleep(30 * time.Second)
 }
 
 func shutdown() {
 	binance.Close()
+	log.Printf("bye, bye")
 }

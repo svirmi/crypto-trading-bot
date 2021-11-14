@@ -1,6 +1,7 @@
 package fts
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
@@ -34,6 +35,58 @@ type LocalAccountFTS struct {
 
 func (a LocalAccountFTS) IsEmpty() bool {
 	return reflect.DeepEqual(a, LocalAccountFTS{})
+}
+
+func (a LocalAccountFTS) Update(op model.Operation) (model.ILocalAccount, error) {
+	// Check execution ids
+	if op.ExeId != a.ExeId {
+		err := fmt.Errorf("mismatching execution ids")
+		return a, err
+	}
+
+	// If the result status is failed, NOP
+	if op.OrderResults.Status == model.FAILED {
+		return a, nil
+	}
+
+	// FTS only handle operation back and forth USDT
+	if op.Quote != "USDT" {
+		err := fmt.Errorf("FTS can only hande trading to USDT")
+		return a, err
+	}
+
+	// Getting asset status
+	assetStatus, found := a.Assets[op.Base]
+	if !found {
+		err := fmt.Errorf("asset %s not found in local wallet", op.Base)
+		return a, err
+	}
+
+	// Updating asset status
+	baseAmount := op.OrderResults.BaseAmount
+	quoteAmount := op.OrderResults.QuoteAmount
+	if op.Type == model.OP_BUY_AUTO || op.Type == model.OP_BUY_MANUAL {
+		assetStatus.Amount = assetStatus.Amount + baseAmount
+		assetStatus.Usdt = assetStatus.Usdt - quoteAmount
+		assetStatus.LastOperationType = OP_BUY_FTS
+	} else if op.Type == model.OP_SELL_AUTO || op.Type == model.OP_SELL_MANUAL {
+		assetStatus.Amount = assetStatus.Amount - baseAmount
+		assetStatus.Usdt = assetStatus.Usdt + quoteAmount
+		assetStatus.LastOperationType = OP_SELL_FTS
+	} else {
+		err := fmt.Errorf("unsupported operation type %s", op.Type)
+		return a, err
+	}
+	if assetStatus.Amount < 0 || assetStatus.Usdt < 0 {
+		err := fmt.Errorf("negative balance detected")
+		return a, err
+	}
+	assetStatus.LastOperationRate = op.OrderResults.ActualRate
+
+	// Returning results
+	a.Assets[op.Base] = assetStatus
+	a.Timestamp = time.Now().UnixMilli()
+	return a, nil
 }
 
 func InitLocalAccountFTS(creationRequest model.LocalAccountInit) (LocalAccountFTS, error) {

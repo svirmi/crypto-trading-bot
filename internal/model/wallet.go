@@ -44,6 +44,7 @@ type ILocalAccount interface {
 	GetExeId() string
 	GetStrategyType() string
 	GetTimestamp() int64
+	Update(op Operation) (ILocalAccount, error)
 }
 
 // Abstract local account representation
