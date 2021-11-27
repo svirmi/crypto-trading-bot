@@ -2,9 +2,11 @@ package laccount
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/fts"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -13,7 +15,7 @@ import (
 // Inserts a new local account object
 // Returns an error, if computation failed
 func Insert(laccout model.ILocalAccount) error {
-	_, err := collection.InsertOne(context.TODO(), laccout)
+	_, err := mongodb.GetLocalAccountsCol().InsertOne(context.TODO(), laccout)
 	return err
 }
 
@@ -23,6 +25,8 @@ func Insert(laccout model.ILocalAccount) error {
 // found or an error was thrown.
 // Returns an error if computation failed
 func FindLatest(exeId string) (model.ILocalAccount, error) {
+	collection := mongodb.GetLocalAccountsCol()
+
 	// Defining query
 	filter := bson.D{{"metadata.exeId", exeId}}
 	options := options.Find()
@@ -52,6 +56,8 @@ func FindLatest(exeId string) (model.ILocalAccount, error) {
 // nothing was found or an error was thorwn
 // Returns an error if computation failed
 func FindAll(exeId string) ([]model.ILocalAccount, error) {
+	collection := mongodb.GetLocalAccountsCol()
+
 	// Defining query
 	filter := bson.D{{"metadata.exeId", exeId}}
 	options := options.Find()
@@ -93,5 +99,20 @@ func decode_one(raw bson.Raw) (model.ILocalAccount, error) {
 	if err != nil {
 		return nil, err
 	}
-	return strategy.DecodeLocalAccount(raw, payload.StrategyType)
+	strategyType := payload.GetStrategyType()
+
+	var laccount model.ILocalAccount = nil
+	if strategyType == model.FIXED_THRESHOLD_STRATEGY {
+		laccount_fts := fts.LocalAccountFTS{}
+		err = bson.Unmarshal(raw, &laccount_fts)
+		laccount = laccount_fts
+	} else {
+		err = fmt.Errorf("unknown strategy type %s", strategyType)
+		return nil, err
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	return laccount, nil
 }

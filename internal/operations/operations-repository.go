@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -11,6 +12,8 @@ import (
 // Inserts operations in DB
 // Returns an error if computation failed
 func InsertMany(ops []model.Operation) error {
+	collection := mongodb.GetOperationsCol()
+
 	var payload []interface{}
 	for i := range ops {
 		payload = append(payload, ops[i])
@@ -24,7 +27,7 @@ func InsertMany(ops []model.Operation) error {
 // Inserts an operation in DB
 // Returns an error if computation failed
 func Insert(op model.Operation) error {
-	_, err := collection.InsertOne(context.TODO(), op)
+	_, err := mongodb.GetOperationsCol().InsertOne(context.TODO(), op)
 	return err
 }
 
@@ -33,6 +36,8 @@ func Insert(op model.Operation) error {
 // oterwise
 // Returns an error if computation failed
 func FindByExeId(exeId string) ([]model.Operation, error) {
+	collection := mongodb.GetOperationsCol()
+
 	// Defining query
 	options := options.Find().SetSort(bson.D{{"timestamp", 1}})
 	filter := bson.D{{"exeId", exeId}}

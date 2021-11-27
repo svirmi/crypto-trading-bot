@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -15,7 +16,7 @@ import (
 // Returns an error if computation failed or checks did not succeed
 func InsertOne(exe model.Execution) error {
 	// Inserting new execution object
-	_, err := collection.InsertOne(context.TODO(), exe)
+	_, err := mongodb.GetExecutionsCol().InsertOne(context.TODO(), exe)
 	return err
 }
 
@@ -24,6 +25,8 @@ func InsertOne(exe model.Execution) error {
 // object if nothing was found or an error was thrown.
 // Returns an error if computation failed
 func FindCurrentlyActiveByExeId(exeId string) (model.Execution, error) {
+	collection := mongodb.GetExecutionsCol()
+
 	// Defining query stages
 	filter1 := bson.D{{"exeId", exeId}}
 	sort := bson.D{{"$sort", bson.D{{"timestamp", -1}}}}
@@ -53,6 +56,8 @@ func FindCurrentlyActiveByExeId(exeId string) (model.Execution, error) {
 // object if nothing was found or an error was thrown.
 // Returns an error if computation failed
 func FindCurrentlyActive() (model.Execution, error) {
+	collection := mongodb.GetExecutionsCol()
+
 	// Defining query stages
 	sort := bson.D{{"$sort", bson.D{{"timestamp", 1}}}}
 	group := bson.D{{"$group", bson.D{

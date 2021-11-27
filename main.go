@@ -10,7 +10,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/operations"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 )
 
 func main() {
@@ -61,8 +61,6 @@ func interrupt_handler() chan os.Signal {
 
 func shutdown() {
 	binance.Close()
-	executions.Close()
-	operations.Close()
-	laccount.Close()
+	mongodb.Disconnect()
 	log.Printf("bye, bye")
 }
