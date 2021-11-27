@@ -1,4 +1,4 @@
-module github.com/valerioferretti92/trading-bot-demo
+module github.com/valerioferretti92/crypto-trading-bot
 
 go 1.16
 

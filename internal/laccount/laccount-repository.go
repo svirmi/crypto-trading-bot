@@ -3,8 +3,8 @@ package laccount
 import (
 	"context"
 
-	"github.com/valerioferretti92/trading-bot-demo/internal/model"
-	"github.com/valerioferretti92/trading-bot-demo/internal/strategy"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

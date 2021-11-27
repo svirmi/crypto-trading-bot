@@ -4,7 +4,7 @@ package model
 type MiniMarketStats struct {
 	Event       string
 	Time        int64
-	Symbol      string
+	Asset       string
 	LastPrice   float32
 	OpenPrice   float32
 	HighPrice   float32

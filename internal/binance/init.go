@@ -6,7 +6,7 @@ import (
 	"time"
 
 	binanceapi "github.com/adshao/go-binance/v2"
-	"github.com/valerioferretti92/trading-bot-demo/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 )
 
 var (

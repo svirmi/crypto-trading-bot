@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/valerioferretti92/trading-bot-demo/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
 // Gets active execution object by execution id.
@@ -37,7 +37,7 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 	if !exe.IsEmpty() {
 		log.Printf("restoring execution %s", exe.ExeId)
 		log.Printf("execution status: %s", exe.Status)
-		log.Printf("assets to be traded: %v", exe.Symbols)
+		log.Printf("assets to be traded: %v", exe.Assets)
 		return exe, nil
 	}
 
@@ -48,7 +48,7 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 
 	exe = build_execution(raccount)
 	log.Printf("starting execution %s", exe.ExeId)
-	log.Printf("assets to be traded: %v", exe.Symbols)
+	log.Printf("assets to be traded: %v", exe.Assets)
 	if InsertOne(exe); err != nil {
 		return model.Execution{}, err
 	}
@@ -150,14 +150,14 @@ func Terminate(exeId string) (model.Execution, error) {
 }
 
 func build_execution(account model.RemoteAccount) model.Execution {
-	symbols := make([]string, 0, len(account.Balances))
-	for i := range account.Balances {
-		symbols = append(symbols, account.Balances[i].Asset)
+	assets := make([]string, 0, len(account.Balances))
+	for _, balance := range account.Balances {
+		assets = append(assets, balance.Asset)
 	}
 
 	return model.Execution{
 		ExeId:     uuid.NewString(),
 		Status:    model.EXE_ACTIVE,
-		Symbols:   symbols,
+		Assets:    assets,
 		Timestamp: time.Now().UnixMilli()}
 }

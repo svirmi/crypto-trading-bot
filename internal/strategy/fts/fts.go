@@ -6,8 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/valerioferretti92/trading-bot-demo/internal/model"
-	"github.com/valerioferretti92/trading-bot-demo/internal/utils"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
 const (
@@ -94,8 +93,7 @@ func InitLocalAccountFTS(creationRequest model.LocalAccountInit) (LocalAccountFT
 	var assets = make(map[string]AssetStatusFTS)
 
 	for _, rbalance := range creationRequest.RAccount.Balances {
-		symbol := utils.GetSymbolFromAsset(rbalance.Asset)
-		price, found := creationRequest.TradableAssetsPrice[symbol]
+		price, found := creationRequest.TradableAssetsPrice[rbalance.Asset]
 		if !found {
 			ignored[rbalance.Asset] = rbalance.Amount
 			continue
@@ -117,7 +115,7 @@ func InitLocalAccountFTS(creationRequest model.LocalAccountInit) (LocalAccountFT
 		Assets:  assets}, nil
 }
 
-func init_asset_status_FTS(rbalance model.RemoteBalance, price model.SymbolPrice) (AssetStatusFTS, error) {
+func init_asset_status_FTS(rbalance model.RemoteBalance, price model.AssetPrice) (AssetStatusFTS, error) {
 	return AssetStatusFTS{
 		Asset:             rbalance.Asset,
 		Amount:            rbalance.Amount,

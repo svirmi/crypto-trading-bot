@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/valerioferretti92/trading-bot-demo/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"

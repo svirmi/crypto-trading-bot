@@ -3,7 +3,7 @@ package operations
 import (
 	"context"
 
-	"github.com/valerioferretti92/trading-bot-demo/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )

@@ -5,9 +5,9 @@ import (
 
 	binanceapi "github.com/adshao/go-binance/v2"
 	abool "github.com/tevino/abool/v2"
-	"github.com/valerioferretti92/trading-bot-demo/internal/handler"
-	"github.com/valerioferretti92/trading-bot-demo/internal/model"
-	"github.com/valerioferretti92/trading-bot-demo/internal/utils"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/handler"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
 type mini_markets_stats_ctl struct {
@@ -17,7 +17,12 @@ type mini_markets_stats_ctl struct {
 
 var mms_ctl mini_markets_stats_ctl = mini_markets_stats_ctl{}
 
-func MiniMarketsStatsServe(symbols map[string]bool) error {
+func MiniMarketsStatsServe(assets []string) error {
+	symbolsMap := make(map[string]bool)
+	for _, asset := range assets {
+		symbolsMap[utils.GetSymbolFromAsset(asset)] = true
+	}
+
 	errorHandler := func(err error) {
 		log.Print(err.Error())
 	}
@@ -37,7 +42,7 @@ func MiniMarketsStatsServe(symbols map[string]bool) error {
 			miniMarketsStats := make([]model.MiniMarketStats, 0, len(rMiniMarketsStats))
 			for _, rMiniMarketStats := range rMiniMarketsStats {
 				// Filter out symbols that are not in local wallet
-				if !symbols[rMiniMarketStats.Symbol] {
+				if !symbolsMap[rMiniMarketStats.Symbol] {
 					continue
 				}
 				// Filter out symbols whose numeric fields could not be parsed from string
@@ -112,7 +117,7 @@ func to_mini_market_stats(rMiniMarketStat binanceapi.WsMiniMarketsStatEvent) (mo
 	return model.MiniMarketStats{
 		Event:       rMiniMarketStat.Event,
 		Time:        rMiniMarketStat.Time,
-		Symbol:      rMiniMarketStat.Symbol,
+		Asset:       utils.GetAssetFromSymbol(rMiniMarketStat.Symbol),
 		LastPrice:   lastPrice,
 		OpenPrice:   openPrice,
 		LowPrice:    lowPrice,

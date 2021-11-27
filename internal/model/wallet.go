@@ -26,13 +26,13 @@ func (b RemoteBalance) IsEmpty() bool {
 	return reflect.DeepEqual(b, RemoteBalance{})
 }
 
-type SymbolPrice struct {
-	Symbol string
-	Price  float32
+type AssetPrice struct {
+	Asset string
+	Price float32
 }
 
-func (p SymbolPrice) IsEmpty() bool {
-	return reflect.DeepEqual(p, SymbolPrice{})
+func (p AssetPrice) IsEmpty() bool {
+	return reflect.DeepEqual(p, AssetPrice{})
 }
 
 const (
@@ -81,7 +81,7 @@ func (a LocalAccountMetadata) IsEmpty() bool {
 type LocalAccountInit struct {
 	ExeId               string
 	RAccount            RemoteAccount
-	TradableAssetsPrice map[string]SymbolPrice
+	TradableAssetsPrice map[string]AssetPrice
 	StrategyType        string
 }
 

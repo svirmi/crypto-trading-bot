@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/valerioferretti92/trading-bot-demo/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -58,11 +58,11 @@ func FindCurrentlyActive() (model.Execution, error) {
 	group := bson.D{{"$group", bson.D{
 		{"_id", "$exeId"},
 		{"status", bson.D{{"$last", "$status"}}},
-		{"symbols", bson.D{{"$last", "$symbols"}}},
+		{"assets", bson.D{{"$last", "$assets"}}},
 		{"timestamp", bson.D{{"$last", "$timestamp"}}}}}}
 	project := bson.D{{"$project", bson.D{
 		{"timestamp", 1},
-		{"symbols", 1},
+		{"assets", 1},
 		{"status", 1},
 		{"exeId", "$_id"},
 		{"_id", 0}}}}

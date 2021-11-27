@@ -6,11 +6,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/valerioferretti92/trading-bot-demo/internal/binance"
-	"github.com/valerioferretti92/trading-bot-demo/internal/executions"
-	"github.com/valerioferretti92/trading-bot-demo/internal/laccount"
-	"github.com/valerioferretti92/trading-bot-demo/internal/model"
-	"github.com/valerioferretti92/trading-bot-demo/internal/operations"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/binance"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/operations"
 )
 
 func main() {
@@ -27,8 +27,8 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	tradableSymbols := binance.FilterTradableSymbols(exe.Symbols)
-	prices, err := binance.GetAssetsValueUsdt(tradableSymbols)
+	tradableAssets := binance.FilterTradableAssets(exe.Assets)
+	prices, err := binance.GetAssetsValue(tradableAssets)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -43,10 +43,7 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	symbols := make(map[string]bool)
-	symbols["ETHUSDT"] = true
-	symbols["BTCUSDT"] = true
-	binance.MiniMarketsStatsServe(symbols)
+	binance.MiniMarketsStatsServe([]string{"BTC", "ETH"})
 
 	// Terminate when the application is stopped
 	<-sigc

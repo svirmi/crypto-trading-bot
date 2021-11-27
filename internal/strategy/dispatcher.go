@@ -3,8 +3,8 @@ package strategy
 import (
 	"fmt"
 
-	"github.com/valerioferretti92/trading-bot-demo/internal/model"
-	"github.com/valerioferretti92/trading-bot-demo/internal/strategy/fts"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/fts"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

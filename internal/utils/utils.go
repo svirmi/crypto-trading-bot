@@ -1,6 +1,9 @@
 package utils
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 func ParseFloat32(payload string) (float32, error) {
 	value, err := strconv.ParseFloat(payload, 32)
@@ -12,4 +15,8 @@ func ParseFloat32(payload string) (float32, error) {
 
 func GetSymbolFromAsset(base string) string {
 	return base + "USDT"
+}
+
+func GetAssetFromSymbol(symbol string) string {
+	return strings.TrimSuffix(symbol, "USDT")
 }

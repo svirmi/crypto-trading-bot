@@ -1,6 +1,6 @@
 package operations
 
-import "github.com/valerioferretti92/trading-bot-demo/internal/model"
+import "github.com/valerioferretti92/crypto-trading-bot/internal/model"
 
 // Creates an operation
 // Returns an error if computation failed

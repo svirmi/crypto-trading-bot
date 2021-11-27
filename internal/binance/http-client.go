@@ -6,16 +6,16 @@ import (
 	"log"
 
 	binanceapi "github.com/adshao/go-binance/v2"
-	"github.com/valerioferretti92/trading-bot-demo/internal/model"
-	"github.com/valerioferretti92/trading-bot-demo/internal/utils"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
-func FilterTradableSymbols(bases []string) []string {
+func FilterTradableAssets(bases []string) []string {
 	// An asset is considered to be tradable, if it can be
 	// exchanged for USDT directly
 	tradables := make([]string, 0)
 	for _, base := range bases {
-		_, found := symbols[base+"USDT"]
+		_, found := symbols[utils.GetSymbolFromAsset(base)]
 		if !found {
 			log.Printf("%s is not a tradable asset", base)
 			continue
@@ -25,13 +25,13 @@ func FilterTradableSymbols(bases []string) []string {
 	return tradables
 }
 
-func GetAssetsValueUsdt(bases []string) (map[string]model.SymbolPrice, error) {
-	lprices := make(map[string]model.SymbolPrice)
-	bases = FilterTradableSymbols(bases)
+func GetAssetsValue(bases []string) (map[string]model.AssetPrice, error) {
+	lprices := make(map[string]model.AssetPrice)
+	bases = FilterTradableAssets(bases)
 
 	pricesService := httpClient.NewListPricesService()
 	for _, base := range bases {
-		symbol := base + "USDT"
+		symbol := utils.GetSymbolFromAsset(base)
 		rprices, err := pricesService.Symbol(symbol).Do(context.TODO())
 		if err != nil {
 			return nil, err
@@ -41,7 +41,7 @@ func GetAssetsValueUsdt(bases []string) (map[string]model.SymbolPrice, error) {
 		if err != nil {
 			return nil, err
 		} else {
-			lprices[lprice.Symbol] = lprice
+			lprices[lprice.Asset] = lprice
 		}
 	}
 	return lprices, nil
@@ -98,15 +98,15 @@ func sendMarketOrder(base, quote string, qty float64, regular bool, side binance
 
 /********************** Mapping to local representation **********************/
 
-func to_CCTB_symbol_price(rprice *binanceapi.SymbolPrice) (model.SymbolPrice, error) {
+func to_CCTB_symbol_price(rprice *binanceapi.SymbolPrice) (model.AssetPrice, error) {
 	amount, err := utils.ParseFloat32(rprice.Price)
 	if err != nil {
-		return model.SymbolPrice{}, err
+		return model.AssetPrice{}, err
 	}
 
-	return model.SymbolPrice{
-		Symbol: rprice.Symbol,
-		Price:  amount}, nil
+	return model.AssetPrice{
+		Asset: utils.GetAssetFromSymbol(rprice.Symbol),
+		Price: amount}, nil
 }
 
 func to_CCTB_remote_account(account *binanceapi.Account) (model.RemoteAccount, error) {

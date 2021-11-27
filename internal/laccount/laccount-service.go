@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/valerioferretti92/trading-bot-demo/internal/model"
-	"github.com/valerioferretti92/trading-bot-demo/internal/strategy"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy"
 )
 
 // Creates a local account based on the remote account, or restores
