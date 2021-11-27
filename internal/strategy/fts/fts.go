@@ -36,7 +36,11 @@ func (a LocalAccountFTS) IsEmpty() bool {
 	return reflect.DeepEqual(a, LocalAccountFTS{})
 }
 
-func (a LocalAccountFTS) Update(op model.Operation) (model.ILocalAccount, error) {
+func (a LocalAccountFTS) GetCommand(model.MiniMarketStats) (model.TradingCommand, error) {
+	return model.TradingCommand{}, nil
+}
+
+func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccount, error) {
 	// Check execution ids
 	if op.ExeId != a.ExeId {
 		err := fmt.Errorf("mismatching execution ids")

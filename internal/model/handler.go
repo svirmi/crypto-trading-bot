@@ -1,6 +1,5 @@
 package model
 
-// WsMiniMarketsStatEvent define websocket market mini-ticker statistics event
 type MiniMarketStats struct {
 	Event       string
 	Time        int64
@@ -11,4 +10,17 @@ type MiniMarketStats struct {
 	LowPrice    float32
 	BaseVolume  float32
 	QuoteVolume float32
+}
+
+const (
+	NO_OP_CMD = "NO_OP_CMD"
+	BUY_CMD   = "BUY_CMD"
+	SELL_CMD  = "SELL_CMD"
+)
+
+type TradingCommand struct {
+	Base       string
+	Quote      string
+	Amount     string
+	AmountSide string
 }
