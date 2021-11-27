@@ -92,7 +92,7 @@ func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	return a, nil
 }
 
-func InitLocalAccountFTS(creationRequest model.LocalAccountInit) (LocalAccountFTS, error) {
+func (a LocalAccountFTS) Initialise(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
 	var ignored = make(map[string]float32)
 	var assets = make(map[string]AssetStatusFTS)
 
@@ -104,19 +104,20 @@ func InitLocalAccountFTS(creationRequest model.LocalAccountInit) (LocalAccountFT
 		}
 		assetStatus, err := init_asset_status_FTS(rbalance, price)
 		if err != nil {
-			return LocalAccountFTS{}, err
+			return nil, err
 		}
 		assets[rbalance.Asset] = assetStatus
 	}
 
-	return LocalAccountFTS{
+	a = LocalAccountFTS{
 		LocalAccountMetadata: model.LocalAccountMetadata{
 			AccountId:    uuid.NewString(),
 			ExeId:        creationRequest.ExeId,
 			StrategyType: model.FIXED_THRESHOLD_STRATEGY,
 			Timestamp:    time.Now().UnixMilli()},
 		Ignored: ignored,
-		Assets:  assets}, nil
+		Assets:  assets}
+	return a, nil
 }
 
 func init_asset_status_FTS(rbalance model.RemoteBalance, price model.AssetPrice) (AssetStatusFTS, error) {

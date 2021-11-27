@@ -8,15 +8,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func InitLocalAccount(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
-	if creationRequest.StrategyType == model.FIXED_THRESHOLD_STRATEGY {
-		return fts.InitLocalAccountFTS(creationRequest)
-	} else {
-		err := fmt.Errorf("unknwon strategy type %s", creationRequest.StrategyType)
-		return nil, err
-	}
-}
-
+// TODO: create mongo package that will haold one mongo connection only
+// TODO: move this function into mongo package using reflection to avoid
+// if-elses over the strategy type
 func DecodeLocalAccount(data bson.Raw, strategyType string) (model.ILocalAccount, error) {
 	var ilaccount model.ILocalAccount = nil
 	var err error = nil

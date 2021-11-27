@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/fts"
 )
 
 // Creates a local account based on the remote account, or restores
@@ -32,8 +32,8 @@ func CreateOrRestore(creationRequest model.LocalAccountInit) (model.ILocalAccoun
 		return laccount, nil
 	}
 
-	// Create new local account
-	laccount, err = strategy.InitLocalAccount(creationRequest)
+	// Initialise new local account
+	laccount, err = initialise_local_account(creationRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -41,9 +41,27 @@ func CreateOrRestore(creationRequest model.LocalAccountInit) (model.ILocalAccoun
 		err = fmt.Errorf("failed to build local account from remote account")
 		return nil, err
 	}
+
+	// Inseting in mongo db and returning value
 	if err := Insert(laccount); err != nil {
 		return nil, err
 	}
 	log.Printf("registering local account %s", laccount.GetAccountId())
+	return laccount, nil
+}
+
+func initialise_local_account(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
+	var laccount model.ILocalAccount = nil
+
+	if creationRequest.StrategyType == model.FIXED_THRESHOLD_STRATEGY {
+		laccount = fts.LocalAccountFTS{}
+	} else {
+		err := fmt.Errorf("unknwon strategy type %s", creationRequest.StrategyType)
+		return nil, err
+	}
+	laccount, err := laccount.Initialise(creationRequest)
+	if err != nil {
+		return nil, err
+	}
 	return laccount, nil
 }
