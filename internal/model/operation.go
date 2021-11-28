@@ -31,6 +31,10 @@ type OrderDetails struct {
 	AmountSide string  `bson:"quoteQty"` // What amount refers to, base or quote
 }
 
+func (o OrderDetails) IsEmpty() bool {
+	return reflect.DeepEqual(o, OrderDetails{})
+}
+
 type OrderResults struct {
 	ActualRate  float32 `bson:"actualRate"`  // Actual rate
 	BaseAmount  float32 `bson:"baseAmount"`  // Base amount actually traded
@@ -38,8 +42,8 @@ type OrderResults struct {
 	Status      string  `bson:"status"`      // Status
 }
 
-func (o OrderDetails) IsEmpty() bool {
-	return reflect.DeepEqual(o, OrderDetails{})
+func (o OrderResults) IsEmpty() bool {
+	return reflect.DeepEqual(o, OrderResults{})
 }
 
 type Operation struct {

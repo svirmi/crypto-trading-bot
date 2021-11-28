@@ -25,10 +25,11 @@ const (
 )
 
 type TradingCommand struct {
-	Base       string
-	Quote      string
-	Amount     string
-	AmountSide string
+	Base        string
+	Quote       string
+	Amount      float32
+	AmountSide  string
+	CommandType string
 }
 
 func (t TradingCommand) IsEmpty() bool {

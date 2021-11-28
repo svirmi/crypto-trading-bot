@@ -33,9 +33,15 @@ func init() {
 	// Mapping interface{} to strategy_config_fts
 	mapstructure.Decode(strategyConfig.Config, &strategy_config)
 
-	// Checking config is not empty
+	// Checking config validity
 	if strategy_config.is_empty() {
 		log.Fatalf("failed to parse fts config")
+	}
+	if strategy_config.BuyThreshold <= 0 ||
+		strategy_config.SellThreshold <= 0 ||
+		strategy_config.MissProfitThreshold <= 0 ||
+		strategy_config.StopLossThreshold <= 0 {
+		log.Fatalf("fts thresholds must be strictly positive")
 	}
 
 	log.Printf("fts strategy config: %+v", strategy_config)
