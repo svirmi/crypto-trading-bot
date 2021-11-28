@@ -59,7 +59,7 @@ func initialise_local_account(creationRequest model.LocalAccountInit) (model.ILo
 		err := fmt.Errorf("unknwon strategy type %s", creationRequest.StrategyType)
 		return nil, err
 	}
-	laccount, err := laccount.Initialise(creationRequest)
+	laccount, err := laccount.Initialize(creationRequest)
 	if err != nil {
 		return nil, err
 	}

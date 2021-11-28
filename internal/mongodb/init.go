@@ -26,8 +26,9 @@ type mongo_connection struct {
 var mongoConnection mongo_connection
 
 func init() {
-	log.Printf("connecting to mongo instance: %s", config.AppConfig.MongoDbConfig.Uri)
-	clientOptions := options.Client().ApplyURI(config.AppConfig.MongoDbConfig.Uri)
+	mongoDbConfig := config.GetMongoDbConfig()
+	log.Printf("connecting to mongo instance: %s", mongoDbConfig.Uri)
+	clientOptions := options.Client().ApplyURI(mongoDbConfig.Uri)
 	mongoClient, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		log.Fatalf(err.Error())
@@ -69,8 +70,9 @@ func Disconnect() {
 }
 
 func get_collection_handle(mongoClient *mongo.Client, collection string) *mongo.Collection {
+	mongoDbConfig := config.GetMongoDbConfig()
 	log.Printf("getting handle to %s collection", collection)
 	return mongoClient.
-		Database(config.AppConfig.MongoDbConfig.Database).
+		Database(mongoDbConfig.Database).
 		Collection(collection)
 }

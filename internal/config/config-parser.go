@@ -8,20 +8,30 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-type Config struct {
-	BinanceApi struct {
-		ApiKey     string `yaml:"apiKey"`
-		SecretKey  string `yaml:"secretKey"`
-		UseTestnet bool   `yaml:"useTestnet"`
-	} `yaml:"binanceApi"`
-	MongoDbConfig struct {
-		Uri      string `yaml:"uri"`
-		Database string `yaml:"database"`
-	} `yaml:"mongoDbConfig"`
+type binance_api_config struct {
+	ApiKey     string `yaml:"apiKey"`
+	SecretKey  string `yaml:"secretKey"`
+	UseTestnet bool   `yaml:"useTestnet"`
+}
+
+type mongo_db_config struct {
+	Uri      string `yaml:"uri"`
+	Database string `yaml:"database"`
+}
+
+type strategy_config struct {
+	Type   string      `yaml:"type"`
+	Config interface{} `yaml:"config"`
+}
+
+type config struct {
+	BinanceApi binance_api_config `yaml:"binanceApi"`
+	MongoDb    mongo_db_config    `yaml:"mongoDb"`
+	Strategy   strategy_config    `yaml:"strategy"`
 }
 
 var (
-	AppConfig           Config
+	appConfig           config
 	config_testnet_path = "resources/config-testnet.yaml"
 	config_path         = "resources/config.yaml"
 )
@@ -36,10 +46,22 @@ func init() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	AppConfig = config
+	appConfig = config
 }
 
-func parse_config(testnet *bool) (Config, error) {
+func GetBinanceApiConfig() binance_api_config {
+	return appConfig.BinanceApi
+}
+
+func GetMongoDbConfig() mongo_db_config {
+	return appConfig.MongoDb
+}
+
+func GetStrategyConfig() strategy_config {
+	return appConfig.Strategy
+}
+
+func parse_config(testnet *bool) (config config, err error) {
 	var configPath string
 	if *testnet {
 		configPath = config_testnet_path
@@ -55,9 +77,9 @@ func parse_config(testnet *bool) (Config, error) {
 
 	log.Printf("parsing config file %s", configPath)
 	decoder := yaml.NewDecoder(f)
-	err = decoder.Decode(&AppConfig)
+	err = decoder.Decode(&config)
 	if err != nil {
 		log.Fatalf("could not parse %s", configPath)
 	}
-	return AppConfig, nil
+	return config, nil
 }

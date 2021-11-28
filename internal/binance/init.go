@@ -26,7 +26,7 @@ func init() {
 }
 
 func build_binance_clients() {
-	binanceConfig := config.AppConfig.BinanceApi
+	binanceConfig := config.GetBinanceApiConfig()
 	binanceapi.UseTestnet = binanceConfig.UseTestnet
 	httpClient = binanceapi.NewClient(binanceConfig.ApiKey, binanceConfig.SecretKey)
 }

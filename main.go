@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/valerioferretti92/crypto-trading-bot/internal/binance"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
@@ -33,10 +34,11 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
+	strategyConfig := config.GetStrategyConfig()
 	laCreationRequest := model.LocalAccountInit{
 		ExeId:               exe.ExeId,
 		RAccount:            raccount,
-		StrategyType:        model.FIXED_THRESHOLD_STRATEGY,
+		StrategyType:        strategyConfig.Type,
 		TradableAssetsPrice: prices}
 	_, err = laccount.CreateOrRestore(laCreationRequest)
 	if err != nil {

@@ -1,5 +1,7 @@
 package model
 
+import "reflect"
+
 type MiniMarketStats struct {
 	Event       string
 	Time        int64
@@ -10,6 +12,10 @@ type MiniMarketStats struct {
 	LowPrice    float32
 	BaseVolume  float32
 	QuoteVolume float32
+}
+
+func (m MiniMarketStats) IsEmpty() bool {
+	return reflect.DeepEqual(m, MiniMarketStats{})
 }
 
 const (
@@ -23,4 +29,8 @@ type TradingCommand struct {
 	Quote      string
 	Amount     string
 	AmountSide string
+}
+
+func (t TradingCommand) IsEmpty() bool {
+	return reflect.DeepEqual(t, TradingCommand{})
 }

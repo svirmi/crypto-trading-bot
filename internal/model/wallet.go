@@ -44,7 +44,7 @@ type ILocalAccount interface {
 	GetExeId() string
 	GetStrategyType() string
 	GetTimestamp() int64
-	Initialise(LocalAccountInit) (ILocalAccount, error)
+	Initialize(LocalAccountInit) (ILocalAccount, error)
 	RegisterTrading(Operation) (ILocalAccount, error)
 	GetCommand(MiniMarketStats) (TradingCommand, error)
 }

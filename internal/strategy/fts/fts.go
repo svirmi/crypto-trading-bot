@@ -92,7 +92,7 @@ func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	return a, nil
 }
 
-func (a LocalAccountFTS) Initialise(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
+func (a LocalAccountFTS) Initialize(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
 	var ignored = make(map[string]float32)
 	var assets = make(map[string]AssetStatusFTS)
 
