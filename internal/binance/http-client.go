@@ -70,9 +70,7 @@ func SendMarketOrder(op model.Operation) (model.Operation, error) {
 
 	// If direct symbol does not exist, invert operation
 	if ifound {
-		op.Base, op.Quote = op.Quote, op.Base
-		op.Side = op.Side.Invert()
-		op.Details.AmountSide = op.Details.AmountSide.Invert()
+		op = op.Flip()
 	}
 
 	// Execute operation
@@ -99,10 +97,10 @@ func send_market_order(op model.Operation) error {
 		return fmt.Errorf("unknown operation side %s", op.Side)
 	}
 
-	if op.Details.AmountSide == model.BASE_AMOUNT {
-		ordersvc.Quantity(fmt.Sprintf("%f", op.Details.Amount))
+	if op.AmountSide == model.BASE_AMOUNT {
+		ordersvc.Quantity(fmt.Sprintf("%f", op.Amount))
 	} else {
-		ordersvc.QuoteOrderQty(fmt.Sprintf("%f", op.Details.Amount))
+		ordersvc.QuoteOrderQty(fmt.Sprintf("%f", op.Amount))
 	}
 
 	order, err := ordersvc.Do(context.TODO())

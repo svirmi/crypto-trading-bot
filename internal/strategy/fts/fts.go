@@ -182,40 +182,30 @@ func build_operation_init(asset string, amount float32, price float32) operation
 
 func build_buy_op(laccount LocalAccountFTS, operationInit operation_init) model.Operation {
 	return model.Operation{
-		OpId:    uuid.NewString(),
-		ExeId:   laccount.ExeId,
-		Type:    model.AUTO,
-		Base:    operationInit.asset,
-		Quote:   "USDT",
-		Side:    model.BUY,
-		Details: build_buy_op_details(operationInit),
-		Status:  model.PENDING}
+		OpId:       uuid.NewString(),
+		ExeId:      laccount.ExeId,
+		Type:       model.AUTO,
+		Base:       operationInit.asset,
+		Quote:      "USDT",
+		Side:       model.BUY,
+		Amount:     operationInit.amount,
+		AmountSide: model.QUOTE_AMOUNT,
+		Price:      operationInit.targetPrice,
+		Status:     model.PENDING}
 }
 
 func build_sell_op(laccount LocalAccountFTS, operationInit operation_init) model.Operation {
 	return model.Operation{
-		OpId:    uuid.NewString(),
-		ExeId:   laccount.ExeId,
-		Type:    model.AUTO,
-		Base:    operationInit.asset,
-		Quote:   "USDT",
-		Side:    model.SELL,
-		Details: build_sell_op_details(operationInit),
-		Status:  model.PENDING}
-}
-
-func build_buy_op_details(operationInit operation_init) model.OpDetails {
-	return model.OpDetails{
-		TargetPrice: operationInit.targetPrice,
-		Amount:      operationInit.amount,
-		AmountSide:  model.QUOTE_AMOUNT}
-}
-
-func build_sell_op_details(operationInit operation_init) model.OpDetails {
-	return model.OpDetails{
-		TargetPrice: operationInit.targetPrice,
-		Amount:      operationInit.amount,
-		AmountSide:  model.BASE_AMOUNT}
+		OpId:       uuid.NewString(),
+		ExeId:      laccount.ExeId,
+		Type:       model.AUTO,
+		Base:       operationInit.asset,
+		Quote:      "USDT",
+		Side:       model.SELL,
+		Amount:     operationInit.amount,
+		AmountSide: model.BASE_AMOUNT,
+		Price:      operationInit.targetPrice,
+		Status:     model.PENDING}
 }
 
 func log_trading_intent(cond, asset string, last, current float32) {

@@ -61,20 +61,11 @@ func (s AmountSide) Invert() AmountSide {
 	}
 }
 
-type OpDetails struct {
-	TargetPrice float32    `bson:"targetPrice"` // How much of "quote" to get one unit of "base"
-	Amount      float32    `bson:"amount"`      // Amount to be bought or sold
-	AmountSide  AmountSide `bson:"amountSide"`  // What amount refers to, base or quote
-}
-
-func (o OpDetails) IsEmpty() bool {
-	return reflect.DeepEqual(o, OpDetails{})
-}
-
 type OpResults struct {
 	ActualPrice float32 `bson:"actualPrice"` // Actual rate
 	BaseAmount  float32 `bson:"baseAmount"`  // Base amount actually traded
 	QuoteAmount float32 `bson:"quoteAmount"` // Quote amount actually traded
+	Spread      float32 `bson:"spread"`      // Spread percentage expected - actual
 }
 
 func (o OpResults) IsEmpty() bool {
@@ -82,19 +73,28 @@ func (o OpResults) IsEmpty() bool {
 }
 
 type Operation struct {
-	OpId      string    `bson:"opId"`      // Operation id
-	ExeId     string    `bson:"exeId"`     // Execution id
-	Type      OpType    `bson:"opType"`    // Manual vs Auto
-	Base      string    `bson:"base"`      // Base crypto
-	Quote     string    `bson:"quote"`     // Quote crypto
-	Side      OpSide    `bson:"opSide"`    // Buy vs Sell
-	Details   OpDetails `bson:"opDetails"` // Expected order details
-	Results   OpResults `bson:"opResults"` // Actual order details
-	Status    OpStatus  `bson:"status"`    // Status
-	Spread    float32   `bson:"spread"`    // Spread percentage expected - actual
-	Timestamp int64     `bson:"timestamp"` // Operation timestamp
+	OpId       string     `bson:"opId"`       // Operation id
+	ExeId      string     `bson:"exeId"`      // Execution id
+	Type       OpType     `bson:"type"`       // Manual vs Auto
+	Base       string     `bson:"base"`       // Base crypto
+	Quote      string     `bson:"quote"`      // Quote crypto
+	Side       OpSide     `bson:"side"`       // Buy vs Sell
+	Amount     float32    `bson:"amount"`     // Amount to be bought or sold
+	AmountSide AmountSide `bson:"amountSide"` // What amount refers to, base or quote
+	Price      float32    `bson:"price"`      // How much of "quote" to get one unit of "base"
+	Results    OpResults  `bson:"results"`    // Results
+	Status     OpStatus   `bson:"status"`     // Status
+	Timestamp  int64      `bson:"timestamp"`  // Operation timestamp
 }
 
 func (o Operation) IsEmpty() bool {
 	return reflect.DeepEqual(o, Operation{})
+}
+
+func (o Operation) Flip() Operation {
+	o.Base, o.Quote = o.Quote, o.Base
+	o.Side = o.Side.Invert()
+	o.AmountSide = o.AmountSide.Invert()
+	o.Price = 1 / o.Price
+	return o
 }
