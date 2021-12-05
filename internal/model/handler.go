@@ -17,21 +17,3 @@ type MiniMarketStats struct {
 func (m MiniMarketStats) IsEmpty() bool {
 	return reflect.DeepEqual(m, MiniMarketStats{})
 }
-
-const (
-	NO_OP_CMD = "NO_OP_CMD"
-	BUY_CMD   = "BUY_CMD"
-	SELL_CMD  = "SELL_CMD"
-)
-
-type TradingCommand struct {
-	Base        string
-	Quote       string
-	Amount      float32
-	AmountSide  string
-	CommandType string
-}
-
-func (t TradingCommand) IsEmpty() bool {
-	return reflect.DeepEqual(t, TradingCommand{})
-}

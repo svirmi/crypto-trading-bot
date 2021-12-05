@@ -35,40 +35,16 @@ func main() {
 	}
 
 	strategyConfig := config.GetStrategyConfig()
+	strategyType := model.StrategyType(strategyConfig.Type)
 	laCreationRequest := model.LocalAccountInit{
 		ExeId:               exe.ExeId,
 		RAccount:            raccount,
-		StrategyType:        strategyConfig.Type,
+		StrategyType:        strategyType,
 		TradableAssetsPrice: prices}
-	laccount, err := laccount.CreateOrRestore(laCreationRequest)
+	_, err = laccount.CreateOrRestore(laCreationRequest)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-
-	// NOOP
-	mms1 := model.MiniMarketStats{
-		Asset:     "BTC",
-		LastPrice: 54240.11}
-	cmd, _ := laccount.GetCommand(mms1)
-	log.Printf("TradingCommand: %+v", cmd)
-	// NO0P
-	mms1 = model.MiniMarketStats{
-		Asset:     "BTC",
-		LastPrice: 54242.11}
-	cmd, _ = laccount.GetCommand(mms1)
-	log.Printf("TradingCommand: %+v", cmd)
-	// SELL
-	mms1 = model.MiniMarketStats{
-		Asset:     "BTC",
-		LastPrice: 61000.12}
-	cmd, _ = laccount.GetCommand(mms1)
-	log.Printf("TradingCommand: %+v", cmd)
-	// STOP_LOSS
-	mms1 = model.MiniMarketStats{
-		Asset:     "BTC",
-		LastPrice: 20000.12}
-	cmd, _ = laccount.GetCommand(mms1)
-	log.Printf("TradingCommand: %+v", cmd)
 
 	binance.MiniMarketsStatsServe([]string{"BTC", "ETH"})
 

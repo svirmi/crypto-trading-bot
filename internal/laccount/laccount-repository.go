@@ -99,7 +99,7 @@ func decode_one(raw bson.Raw) (model.ILocalAccount, error) {
 	if err != nil {
 		return nil, err
 	}
-	strategyType := payload.GetStrategyType()
+	strategyType := model.StrategyType(payload.GetStrategyType())
 
 	var laccount model.ILocalAccount = nil
 	if strategyType == model.FIXED_THRESHOLD_STRATEGY {

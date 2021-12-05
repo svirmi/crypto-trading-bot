@@ -24,9 +24,10 @@ var strategy_config strategy_config_fts
 
 func init() {
 	strategyConfig := config.GetStrategyConfig()
+	strategyType := model.StrategyType(strategyConfig.Type)
 
 	// Check strategy type
-	if strategyConfig.Type != model.FIXED_THRESHOLD_STRATEGY {
+	if strategyType != model.FIXED_THRESHOLD_STRATEGY {
 		log.Fatalf("wrong startegy type %s", strategyConfig.Type)
 	}
 

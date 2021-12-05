@@ -11,17 +11,19 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
+type OperationTypeFts string
+
 const (
-	OP_BUY_FTS  = "OP_BUY_FTS"
-	OP_SELL_FTS = "OP_SELL_FTS"
+	OP_BUY_FTS  OperationTypeFts = "OP_BUY_FTS"
+	OP_SELL_FTS OperationTypeFts = "OP_SELL_FTS"
 )
 
 type AssetStatusFTS struct {
-	Asset             string  `bson:"asset"`             // Asset being tracked
-	Amount            float32 `bson:"amount"`            // Amount of that asset currently owned
-	Usdt              float32 `bson:"usdt"`              // Usdt gotten by selling the asset
-	LastOperationType string  `bson:"lastOperationType"` // Last FTS operation type
-	LastOperationRate float32 `bson:"lastOperationRate"` // Asset value at the time last op was executed
+	Asset              string           `bson:"asset"`              // Asset being tracked
+	Amount             float32          `bson:"amount"`             // Amount of that asset currently owned
+	Usdt               float32          `bson:"usdt"`               // Usdt gotten by selling the asset
+	LastOperationType  OperationTypeFts `bson:"lastOperationType"`  // Last FTS operation type
+	LastOperationPrice float32          `bson:"lastOperationPrice"` // Asset value at the time last op was executed
 }
 
 func (a AssetStatusFTS) IsEmpty() bool {
@@ -38,6 +40,12 @@ func (a LocalAccountFTS) IsEmpty() bool {
 	return reflect.DeepEqual(a, LocalAccountFTS{})
 }
 
+type operation_init struct {
+	asset       string
+	amount      float32
+	targetPrice float32
+}
+
 func (a LocalAccountFTS) Initialize(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
 	var ignored = make(map[string]float32)
 	var assets = make(map[string]AssetStatusFTS)
@@ -48,7 +56,7 @@ func (a LocalAccountFTS) Initialize(creationRequest model.LocalAccountInit) (mod
 			ignored[rbalance.Asset] = rbalance.Amount
 			continue
 		}
-		assetStatus, err := init_asset_status_FTS(rbalance, price)
+		assetStatus, err := init_asset_status_fts(rbalance, price)
 		if err != nil {
 			return nil, err
 		}
@@ -74,7 +82,7 @@ func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	}
 
 	// If the result status is failed, NOP
-	if op.OrderResults.Status == model.FAILED {
+	if op.Status == model.FAILED {
 		return a, nil
 	}
 
@@ -92,25 +100,25 @@ func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	}
 
 	// Updating asset status
-	baseAmount := op.OrderResults.BaseAmount
-	quoteAmount := op.OrderResults.QuoteAmount
-	if op.Type == model.OP_BUY_AUTO || op.Type == model.OP_BUY_MANUAL {
+	baseAmount := op.OpResults.BaseAmount
+	quoteAmount := op.OpResults.QuoteAmount
+	if op.OpSide == model.BUY {
 		assetStatus.Amount = assetStatus.Amount + baseAmount
 		assetStatus.Usdt = assetStatus.Usdt - quoteAmount
 		assetStatus.LastOperationType = OP_BUY_FTS
-	} else if op.Type == model.OP_SELL_AUTO || op.Type == model.OP_SELL_MANUAL {
+	} else if op.OpSide == model.SELL {
 		assetStatus.Amount = assetStatus.Amount - baseAmount
 		assetStatus.Usdt = assetStatus.Usdt + quoteAmount
 		assetStatus.LastOperationType = OP_SELL_FTS
 	} else {
-		err := fmt.Errorf("unsupported operation type %s", op.Type)
+		err := fmt.Errorf("unsupported operation type %s", op.OpType)
 		return a, err
 	}
 	if assetStatus.Amount < 0 || assetStatus.Usdt < 0 {
 		err := fmt.Errorf("negative balance detected")
 		return a, err
 	}
-	assetStatus.LastOperationRate = op.OrderResults.ActualRate
+	assetStatus.LastOperationPrice = op.OpResults.ActualPrice
 
 	// Returning results
 	a.Assets[op.Base] = assetStatus
@@ -118,72 +126,96 @@ func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	return a, nil
 }
 
-func (a LocalAccountFTS) GetCommand(mms model.MiniMarketStats) (model.TradingCommand, error) {
+func (a LocalAccountFTS) GetOperation(mms model.MiniMarketStats) (model.Operation, error) {
 	asset := mms.Asset
 	assetStatus, found := a.Assets[asset]
 	if !found {
 		err := fmt.Errorf("asset %s not in local wallet", asset)
-		return model.TradingCommand{}, err
+		return model.Operation{}, err
 	}
 
 	lastOpType := assetStatus.LastOperationType
-	lastOpRate := assetStatus.LastOperationRate
+	lastOpPrice := assetStatus.LastOperationPrice
 	currentAmnt := assetStatus.Amount
 	currentAmntUsdt := assetStatus.Usdt
-	currentRate := mms.LastPrice
+	currentPrice := mms.LastPrice
 
-	sellPrice := get_threshold_rate(lastOpRate, strategy_config.SellThreshold)
-	stopLossPrice := get_threshold_rate(lastOpRate, -strategy_config.StopLossThreshold)
-	buyPrice := get_threshold_rate(lastOpRate, -strategy_config.BuyThreshold)
-	missProfitPrice := get_threshold_rate(lastOpRate, strategy_config.MissProfitThreshold)
+	sellPrice := get_threshold_rate(lastOpPrice, strategy_config.SellThreshold)
+	stopLossPrice := get_threshold_rate(lastOpPrice, -strategy_config.StopLossThreshold)
+	buyPrice := get_threshold_rate(lastOpPrice, -strategy_config.BuyThreshold)
+	missProfitPrice := get_threshold_rate(lastOpPrice, strategy_config.MissProfitThreshold)
 
-	if lastOpType == OP_BUY_FTS && currentRate >= sellPrice {
+	if lastOpType == OP_BUY_FTS && currentPrice >= sellPrice {
 		// sell command
-		log_trading_intent("SELL", asset, lastOpRate, currentRate)
-		return build_sell_command(asset, currentAmnt), nil
+		operationInit := build_operation_init(asset, currentAmnt, currentPrice)
+		log_trading_intent("SELL", asset, lastOpPrice, currentPrice)
+		return build_sell_op(a, operationInit), nil
 
-	} else if lastOpType == OP_BUY_FTS && currentRate <= stopLossPrice {
+	} else if lastOpType == OP_BUY_FTS && currentPrice <= stopLossPrice {
 		// stop loss command
-		log_trading_intent("STOP_LOSS", asset, lastOpRate, currentRate)
-		return build_sell_command(asset, currentAmnt), nil
+		operationInit := build_operation_init(asset, currentAmnt, currentPrice)
+		log_trading_intent("STOP_LOSS", asset, lastOpPrice, currentPrice)
+		return build_sell_op(a, operationInit), nil
 
-	} else if lastOpType == OP_SELL_FTS && currentRate <= buyPrice {
+	} else if lastOpType == OP_SELL_FTS && currentPrice <= buyPrice {
 		// buy command
-		log_trading_intent("BUY", asset, lastOpRate, currentRate)
-		return build_buy_command(asset, currentAmntUsdt), nil
+		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice)
+		log_trading_intent("BUY", asset, lastOpPrice, currentPrice)
+		return build_buy_op(a, operationInit), nil
 
-	} else if lastOpType == OP_SELL_FTS && currentRate >= missProfitPrice {
+	} else if lastOpType == OP_SELL_FTS && currentPrice >= missProfitPrice {
 		// miss profit command
-		log_trading_intent("MISS_PROFIT", asset, lastOpRate, currentRate)
-		return build_buy_command(asset, currentAmntUsdt), nil
+		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice)
+		log_trading_intent("MISS_PROFIT", asset, lastOpPrice, currentPrice)
+		return build_buy_op(a, operationInit), nil
 
-	} else {
-		// noop command
-		return build_no_op_command(), nil
 	}
+	return model.Operation{}, nil
 }
 
-func build_no_op_command() model.TradingCommand {
-	return model.TradingCommand{
-		CommandType: model.NO_OP_CMD}
+func build_operation_init(asset string, amount float32, price float32) operation_init {
+	return operation_init{
+		asset:       asset,
+		amount:      amount,
+		targetPrice: price}
 }
 
-func build_buy_command(asset string, amount float32) model.TradingCommand {
-	return model.TradingCommand{
-		Base:        asset,
-		Quote:       "USDT",
-		Amount:      amount,
-		AmountSide:  model.QUOTE_AMOUNT,
-		CommandType: model.BUY_CMD}
+func build_buy_op(laccount LocalAccountFTS, operationInit operation_init) model.Operation {
+	return model.Operation{
+		OpId:      uuid.NewString(),
+		ExeId:     laccount.ExeId,
+		OpType:    model.AUTO,
+		Base:      operationInit.asset,
+		Quote:     "USDT",
+		OpSide:    model.BUY,
+		OpDetails: build_buy_op_details(operationInit),
+		Status:    model.PENDING}
 }
 
-func build_sell_command(asset string, amount float32) model.TradingCommand {
-	return model.TradingCommand{
-		Base:        asset,
-		Quote:       "USDT",
-		Amount:      amount,
-		AmountSide:  model.BASE_AMOUNT,
-		CommandType: model.SELL_CMD}
+func build_sell_op(laccount LocalAccountFTS, operationInit operation_init) model.Operation {
+	return model.Operation{
+		OpId:      uuid.NewString(),
+		ExeId:     laccount.ExeId,
+		OpType:    model.AUTO,
+		Base:      operationInit.asset,
+		Quote:     "USDT",
+		OpSide:    model.SELL,
+		OpDetails: build_sell_op_details(operationInit),
+		Status:    model.PENDING}
+}
+
+func build_buy_op_details(operationInit operation_init) model.OpDetails {
+	return model.OpDetails{
+		TargetPrice: operationInit.targetPrice,
+		Amount:      operationInit.amount,
+		AmountSide:  model.QUOTE_AMOUNT}
+}
+
+func build_sell_op_details(operationInit operation_init) model.OpDetails {
+	return model.OpDetails{
+		TargetPrice: operationInit.targetPrice,
+		Amount:      operationInit.amount,
+		AmountSide:  model.BASE_AMOUNT}
 }
 
 func log_trading_intent(cond, asset string, last, current float32) {
@@ -199,11 +231,11 @@ func get_threshold_rate(price float32, percentage float32) float32 {
 	return price + float32(delta*sign)
 }
 
-func init_asset_status_FTS(rbalance model.RemoteBalance, price model.AssetPrice) (AssetStatusFTS, error) {
+func init_asset_status_fts(rbalance model.RemoteBalance, price model.AssetPrice) (AssetStatusFTS, error) {
 	return AssetStatusFTS{
-		Asset:             rbalance.Asset,
-		Amount:            rbalance.Amount,
-		Usdt:              0,
-		LastOperationType: OP_BUY_FTS,
-		LastOperationRate: price.Price}, nil
+		Asset:              rbalance.Asset,
+		Amount:             rbalance.Amount,
+		Usdt:               0,
+		LastOperationType:  OP_BUY_FTS,
+		LastOperationPrice: price.Price}, nil
 }

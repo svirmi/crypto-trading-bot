@@ -2,17 +2,19 @@ package model
 
 import "reflect"
 
+type ExeStatus string
+
 const (
-	EXE_ACTIVE     = "EXE_ACTIVE"     // Execution started
-	EXE_PAUSED     = "EXE_PAUSED"     // Execution paused, manual operations enabled
-	EXE_TERMINATED = "EXE_TERMINATED" // Execution terminated and cryptos sold off
+	EXE_ACTIVE     ExeStatus = "EXE_ACTIVE"     // Execution started
+	EXE_PAUSED     ExeStatus = "EXE_PAUSED"     // Execution paused, manual operations enabled
+	EXE_TERMINATED ExeStatus = "EXE_TERMINATED" // Execution terminated
 )
 
 type Execution struct {
-	ExeId     string   `bson:"exeId"`     // Execution id
-	Status    string   `bson:"status"`    // Execution status
-	Assets    []string `bson:"assets"`    // List of symbols to be traded
-	Timestamp int64    `bson:"timestamp"` // Timestamp
+	ExeId     string    `bson:"exeId"`     // Execution id
+	Status    ExeStatus `bson:"status"`    // Execution status
+	Assets    []string  `bson:"assets"`    // List of symbols to be traded
+	Timestamp int64     `bson:"timestamp"` // Timestamp
 }
 
 func (e Execution) IsEmpty() bool {

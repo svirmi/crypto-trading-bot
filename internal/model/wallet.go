@@ -35,18 +35,21 @@ func (p AssetPrice) IsEmpty() bool {
 	return reflect.DeepEqual(p, AssetPrice{})
 }
 
+// Strategy types
+type StrategyType string
+
 const (
-	FIXED_THRESHOLD_STRATEGY = "FIXED_THRESHOLD_STRATEGY"
+	FIXED_THRESHOLD_STRATEGY StrategyType = "FIXED_THRESHOLD_STRATEGY"
 )
 
 type ILocalAccount interface {
 	GetAccountId() string
 	GetExeId() string
-	GetStrategyType() string
+	GetStrategyType() StrategyType
 	GetTimestamp() int64
 	Initialize(LocalAccountInit) (ILocalAccount, error)
 	RegisterTrading(Operation) (ILocalAccount, error)
-	GetCommand(MiniMarketStats) (TradingCommand, error)
+	GetOperation(MiniMarketStats) (Operation, error)
 }
 
 // Abstract local account representation
@@ -54,10 +57,10 @@ type ILocalAccount interface {
 // local wallet representations. To be composed with those
 // strategy dependant types
 type LocalAccountMetadata struct {
-	AccountId    string `bson:"accountId"`    // Local account object id
-	ExeId        string `bson:"exeId"`        // Execution id this local wallet is bound to
-	StrategyType string `bson:"strategyType"` // Strategy type
-	Timestamp    int64  `bson:"timestamp"`    // Timestamp
+	AccountId    string       `bson:"accountId"`    // Local account object id
+	ExeId        string       `bson:"exeId"`        // Execution id this local wallet is bound to
+	StrategyType StrategyType `bson:"strategyType"` // Strategy type
+	Timestamp    int64        `bson:"timestamp"`    // Timestamp
 }
 
 func (a LocalAccountMetadata) GetAccountId() string {
@@ -68,7 +71,7 @@ func (a LocalAccountMetadata) GetExeId() string {
 	return a.ExeId
 }
 
-func (a LocalAccountMetadata) GetStrategyType() string {
+func (a LocalAccountMetadata) GetStrategyType() StrategyType {
 	return a.StrategyType
 }
 
@@ -84,7 +87,7 @@ type LocalAccountInit struct {
 	ExeId               string
 	RAccount            RemoteAccount
 	TradableAssetsPrice map[string]AssetPrice
-	StrategyType        string
+	StrategyType        StrategyType
 }
 
 func (acr LocalAccountInit) IsEmpty() bool {
