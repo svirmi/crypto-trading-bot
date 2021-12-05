@@ -100,25 +100,25 @@ func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	}
 
 	// Updating asset status
-	baseAmount := op.OpResults.BaseAmount
-	quoteAmount := op.OpResults.QuoteAmount
-	if op.OpSide == model.BUY {
+	baseAmount := op.Results.BaseAmount
+	quoteAmount := op.Results.QuoteAmount
+	if op.Side == model.BUY {
 		assetStatus.Amount = assetStatus.Amount + baseAmount
 		assetStatus.Usdt = assetStatus.Usdt - quoteAmount
 		assetStatus.LastOperationType = OP_BUY_FTS
-	} else if op.OpSide == model.SELL {
+	} else if op.Side == model.SELL {
 		assetStatus.Amount = assetStatus.Amount - baseAmount
 		assetStatus.Usdt = assetStatus.Usdt + quoteAmount
 		assetStatus.LastOperationType = OP_SELL_FTS
 	} else {
-		err := fmt.Errorf("unsupported operation type %s", op.OpType)
+		err := fmt.Errorf("unsupported operation type %s", op.Type)
 		return a, err
 	}
 	if assetStatus.Amount < 0 || assetStatus.Usdt < 0 {
 		err := fmt.Errorf("negative balance detected")
 		return a, err
 	}
-	assetStatus.LastOperationPrice = op.OpResults.ActualPrice
+	assetStatus.LastOperationPrice = op.Results.ActualPrice
 
 	// Returning results
 	a.Assets[op.Base] = assetStatus
@@ -182,26 +182,26 @@ func build_operation_init(asset string, amount float32, price float32) operation
 
 func build_buy_op(laccount LocalAccountFTS, operationInit operation_init) model.Operation {
 	return model.Operation{
-		OpId:      uuid.NewString(),
-		ExeId:     laccount.ExeId,
-		OpType:    model.AUTO,
-		Base:      operationInit.asset,
-		Quote:     "USDT",
-		OpSide:    model.BUY,
-		OpDetails: build_buy_op_details(operationInit),
-		Status:    model.PENDING}
+		OpId:    uuid.NewString(),
+		ExeId:   laccount.ExeId,
+		Type:    model.AUTO,
+		Base:    operationInit.asset,
+		Quote:   "USDT",
+		Side:    model.BUY,
+		Details: build_buy_op_details(operationInit),
+		Status:  model.PENDING}
 }
 
 func build_sell_op(laccount LocalAccountFTS, operationInit operation_init) model.Operation {
 	return model.Operation{
-		OpId:      uuid.NewString(),
-		ExeId:     laccount.ExeId,
-		OpType:    model.AUTO,
-		Base:      operationInit.asset,
-		Quote:     "USDT",
-		OpSide:    model.SELL,
-		OpDetails: build_sell_op_details(operationInit),
-		Status:    model.PENDING}
+		OpId:    uuid.NewString(),
+		ExeId:   laccount.ExeId,
+		Type:    model.AUTO,
+		Base:    operationInit.asset,
+		Quote:   "USDT",
+		Side:    model.SELL,
+		Details: build_sell_op_details(operationInit),
+		Status:  model.PENDING}
 }
 
 func build_buy_op_details(operationInit operation_init) model.OpDetails {

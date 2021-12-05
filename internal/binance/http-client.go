@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	binanceapi "github.com/adshao/go-binance/v2"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
@@ -57,42 +58,59 @@ func GetAccout() (model.RemoteAccount, error) {
 	return to_CCTB_remote_account(account)
 }
 
-// SendMarketOrder places a market order to obtain qty units of target
-// currency, paying with exchange currency. Internally, it will map
-// the target - exchange pair into a binance base - quote pair.
-func SendMarketOrder(target, exchange string, qty float64) (err error) {
-	_, dfound := symbols[target+exchange]
-	_, ifound := symbols[exchange+target]
+func SendMarketOrder(op model.Operation) (model.Operation, error) {
+	//Check if symbol or its inverse exists
+	_, dfound := symbols[op.Base+op.Quote]
+	_, ifound := symbols[op.Quote+op.Base]
 	if !dfound && !ifound {
-		err = fmt.Errorf("neither %s%s nor %s%s is a valid exchange symbol",
-			target, exchange, exchange, target)
-		return err
+		err := fmt.Errorf("neither %s%s nor %s%s is a valid exchange symbol",
+			op.Base, op.Quote, op.Quote, op.Base)
+		return model.Operation{}, err
 	}
 
-	if dfound {
-		return sendMarketOrder(target, exchange, qty, true, binanceapi.SideTypeBuy)
-	} else {
-		return sendMarketOrder(exchange, target, qty, false, binanceapi.SideTypeSell)
+	// If direct symbol does not exist, invert operation
+	if ifound {
+		op.Base, op.Quote = op.Quote, op.Base
+		op.Side = op.Side.Invert()
+		op.Details.AmountSide = op.Details.AmountSide.Invert()
 	}
+
+	// Execute operation
+	op.Timestamp = time.Now().UnixMilli()
+	err := send_market_order(op)
+	if err != nil {
+		op.Status = model.FAILED
+		return op, err
+	}
+	op.Status = model.FILLED
+	return op, nil
 }
 
-func sendMarketOrder(base, quote string, qty float64, regular bool, side binanceapi.SideType) error {
+func send_market_order(op model.Operation) error {
 	ordersvc := httpClient.NewCreateOrderService().
-		Symbol(base + quote).
-		Type(binanceapi.OrderTypeMarket).
-		Side(side)
-	if regular {
-		ordersvc.Quantity(fmt.Sprintf("%f", qty))
+		Symbol(op.Base + op.Quote).
+		Type(binanceapi.OrderTypeMarket)
+
+	if op.Side == model.BUY {
+		ordersvc.Side(binanceapi.SideTypeBuy)
+	} else if op.Side == model.SELL {
+		ordersvc.Side(binanceapi.SideTypeSell)
 	} else {
-		ordersvc.QuoteOrderQty(fmt.Sprintf("%f", qty))
+		return fmt.Errorf("unknown operation side %s", op.Side)
+	}
+
+	if op.Details.AmountSide == model.BASE_AMOUNT {
+		ordersvc.Quantity(fmt.Sprintf("%f", op.Details.Amount))
+	} else {
+		ordersvc.QuoteOrderQty(fmt.Sprintf("%f", op.Details.Amount))
 	}
 
 	order, err := ordersvc.Do(context.TODO())
 	if err != nil {
 		log.Printf("%s\n", err.Error())
-		return fmt.Errorf("failed to place market order %s%s", base, quote)
+		return fmt.Errorf("failed to place market order %s%s", op.Base, op.Quote)
 	}
-	log.Printf("symbol: %s, side: %s, qty: %f, status: %s\n", order.Symbol, order.Side, qty, order.Status)
+	log.Printf("symbol: %s, side: %s, status: %s\n", order.Symbol, order.Side, order.Status)
 	return nil
 }
 

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"log"
 	"reflect"
 )
 
@@ -20,6 +21,17 @@ const (
 	SELL OpSide = "SELL"
 )
 
+func (s OpSide) Invert() OpSide {
+	if s == BUY {
+		return SELL
+	} else if s == SELL {
+		return BUY
+	} else {
+		log.Fatalf("unknown side value %s", s)
+		return OpSide("")
+	}
+}
+
 // Order result status
 type OpStatus string
 
@@ -37,6 +49,17 @@ const (
 	BASE_AMOUNT  AmountSide = "BASE_AMOUNT"
 	QUOTE_AMOUNT AmountSide = "QUOTE_AMOUNT"
 )
+
+func (s AmountSide) Invert() AmountSide {
+	if s == BASE_AMOUNT {
+		return QUOTE_AMOUNT
+	} else if s == QUOTE_AMOUNT {
+		return BASE_AMOUNT
+	} else {
+		log.Fatalf("unknown amount side value %s", s)
+		return AmountSide("")
+	}
+}
 
 type OpDetails struct {
 	TargetPrice float32    `bson:"targetPrice"` // How much of "quote" to get one unit of "base"
@@ -61,12 +84,12 @@ func (o OpResults) IsEmpty() bool {
 type Operation struct {
 	OpId      string    `bson:"opId"`      // Operation id
 	ExeId     string    `bson:"exeId"`     // Execution id
-	OpType    OpType    `bson:"opType"`    // Manual vs Auto
+	Type      OpType    `bson:"opType"`    // Manual vs Auto
 	Base      string    `bson:"base"`      // Base crypto
 	Quote     string    `bson:"quote"`     // Quote crypto
-	OpSide    OpSide    `bson:"opSide"`    // Buy vs Sell
-	OpDetails OpDetails `bson:"opDetails"` // Expected order details
-	OpResults OpResults `bson:"opResults"` // Actual order details
+	Side      OpSide    `bson:"opSide"`    // Buy vs Sell
+	Details   OpDetails `bson:"opDetails"` // Expected order details
+	Results   OpResults `bson:"opResults"` // Actual order details
 	Status    OpStatus  `bson:"status"`    // Status
 	Spread    float32   `bson:"spread"`    // Spread percentage expected - actual
 	Timestamp int64     `bson:"timestamp"` // Operation timestamp
