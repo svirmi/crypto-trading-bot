@@ -17,3 +17,12 @@ type MiniMarketStats struct {
 func (m MiniMarketStats) IsEmpty() bool {
 	return reflect.DeepEqual(m, MiniMarketStats{})
 }
+
+type TradingContext struct {
+	Laccount  ILocalAccount
+	Execution Execution
+}
+
+func (t TradingContext) IsEmpty() bool {
+	return reflect.DeepEqual(t, TradingContext{})
+}

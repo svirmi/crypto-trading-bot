@@ -80,7 +80,6 @@ func SendMarketOrder(op model.Operation) (model.Operation, error) {
 		op.Status = model.FAILED
 		return op, err
 	}
-	op.Status = model.FILLED
 	return op, nil
 }
 

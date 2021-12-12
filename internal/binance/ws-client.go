@@ -4,20 +4,26 @@ import (
 	"log"
 
 	binanceapi "github.com/adshao/go-binance/v2"
-	abool "github.com/tevino/abool/v2"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/handler"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
 type mini_markets_stats_ctl struct {
-	done, stop chan struct{}
-	closed     *abool.AtomicBool
+	mms_done, mms_stop chan struct{}
+	mms                chan []model.MiniMarketStats
 }
 
 var mms_ctl mini_markets_stats_ctl = mini_markets_stats_ctl{}
 
+func InitMmsChannel(mmsChannel chan []model.MiniMarketStats) {
+	mms_ctl.mms = mmsChannel
+}
+
 func MiniMarketsStatsServe(assets []string) error {
+	if mms_ctl.mms == nil {
+		log.Fatalf("uninitialised mms channel")
+	}
+
 	symbolsMap := make(map[string]bool)
 	for _, asset := range assets {
 		symbolsMap[utils.GetSymbolFromAsset(asset)] = true
@@ -27,35 +33,27 @@ func MiniMarketsStatsServe(assets []string) error {
 		log.Print(err.Error())
 	}
 
-	sentinel := abool.New()
 	callback := func(rMiniMarketsStats binanceapi.WsAllMiniMarketsStatEvent) {
-		// Avoid mini markets stats race conditions
-		ok := sentinel.SetToIf(false, true)
-		if !ok {
-			log.Printf("skipping mini markets stats update...")
-			return
+		miniMarketsStats := make([]model.MiniMarketStats, 0, len(rMiniMarketsStats))
+		for _, rMiniMarketStats := range rMiniMarketsStats {
+			// Filter out symbols that are not in local wallet
+			if !symbolsMap[rMiniMarketStats.Symbol] {
+				continue
+			}
+			// Filter out symbols whose numeric fields could not be parsed from string
+			miniMarketStats, err := to_mini_market_stats(*rMiniMarketStats)
+			if err != nil {
+				log.Println(err.Error())
+				log.Printf("skipping update for symbol %s", rMiniMarketStats.Symbol)
+				continue
+			}
+			miniMarketsStats = append(miniMarketsStats, miniMarketStats)
 		}
 
-		// Processing mini markets stats update
-		go func() {
-			defer sentinel.UnSet()
-			miniMarketsStats := make([]model.MiniMarketStats, 0, len(rMiniMarketsStats))
-			for _, rMiniMarketStats := range rMiniMarketsStats {
-				// Filter out symbols that are not in local wallet
-				if !symbolsMap[rMiniMarketStats.Symbol] {
-					continue
-				}
-				// Filter out symbols whose numeric fields could not be parsed from string
-				miniMarketStats, err := to_mini_market_stats(*rMiniMarketStats)
-				if err != nil {
-					log.Println(err.Error())
-					log.Printf("skipping update for symbol %s", rMiniMarketStats.Symbol)
-					continue
-				}
-				miniMarketsStats = append(miniMarketsStats, miniMarketStats)
-			}
-			handler.HandleMiniMarketsStats(miniMarketsStats)
-		}()
+		// Send mini markets stats to channel
+		if len(miniMarketsStats) != 0 {
+			mms_ctl.mms <- miniMarketsStats
+		}
 	}
 
 	// Opening web socket and intialising control structure
@@ -64,26 +62,24 @@ func MiniMarketsStatsServe(assets []string) error {
 		log.Fatalf("%s", err.Error())
 		return err
 	} else {
-		mms_ctl.done = done
-		mms_ctl.stop = stop
-		mms_ctl.closed = abool.New()
+		mms_ctl.mms_done = done
+		mms_ctl.mms_stop = stop
 	}
 	return nil
 }
 
 func MiniMarketsStatsStop() {
-	if mms_ctl.stop == nil || mms_ctl.done == nil || mms_ctl.closed.IsSet() {
+	if mms_ctl.mms_stop == nil || mms_ctl.mms_done == nil {
 		return
 	}
 
 	log.Printf("closing mini markets stats ws")
-	mms_ctl.closed.Set()
-	mms_ctl.stop <- struct{}{}
-	<-mms_ctl.done
-}
+	mms_ctl.mms_stop <- struct{}{}
+	<-mms_ctl.mms_done
 
-func Close() {
-	MiniMarketsStatsStop()
+	if mms_ctl.mms != nil {
+		close(mms_ctl.mms)
+	}
 }
 
 /********************** Mapping to local representation **********************/

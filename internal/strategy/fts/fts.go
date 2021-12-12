@@ -147,29 +147,31 @@ func (a LocalAccountFTS) GetOperation(mms model.MiniMarketStats) (model.Operatio
 
 	if lastOpType == OP_BUY_FTS && currentPrice >= sellPrice {
 		// sell command
-		operationInit := build_operation_init(asset, currentAmnt, currentPrice)
+		operationInit := build_operation_init(asset, currentAmnt/10, currentPrice)
 		log_trading_intent("SELL", asset, lastOpPrice, currentPrice)
 		return build_sell_op(a, operationInit), nil
 
 	} else if lastOpType == OP_BUY_FTS && currentPrice <= stopLossPrice {
 		// stop loss command
-		operationInit := build_operation_init(asset, currentAmnt, currentPrice)
+		operationInit := build_operation_init(asset, currentAmnt/10, currentPrice)
 		log_trading_intent("STOP_LOSS", asset, lastOpPrice, currentPrice)
 		return build_sell_op(a, operationInit), nil
 
 	} else if lastOpType == OP_SELL_FTS && currentPrice <= buyPrice {
 		// buy command
-		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice)
+		operationInit := build_operation_init(asset, currentAmntUsdt/10, currentPrice)
 		log_trading_intent("BUY", asset, lastOpPrice, currentPrice)
 		return build_buy_op(a, operationInit), nil
 
 	} else if lastOpType == OP_SELL_FTS && currentPrice >= missProfitPrice {
 		// miss profit command
-		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice)
+		operationInit := build_operation_init(asset, currentAmntUsdt/10, currentPrice)
 		log_trading_intent("MISS_PROFIT", asset, lastOpPrice, currentPrice)
 		return build_buy_op(a, operationInit), nil
 
 	}
+
+	log_noop(asset, lastOpType, lastOpPrice, currentPrice)
 	return model.Operation{}, nil
 }
 
@@ -206,6 +208,11 @@ func build_sell_op(laccount LocalAccountFTS, operationInit operation_init) model
 		AmountSide: model.BASE_AMOUNT,
 		Price:      operationInit.targetPrice,
 		Status:     model.PENDING}
+}
+
+func log_noop(asset string, lastOpType OperationTypeFts, lastOpPrice, currentPrice float32) {
+	log.Printf("FTS NOOP: asset=%s, lastOpType=%s, lastOpPrice=%f, currentPrice=%f",
+		asset, lastOpType, lastOpPrice, currentPrice)
 }
 
 func log_trading_intent(cond, asset string, last, current float32) {

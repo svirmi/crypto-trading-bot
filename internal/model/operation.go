@@ -95,6 +95,5 @@ func (o Operation) Flip() Operation {
 	o.Base, o.Quote = o.Quote, o.Base
 	o.Side = o.Side.Invert()
 	o.AmountSide = o.AmountSide.Invert()
-	o.Price = 1 / o.Price
 	return o
 }

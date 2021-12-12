@@ -9,6 +9,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/handler"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
@@ -41,12 +42,18 @@ func main() {
 		RAccount:            raccount,
 		StrategyType:        strategyType,
 		TradableAssetsPrice: prices}
-	_, err = laccount.CreateOrRestore(laCreationRequest)
+	laccount, err := laccount.CreateOrRestore(laCreationRequest)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
 
-	binance.MiniMarketsStatsServe([]string{"BTC", "ETH"})
+	mms := make(chan []model.MiniMarketStats)
+	handler.InitTradingContext(laccount, exe)
+	handler.InitMmsChannel(mms)
+	binance.InitMmsChannel(mms)
+
+	handler.HandleMiniMarketsStats()
+	binance.MiniMarketsStatsServe(tradableAssets)
 
 	// Terminate when the application is stopped
 	<-sigc
@@ -63,7 +70,7 @@ func interrupt_handler() chan os.Signal {
 }
 
 func shutdown() {
-	binance.Close()
+	binance.MiniMarketsStatsStop()
 	mongodb.Disconnect()
 	log.Printf("bye, bye")
 }

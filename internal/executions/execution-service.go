@@ -9,18 +9,6 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
-// Gets active execution object by execution id.
-// Returns the execution object, if found, an empty execution
-// object if nothing was found, or an error was thrown.
-// Returns an error if computation failed
-func GetCurrentlyActive(exeId string) (model.Execution, error) {
-	exe, err := FindCurrentlyActiveByExeId(exeId)
-	if err != nil {
-		return model.Execution{}, err
-	}
-	return exe, nil
-}
-
 // Creates an new execution based on a remote wallet object, or
 // restors a previous active execution.
 // Returns the newly created execution object, or the active execution
@@ -53,6 +41,22 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 		return model.Execution{}, err
 	}
 	return exe, nil
+}
+
+// Gets active execution object by execution id.
+// Returns the execution object, if found, an empty execution
+// object if nothing was found, or an error was thrown.
+// Returns an error if computation failed
+func GetCurrentlyActiveByExeId(exeId string) (model.Execution, error) {
+	exe, err := FindCurrentlyActiveByExeId(exeId)
+	if err != nil {
+		return model.Execution{}, err
+	}
+	return exe, nil
+}
+
+func GetCurrentlyActive() (model.Execution, error) {
+	return FindCurrentlyActive()
 }
 
 // Changes execution status from ACTIVE to PAUSED
