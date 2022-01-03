@@ -25,7 +25,7 @@ type mongo_connection struct {
 
 var mongoConnection mongo_connection
 
-func init() {
+func Initialize() {
 	mongoDbConfig := config.GetMongoDbConfig()
 	log.Printf("connecting to mongo instance: %s", mongoDbConfig.Uri)
 	clientOptions := options.Client().ApplyURI(mongoDbConfig.Uri)

@@ -140,10 +140,11 @@ func (a LocalAccountFTS) GetOperation(mms model.MiniMarketStats) (model.Operatio
 	currentAmntUsdt := assetStatus.Usdt
 	currentPrice := mms.LastPrice
 
-	sellPrice := get_threshold_rate(lastOpPrice, strategy_config.SellThreshold)
-	stopLossPrice := get_threshold_rate(lastOpPrice, -strategy_config.StopLossThreshold)
-	buyPrice := get_threshold_rate(lastOpPrice, -strategy_config.BuyThreshold)
-	missProfitPrice := get_threshold_rate(lastOpPrice, strategy_config.MissProfitThreshold)
+	ftsConfig := get_fts_config()
+	sellPrice := get_threshold_rate(lastOpPrice, ftsConfig.SellThreshold)
+	stopLossPrice := get_threshold_rate(lastOpPrice, -ftsConfig.StopLossThreshold)
+	buyPrice := get_threshold_rate(lastOpPrice, -ftsConfig.BuyThreshold)
+	missProfitPrice := get_threshold_rate(lastOpPrice, ftsConfig.MissProfitThreshold)
 
 	if lastOpType == OP_BUY_FTS && currentPrice >= sellPrice {
 		// sell command

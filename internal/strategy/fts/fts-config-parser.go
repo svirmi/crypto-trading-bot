@@ -20,9 +20,7 @@ func (a strategy_config_fts) is_empty() bool {
 	return reflect.DeepEqual(a, strategy_config_fts{})
 }
 
-var strategy_config strategy_config_fts
-
-func init() {
+func get_fts_config() (s strategy_config_fts) {
 	strategyConfig := config.GetStrategyConfig()
 	strategyType := model.StrategyType(strategyConfig.Type)
 
@@ -32,18 +30,19 @@ func init() {
 	}
 
 	// Mapping interface{} to strategy_config_fts
-	mapstructure.Decode(strategyConfig.Config, &strategy_config)
+	mapstructure.Decode(strategyConfig.Config, &s)
 
 	// Checking config validity
-	if strategy_config.is_empty() {
+	if s.is_empty() {
 		log.Fatalf("failed to parse fts config")
 	}
-	if strategy_config.BuyThreshold <= 0 ||
-		strategy_config.SellThreshold <= 0 ||
-		strategy_config.MissProfitThreshold <= 0 ||
-		strategy_config.StopLossThreshold <= 0 {
+	if s.BuyThreshold <= 0 ||
+		s.SellThreshold <= 0 ||
+		s.MissProfitThreshold <= 0 ||
+		s.StopLossThreshold <= 0 {
 		log.Fatalf("fts thresholds must be strictly positive")
 	}
 
-	log.Printf("fts strategy config: %+v", strategy_config)
+	log.Printf("fts strategy config: %+v", s)
+	return s
 }

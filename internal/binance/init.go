@@ -15,7 +15,7 @@ var (
 	symbols map[string]binanceapi.Symbol
 )
 
-func init() {
+func Initialize() {
 	// Web socket keep alive set up
 	binanceapi.WebsocketKeepalive = false
 	binanceapi.WebsocketTimeout = time.Second * 60

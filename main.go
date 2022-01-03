@@ -19,6 +19,10 @@ func main() {
 	defer shutdown()
 	sigc := interrupt_handler()
 
+	config.ParseConfig()
+	mongodb.Initialize()
+	binance.Initialize()
+
 	raccount, err := binance.GetAccout()
 	if err != nil {
 		log.Fatalf(err.Error())

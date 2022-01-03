@@ -14,7 +14,7 @@ import (
 // Checks that exe.ExeId does not reference an execution that
 // was already terminated
 // Returns an error if computation failed or checks did not succeed
-func InsertOne(exe model.Execution) error {
+func insert_one(exe model.Execution) error {
 	// Inserting new execution object
 	_, err := mongodb.GetExecutionsCol().InsertOne(context.TODO(), exe)
 	return err
@@ -24,7 +24,7 @@ func InsertOne(exe model.Execution) error {
 // Returns the execution object, if found, an empty execution
 // object if nothing was found or an error was thrown.
 // Returns an error if computation failed
-func FindCurrentlyActiveByExeId(exeId string) (model.Execution, error) {
+func find_currently_active_by_exeId(exeId string) (model.Execution, error) {
 	collection := mongodb.GetExecutionsCol()
 
 	// Defining query stages
@@ -55,7 +55,7 @@ func FindCurrentlyActiveByExeId(exeId string) (model.Execution, error) {
 // Returns the execution object, if found, an empty execution
 // object if nothing was found or an error was thrown.
 // Returns an error if computation failed
-func FindCurrentlyActive() (model.Execution, error) {
+func find_currently_active() (model.Execution, error) {
 	collection := mongodb.GetExecutionsCol()
 
 	// Defining query stages

@@ -16,7 +16,7 @@ import (
 // Returns an error if computation failed or an error was thrown.
 func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 	// Get current active execution from DB
-	exe, err := FindCurrentlyActive()
+	exe, err := find_currently_active()
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -37,7 +37,7 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 	exe = build_execution(raccount)
 	log.Printf("starting execution %s", exe.ExeId)
 	log.Printf("assets to be traded: %v", exe.Assets)
-	if InsertOne(exe); err != nil {
+	if insert_one(exe); err != nil {
 		return model.Execution{}, err
 	}
 	return exe, nil
@@ -48,7 +48,7 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 // object if nothing was found, or an error was thrown.
 // Returns an error if computation failed
 func GetCurrentlyActiveByExeId(exeId string) (model.Execution, error) {
-	exe, err := FindCurrentlyActiveByExeId(exeId)
+	exe, err := find_currently_active_by_exeId(exeId)
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -56,7 +56,7 @@ func GetCurrentlyActiveByExeId(exeId string) (model.Execution, error) {
 }
 
 func GetCurrentlyActive() (model.Execution, error) {
-	return FindCurrentlyActive()
+	return find_currently_active()
 }
 
 // Changes execution status from ACTIVE to PAUSED
@@ -67,7 +67,7 @@ func GetCurrentlyActive() (model.Execution, error) {
 // Returns an error if computation failed or checks did not
 // succeed
 func Pause(exeId string) (model.Execution, error) {
-	exe, err := FindCurrentlyActiveByExeId(exeId)
+	exe, err := find_currently_active_by_exeId(exeId)
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -85,7 +85,7 @@ func Pause(exeId string) (model.Execution, error) {
 	}
 
 	exe.Status = model.EXE_PAUSED
-	if err := InsertOne(exe); err != nil {
+	if err := insert_one(exe); err != nil {
 		return model.Execution{}, err
 	}
 	return exe, nil
@@ -100,7 +100,7 @@ func Pause(exeId string) (model.Execution, error) {
 // Returns an error if computation failed or checks did not
 // succeed
 func Resume(exeId string) (model.Execution, error) {
-	exe, err := FindCurrentlyActiveByExeId(exeId)
+	exe, err := find_currently_active_by_exeId(exeId)
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -118,7 +118,7 @@ func Resume(exeId string) (model.Execution, error) {
 	}
 
 	exe.Status = model.EXE_ACTIVE
-	if err := InsertOne(exe); err != nil {
+	if err := insert_one(exe); err != nil {
 		return model.Execution{}, err
 	}
 	return exe, nil
@@ -133,7 +133,7 @@ func Resume(exeId string) (model.Execution, error) {
 // Returns an error if computation failed or checks did not
 // succeed
 func Terminate(exeId string) (model.Execution, error) {
-	exe, err := FindCurrentlyActiveByExeId(exeId)
+	exe, err := find_currently_active_by_exeId(exeId)
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -147,7 +147,7 @@ func Terminate(exeId string) (model.Execution, error) {
 	}
 
 	exe.Status = model.EXE_TERMINATED
-	if err := InsertOne(exe); err != nil {
+	if err := insert_one(exe); err != nil {
 		return model.Execution{}, err
 	}
 	return exe, nil

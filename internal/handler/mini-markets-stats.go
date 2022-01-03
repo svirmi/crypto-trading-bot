@@ -181,7 +181,7 @@ func log_operation_results(op model.Operation, baseDiff, quoteDiff float32) {
 
 func trading_context_init() {
 	if tcontext.execution.IsEmpty() {
-		execution, err := executions.FindCurrentlyActive()
+		execution, err := executions.GetCurrentlyActive()
 		if err != nil {
 			log.Fatalf("failed to retrieve active execution")
 		}
