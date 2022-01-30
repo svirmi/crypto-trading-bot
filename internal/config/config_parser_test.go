@@ -7,26 +7,14 @@ import (
 )
 
 func TestParseConfig(t *testing.T) {
-	// Restoring interanl status after test execution
-	resource_folder_org := resource_folder
-	defer func() {
-		resource_folder = resource_folder_org
-	}()
-
-	// Testing testnet config parsing
-	resource_folder = filepath.Join("..", "..", resource_folder)
-	config, err := parse_config(false)
-
-	// Asserting config
-	if err != nil {
-		t.Errorf(err.Error())
-	} else {
-		appConfig = config
-		test_config_not_blank(t, false)
-	}
+	test_parse_config(t, false)
 }
 
 func TestParseConfig_Testnet(t *testing.T) {
+	test_parse_config(t, true)
+}
+
+func test_parse_config(t *testing.T, testnet bool) {
 	// Restoring interanl status after test execution
 	resource_folder_org := resource_folder
 	defer func() {
@@ -35,14 +23,14 @@ func TestParseConfig_Testnet(t *testing.T) {
 
 	// Testing testnet config parsing
 	resource_folder = filepath.Join("..", "..", resource_folder)
-	config, err := parse_config(true)
+	config, err := parse_config(testnet)
 
 	// Asserting config
 	if err != nil {
 		t.Errorf(err.Error())
 	} else {
 		appConfig = config
-		test_config_not_blank(t, true)
+		test_config_not_blank(t, testnet)
 	}
 }
 

@@ -49,15 +49,15 @@ func Initialize() {
 	}
 }
 
-func GetExecutionsCol() *mongo.Collection {
+var GetExecutionsCol = func() *mongo.Collection {
 	return mongoConnection.executionsCol
 }
 
-func GetOperationsCol() *mongo.Collection {
+var GetOperationsCol = func() *mongo.Collection {
 	return mongoConnection.operationsCol
 }
 
-func GetLocalAccountsCol() *mongo.Collection {
+var GetLocalAccountsCol = func() *mongo.Collection {
 	return mongoConnection.localAccountsCol
 }
 

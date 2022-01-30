@@ -47,8 +47,8 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 // Returns the execution object, if found, an empty execution
 // object if nothing was found, or an error was thrown.
 // Returns an error if computation failed
-func GetCurrentlyActiveByExeId(exeId string) (model.Execution, error) {
-	exe, err := find_currently_active_by_exeId(exeId)
+func GetLatestByExeId(exeId string) (model.Execution, error) {
+	exe, err := find_latest_by_exeId(exeId)
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -67,7 +67,7 @@ func GetCurrentlyActive() (model.Execution, error) {
 // Returns an error if computation failed or checks did not
 // succeed
 func Pause(exeId string) (model.Execution, error) {
-	exe, err := find_currently_active_by_exeId(exeId)
+	exe, err := find_latest_by_exeId(exeId)
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -100,7 +100,7 @@ func Pause(exeId string) (model.Execution, error) {
 // Returns an error if computation failed or checks did not
 // succeed
 func Resume(exeId string) (model.Execution, error) {
-	exe, err := find_currently_active_by_exeId(exeId)
+	exe, err := find_latest_by_exeId(exeId)
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -133,7 +133,7 @@ func Resume(exeId string) (model.Execution, error) {
 // Returns an error if computation failed or checks did not
 // succeed
 func Terminate(exeId string) (model.Execution, error) {
-	exe, err := find_currently_active_by_exeId(exeId)
+	exe, err := find_latest_by_exeId(exeId)
 	if err != nil {
 		return model.Execution{}, err
 	}
