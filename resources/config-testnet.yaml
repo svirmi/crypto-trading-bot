@@ -6,7 +6,7 @@ binanceApi:
   useTestnet: true
 mongoDb:
   uri: mongodb://localhost:27017
-  database: crypto-trading-bot-testnet
+  database: ctb-testnet
 strategy:
   type: FIXED_THRESHOLD_STRATEGY
   config:

@@ -11,7 +11,7 @@ import (
 
 var (
 	MONGODB_URI_TEST      string = "mongodb://localhost:27017"
-	MONGODB_DATABASE_TEST string = "crypto-trading-bot-testnet"
+	MONGODB_DATABASE_TEST string = "ctb-unit-tests"
 	EXE_COLLECTION_TEST   string = "executions"
 )
 
