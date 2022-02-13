@@ -17,7 +17,7 @@ import (
 // TRUSTS that exeId corresponds to an active execution
 func CreateOrRestore(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
 	// Get current local account from DB by execution id
-	laccount, err := FindLatest(creationRequest.ExeId)
+	laccount, err := find_latest_by_exeId(creationRequest.ExeId)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func CreateOrRestore(creationRequest model.LocalAccountInit) (model.ILocalAccoun
 	}
 
 	// Inseting in mongo db and returning value
-	if err := Insert(laccount); err != nil {
+	if err := insert(laccount); err != nil {
 		return nil, err
 	}
 	log.Printf("registering local account %s", laccount.GetAccountId())
@@ -51,7 +51,7 @@ func CreateOrRestore(creationRequest model.LocalAccountInit) (model.ILocalAccoun
 }
 
 func GetLatestByExeId(exeId string) (model.ILocalAccount, error) {
-	return FindLatest(exeId)
+	return find_latest_by_exeId(exeId)
 }
 
 func initialise_local_account(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {

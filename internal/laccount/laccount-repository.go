@@ -14,7 +14,7 @@ import (
 
 // Inserts a new local account object
 // Returns an error, if computation failed
-func Insert(laccout model.ILocalAccount) error {
+func insert(laccout model.ILocalAccount) error {
 	_, err := mongodb.GetLocalAccountsCol().InsertOne(context.TODO(), laccout)
 	return err
 }
@@ -24,7 +24,7 @@ func Insert(laccout model.ILocalAccount) error {
 // Returns a local wallet or en empty wallet if nothing was
 // found or an error was thrown.
 // Returns an error if computation failed
-func FindLatest(exeId string) (model.ILocalAccount, error) {
+func find_latest_by_exeId(exeId string) (model.ILocalAccount, error) {
 	collection := mongodb.GetLocalAccountsCol()
 
 	// Defining query
@@ -49,32 +49,6 @@ func FindLatest(exeId string) (model.ILocalAccount, error) {
 		return nil, nil
 	}
 	return results[0], nil
-}
-
-// Returns all local wallet versions bound to an execution id.
-// returns the list of local wallet versions, a nil slice if
-// nothing was found or an error was thorwn
-// Returns an error if computation failed
-func FindAll(exeId string) ([]model.ILocalAccount, error) {
-	collection := mongodb.GetLocalAccountsCol()
-
-	// Defining query
-	filter := bson.D{{"metadata.exeId", exeId}}
-	options := options.Find()
-	options.SetSort(bson.D{{"metadata.timestamp", -1}})
-
-	// Querying DB
-	cursor, err := collection.Find(context.TODO(), filter, options)
-	if err != nil {
-		return nil, nil
-	}
-
-	// Returning query results
-	results, err := decode_many(cursor)
-	if err != nil {
-		return nil, err
-	}
-	return results, nil
 }
 
 func decode_many(cursor *mongo.Cursor) ([]model.ILocalAccount, error) {

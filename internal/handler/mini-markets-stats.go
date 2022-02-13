@@ -189,7 +189,7 @@ func trading_context_init() {
 	}
 
 	if tcontext.laccount == nil {
-		laccount, err := laccount.FindLatest(tcontext.execution.ExeId)
+		laccount, err := laccount.GetLatestByExeId(tcontext.execution.ExeId)
 		if err != nil {
 			log.Fatalf("failed to retrieve local account")
 		}
