@@ -74,7 +74,7 @@ func SendMarketOrder(op model.Operation) (model.Operation, error) {
 	}
 
 	// Execute operation
-	op.Timestamp = time.Now().UnixMilli()
+	op.Timestamp = time.Now().UnixMicro()
 	err := send_market_order(op)
 	if err != nil {
 		op.Status = model.FAILED

@@ -10,7 +10,7 @@ import (
 )
 
 // Creates an new execution based on a remote wallet object, or
-// restors a previous active execution.
+// restores a previous active execution.
 // Returns the newly created execution object, or the active execution
 // object found in DB.
 // Returns an error if computation failed or an error was thrown.
@@ -43,7 +43,7 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 	return exe, nil
 }
 
-// Gets active execution object by execution id.
+// Gets the latest version of an execution object by execution id.
 // Returns the execution object, if found, an empty execution
 // object if nothing was found, or an error was thrown.
 // Returns an error if computation failed
@@ -85,6 +85,7 @@ func Pause(exeId string) (model.Execution, error) {
 	}
 
 	exe.Status = model.EXE_PAUSED
+	exe.Timestamp = time.Now().UnixMicro()
 	if err := insert_one(exe); err != nil {
 		return model.Execution{}, err
 	}
@@ -118,6 +119,7 @@ func Resume(exeId string) (model.Execution, error) {
 	}
 
 	exe.Status = model.EXE_ACTIVE
+	exe.Timestamp = time.Now().UnixMicro()
 	if err := insert_one(exe); err != nil {
 		return model.Execution{}, err
 	}
@@ -147,6 +149,7 @@ func Terminate(exeId string) (model.Execution, error) {
 	}
 
 	exe.Status = model.EXE_TERMINATED
+	exe.Timestamp = time.Now().UnixMicro()
 	if err := insert_one(exe); err != nil {
 		return model.Execution{}, err
 	}
@@ -163,5 +166,5 @@ func build_execution(account model.RemoteAccount) model.Execution {
 		ExeId:     uuid.NewString(),
 		Status:    model.EXE_ACTIVE,
 		Assets:    assets,
-		Timestamp: time.Now().UnixMilli()}
+		Timestamp: time.Now().UnixMicro()}
 }

@@ -1,4 +1,4 @@
-package utilstest
+package testutils
 
 import (
 	"context"
@@ -10,13 +10,12 @@ import (
 )
 
 var (
-	MONGODB_URI_TEST      string = "mongodb://localhost:27017"
-	MONGODB_DATABASE_TEST string = "ctb-unit-tests"
-	EXE_COLLECTION_TEST   string = "executions"
+	_MONGODB_URI_TEST      string = "mongodb://localhost:27017"
+	_MONGODB_DATABASE_TEST string = "ctb-unit-tests"
 )
 
 func GetMongoClientTest() *mongo.Client {
-	clientOptions := options.Client().ApplyURI(MONGODB_URI_TEST)
+	clientOptions := options.Client().ApplyURI(_MONGODB_URI_TEST)
 	mongoClient, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		log.Fatalf(err.Error())

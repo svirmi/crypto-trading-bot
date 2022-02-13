@@ -9,15 +9,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/utilstest"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func TestInsertOne(t *testing.T) {
 	// Setting up test
-	mongoClient := utilstest.GetMongoClientTest()
-	old := mock_execution_collection(mongoClient)
+	mongoClient := testutils.GetMongoClientTest()
+	old := testutils.MockExecutionCollection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 
 	// Restoring status after test execution
@@ -25,7 +24,7 @@ func TestInsertOne(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetExecutionsCol().DeleteOne(context.TODO(), filter, nil)
 
-		restore_execution_collection(old)
+		testutils.RestoreExecutionCollection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -34,7 +33,7 @@ func TestInsertOne(t *testing.T) {
 		ExeId:     exeIds[0],
 		Status:    model.EXE_ACTIVE,
 		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMilli()}
+		Timestamp: time.Now().UnixMicro()}
 	insert_one(expected)
 
 	// Getting execution object from DB
@@ -43,13 +42,13 @@ func TestInsertOne(t *testing.T) {
 	mongodb.GetExecutionsCol().FindOne(context.TODO(), filter).Decode(&gotten)
 
 	// Assertions
-	assert_executions(t, expected, gotten)
+	testutils.AssertExecutions(t, expected, gotten)
 }
 
 func TestFindLatestByExeId(t *testing.T) {
 	// Setting up test
-	mongoClient := utilstest.GetMongoClientTest()
-	old := mock_execution_collection(mongoClient)
+	mongoClient := testutils.GetMongoClientTest()
+	old := testutils.MockExecutionCollection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 	var otherExeIds = []string{uuid.NewString()}
 
@@ -60,7 +59,7 @@ func TestFindLatestByExeId(t *testing.T) {
 		filter := bson.M{"$or": []bson.M{filter1, filter4}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
-		restore_execution_collection(old)
+		testutils.RestoreExecutionCollection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -70,25 +69,25 @@ func TestFindLatestByExeId(t *testing.T) {
 		ExeId:     exeIds[0],
 		Status:    model.EXE_ACTIVE,
 		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMilli() + 100}
+		Timestamp: time.Now().UnixMicro() + 100}
 	docs = append(docs, exe1)
 	exe2 := model.Execution{
 		ExeId:     exeIds[0],
 		Status:    model.EXE_PAUSED,
 		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMilli() + 200}
+		Timestamp: time.Now().UnixMicro() + 200}
 	docs = append(docs, exe2)
 	expected := model.Execution{
 		ExeId:     exeIds[0],
 		Status:    model.EXE_ACTIVE,
 		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMilli() + 300}
+		Timestamp: time.Now().UnixMicro() + 300}
 	docs = append(docs, expected)
 	other1 := model.Execution{
 		ExeId:     otherExeIds[0],
 		Status:    model.EXE_TERMINATED,
 		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMilli()}
+		Timestamp: time.Now().UnixMicro()}
 	docs = append(docs, other1)
 	mongodb.GetExecutionsCol().InsertMany(context.TODO(), docs, nil)
 
@@ -99,17 +98,17 @@ func TestFindLatestByExeId(t *testing.T) {
 	}
 
 	// Assertions
-	assert_executions(t, expected, gotten)
+	testutils.AssertExecutions(t, expected, gotten)
 }
 
 func TestFindLatestByExeId_NoResults(t *testing.T) {
 	// Setting up test
-	mongoClient := utilstest.GetMongoClientTest()
-	old := mock_execution_collection(mongoClient)
+	mongoClient := testutils.GetMongoClientTest()
+	old := testutils.MockExecutionCollection(mongoClient)
 
 	// Restoring status after test execution
 	defer func() {
-		restore_execution_collection(old)
+		testutils.RestoreExecutionCollection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -125,8 +124,8 @@ func TestFindLatestByExeId_NoResults(t *testing.T) {
 
 func TestFindCurrentlyActive(t *testing.T) {
 	// Setting up test
-	mongoClient := utilstest.GetMongoClientTest()
-	old := mock_execution_collection(mongoClient)
+	mongoClient := testutils.GetMongoClientTest()
+	old := testutils.MockExecutionCollection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 	var otherExeIds = []string{uuid.NewString(), uuid.NewString()}
 
@@ -138,7 +137,7 @@ func TestFindCurrentlyActive(t *testing.T) {
 		filter := bson.M{"$or": []bson.M{filter1, filter3, filter4}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
-		restore_execution_collection(old)
+		testutils.RestoreExecutionCollection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -148,19 +147,19 @@ func TestFindCurrentlyActive(t *testing.T) {
 		ExeId:     exeIds[0],
 		Status:    model.EXE_ACTIVE,
 		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMilli() + 100}
+		Timestamp: time.Now().UnixMicro() + 100}
 	docs = append(docs, expected)
 	exe1 := model.Execution{
 		ExeId:     otherExeIds[0],
 		Status:    model.EXE_TERMINATED,
 		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMilli() + 200}
+		Timestamp: time.Now().UnixMicro() + 200}
 	docs = append(docs, exe1)
 	exe2 := model.Execution{
 		ExeId:     otherExeIds[1],
 		Status:    model.EXE_TERMINATED,
 		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMilli() + 300}
+		Timestamp: time.Now().UnixMicro() + 300}
 	docs = append(docs, exe2)
 	mongodb.GetExecutionsCol().InsertMany(context.TODO(), docs, nil)
 
@@ -171,17 +170,17 @@ func TestFindCurrentlyActive(t *testing.T) {
 	}
 
 	// Assertions
-	assert_executions(t, expected, gotten)
+	testutils.AssertExecutions(t, expected, gotten)
 }
 
 func TestFindCurrentlyActive_NoResults(t *testing.T) {
 	// Setting up test
-	mongoClient := utilstest.GetMongoClientTest()
-	old := mock_execution_collection(mongoClient)
+	mongoClient := testutils.GetMongoClientTest()
+	old := testutils.MockExecutionCollection(mongoClient)
 
 	// Restoring status after test execution
 	defer func() {
-		restore_execution_collection(old)
+		testutils.RestoreExecutionCollection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -192,34 +191,5 @@ func TestFindCurrentlyActive_NoResults(t *testing.T) {
 	}
 	if err != nil {
 		t.Errorf("execution repository error: expected == nil, gotten %v", err)
-	}
-}
-
-func restore_execution_collection(old func() *mongo.Collection) {
-	mongodb.GetExecutionsCol = old
-}
-
-func mock_execution_collection(mongoClient *mongo.Client) func() *mongo.Collection {
-	old := mongodb.GetExecutionsCol
-	mongodb.GetExecutionsCol = func() *mongo.Collection {
-		return mongoClient.
-			Database(utilstest.MONGODB_DATABASE_TEST).
-			Collection(utilstest.EXE_COLLECTION_TEST)
-	}
-	return old
-}
-
-func assert_executions(t *testing.T, expected, gotten model.Execution) {
-	if expected.ExeId != gotten.ExeId {
-		t.Errorf("ExeId: expected %s, gotten %s", expected.ExeId, gotten.ExeId)
-	}
-	if expected.Status != gotten.Status {
-		t.Errorf("Status: expected %s, gotten %s", expected.Status, gotten.Status)
-	}
-	if !reflect.DeepEqual(expected.Assets, gotten.Assets) {
-		t.Errorf("Assets: expected %v, gotten %v", expected.Assets, gotten.Assets)
-	}
-	if expected.Timestamp != gotten.Timestamp {
-		t.Errorf("Timestamp: expected %v, gotten %v", expected.Timestamp, gotten.Timestamp)
 	}
 }

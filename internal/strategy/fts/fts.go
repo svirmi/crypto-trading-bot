@@ -68,7 +68,7 @@ func (a LocalAccountFTS) Initialize(creationRequest model.LocalAccountInit) (mod
 			AccountId:    uuid.NewString(),
 			ExeId:        creationRequest.ExeId,
 			StrategyType: model.FIXED_THRESHOLD_STRATEGY,
-			Timestamp:    time.Now().UnixMilli()},
+			Timestamp:    time.Now().UnixMicro()},
 		Ignored: ignored,
 		Assets:  assets}
 	return a, nil
@@ -122,7 +122,7 @@ func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 
 	// Returning results
 	a.Assets[op.Base] = assetStatus
-	a.Timestamp = time.Now().UnixMilli()
+	a.Timestamp = time.Now().UnixMicro()
 	return a, nil
 }
 
