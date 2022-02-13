@@ -10,7 +10,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/fts"
 )
 
-func GetLocalAccountTFSTest() fts.LocalAccountFTS {
+func GetLocalAccountTest_FTS() fts.LocalAccountFTS {
 	return fts.LocalAccountFTS{
 		LocalAccountMetadata: model.LocalAccountMetadata{
 			AccountId:    uuid.NewString(),
@@ -38,7 +38,7 @@ func GetLocalAccountTFSTest() fts.LocalAccountFTS {
 				LastOperationPrice: 3998.45}}}
 }
 
-func AssertLocalAccountFTS(t *testing.T, expected, gotten fts.LocalAccountFTS) {
+func AssertLocalAccount_FTS(t *testing.T, expected, gotten fts.LocalAccountFTS) {
 	if expected.AccountId != gotten.AccountId {
 		t.Errorf("AccountId: expected = %s, gotten = %s", expected.AccountId, gotten.AccountId)
 	}
