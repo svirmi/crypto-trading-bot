@@ -30,7 +30,7 @@ func TestCreateOrRestore_Create_FTS(t *testing.T) {
 	exeIds = append(exeIds, local_account_init.ExeId)
 	gotten, err := CreateOrRestore(local_account_init)
 	if err != nil {
-		t.Errorf("expected err == nil, gotten = %v", err)
+		t.Fatalf("expected err == nil, gotten = %v", err)
 	}
 	if gotten == nil {
 		t.Error("expected laccount != nil, gotten = nil")
@@ -58,14 +58,14 @@ func TestCreateOrRestore_Restore_FTS(t *testing.T) {
 	exeIds = append(exeIds, laccount.ExeId)
 	err := insert(laccount)
 	if err != nil {
-		t.Errorf("expected err = nil, gotten err = %v", err)
+		t.Fatalf("expected err = nil, gotten err = %v", err)
 	}
 
 	local_account_init := testutils.GetLocalAccountInitTest(model.FIXED_THRESHOLD_STRATEGY)
 	local_account_init.ExeId = exeIds[0]
 	gotten, err := CreateOrRestore(local_account_init)
 	if err != nil {
-		t.Errorf("expected err == nil, gotten = %v", err)
+		t.Fatalf("expected err == nil, gotten = %v", err)
 	}
 	if gotten == nil {
 		t.Error("expected laccount != nil, gotten = nil")

@@ -94,7 +94,7 @@ func TestFindLatestByExeId(t *testing.T) {
 	// Getting execution object from DB
 	gotten, err := find_latest_by_exeId(exeIds[0])
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Fatalf(err.Error())
 	}
 
 	// Assertions
@@ -115,10 +115,10 @@ func TestFindLatestByExeId_NoResults(t *testing.T) {
 	// Getting execution object from DB
 	gotten, err := find_latest_by_exeId(uuid.NewString())
 	if !reflect.DeepEqual(gotten, model.Execution{}) {
-		t.Errorf("execution object: expected {}, gotten %v", gotten)
+		t.Fatalf("execution object: expected {}, gotten %v", gotten)
 	}
 	if err == nil {
-		t.Errorf("execution repository error: expected != nil, gotten nil")
+		t.Fatalf("execution repository error: expected != nil, gotten nil")
 	}
 }
 
@@ -166,7 +166,7 @@ func TestFindCurrentlyActive(t *testing.T) {
 	// Getting execution object from DB
 	gotten, err := find_currently_active()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Fatalf(err.Error())
 	}
 
 	// Assertions
@@ -187,9 +187,9 @@ func TestFindCurrentlyActive_NoResults(t *testing.T) {
 	// Getting execution object from DB
 	gotten, err := find_currently_active()
 	if !reflect.DeepEqual(gotten, model.Execution{}) {
-		t.Errorf("execution object: expected {}, gotten %v", gotten)
+		t.Fatalf("execution object: expected {}, gotten %v", gotten)
 	}
 	if err != nil {
-		t.Errorf("execution repository error: expected == nil, gotten %v", err)
+		t.Fatalf("execution repository error: expected == nil, gotten %v", err)
 	}
 }

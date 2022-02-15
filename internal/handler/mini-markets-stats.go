@@ -115,7 +115,7 @@ func handle_mini_markets_stats(miniMarketsStats []model.MiniMarketStats) {
 		}
 
 		// Inserting operation in DB
-		operations.Insert(operation)
+		operations.Create(operation)
 	}
 }
 

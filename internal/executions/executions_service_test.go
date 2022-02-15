@@ -42,19 +42,19 @@ func TestCreateOrRestore_Create(t *testing.T) {
 	exeIds = append(exeIds, gotten.ExeId)
 
 	if err != nil {
-		t.Errorf("exepected nil, gotten %v", err)
+		t.Fatalf("exepected nil, gotten %v", err)
 	}
 	if gotten.ExeId == "" {
-		t.Errorf("expected exeId != \"\", gotten \"\"")
+		t.Fatalf("expected exeId != \"\", gotten \"\"")
 	}
 	if !reflect.DeepEqual([]string{"BTC", "ETH"}, gotten.Assets) {
-		t.Errorf("expected assets = [BTC, ETH], gotten = %v", gotten.Assets)
+		t.Fatalf("expected assets = [BTC, ETH], gotten = %v", gotten.Assets)
 	}
 	if gotten.Status != model.EXE_ACTIVE {
-		t.Errorf("expected status = ACTIVE, gotten %v", gotten.Status)
+		t.Fatalf("expected status = ACTIVE, gotten %v", gotten.Status)
 	}
 	if gotten.Timestamp == 0 {
-		t.Errorf("expected timestamp != 0, gotten 0")
+		t.Fatalf("expected timestamp != 0, gotten 0")
 	}
 }
 
@@ -93,7 +93,7 @@ func TestCreateOrRestore_Restore(t *testing.T) {
 
 	gotten, err := CreateOrRestore(raccount)
 	if err != nil {
-		t.Errorf("expected err = nil, gotten = %v", err)
+		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 
 	testutils.AssertExecutions(t, gotten, exe)
@@ -131,7 +131,7 @@ func TestGetLatestByExeId(t *testing.T) {
 	// Getting latest by exe id
 	gotten, err := GetLatestByExeId(exeIds[0])
 	if err != nil {
-		t.Errorf("expected err = nil, gotten = %v", err)
+		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 	testutils.AssertExecutions(t, exe, gotten)
 }
@@ -175,7 +175,7 @@ func TestGetCurrentlyActive(t *testing.T) {
 	// Getting latest by exe id
 	gotten, err := GetCurrentlyActive()
 	if err != nil {
-		t.Errorf("expected err = nil, gotten = %v", err)
+		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 	testutils.AssertExecutions(t, exe, gotten)
 }
@@ -194,10 +194,10 @@ func TestGetCurrentlyActive_None(t *testing.T) {
 	// Getting latest by exe id
 	gotten, err := GetCurrentlyActive()
 	if err != nil {
-		t.Errorf("expected err = nil, gptten = %v", err)
+		t.Fatalf("expected err = nil, gptten = %v", err)
 	}
 	if !gotten.IsEmpty() {
-		t.Errorf("expected exe = model.Execution{}, gotten = %v", gotten)
+		t.Fatalf("expected exe = model.Execution{}, gotten = %v", gotten)
 	}
 }
 
@@ -240,10 +240,10 @@ func TestGetCurrentlyActive_Many(t *testing.T) {
 	// Getting latest by exe id
 	gotten, err := GetCurrentlyActive()
 	if err == nil {
-		t.Errorf("expected err != nil, gotten = nil")
+		t.Fatalf("expected err != nil, gotten = nil")
 	}
 	if !gotten.IsEmpty() {
-		t.Errorf("expected exe = model.Execution{}, gotten = %v", gotten)
+		t.Fatalf("expected exe = model.Execution{}, gotten = %v", gotten)
 	}
 }
 
@@ -273,19 +273,19 @@ func TestStatuses(t *testing.T) {
 	// Updating status to PAUSED
 	gotten, err := Pause(exeIds[0])
 	if err != nil {
-		t.Errorf("expected err = nil, gotten = %v", err)
+		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 	if gotten.Status != model.EXE_PAUSED {
-		t.Errorf("expected exe.Status = PAUSED, gotten = %v", gotten.Status)
+		t.Fatalf("expected exe.Status = PAUSED, gotten = %v", gotten.Status)
 	}
 
 	// Updating status to ACTIVE
 	gotten, err = Resume(exeIds[0])
 	if err != nil {
-		t.Errorf("expected err = nil, gotten = %v", err)
+		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 	if gotten.Status != model.EXE_ACTIVE {
-		t.Errorf("expected exe.Status = ACTIVE, gotten = %v", gotten.Status)
+		t.Fatalf("expected exe.Status = ACTIVE, gotten = %v", gotten.Status)
 	}
 
 	// Updating status to ACTIVE again
@@ -294,15 +294,15 @@ func TestStatuses(t *testing.T) {
 		t.Error("expected err != nil, gotten = nil", err)
 	}
 	if !gotten.IsEmpty() {
-		t.Errorf("expected exe = model.Execution{}, gotten = %v", gotten)
+		t.Fatalf("expected exe = model.Execution{}, gotten = %v", gotten)
 	}
 
 	// Updating status to TERMINATED
 	gotten, err = Terminate(exeIds[0])
 	if err != nil {
-		t.Errorf("expected err = nil, gotten = %v", err)
+		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 	if gotten.Status != model.EXE_TERMINATED {
-		t.Errorf("expected exe.Status = TERMINATED, gotten = %v", gotten.Status)
+		t.Fatalf("expected exe.Status = TERMINATED, gotten = %v", gotten.Status)
 	}
 }

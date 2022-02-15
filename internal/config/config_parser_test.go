@@ -27,7 +27,7 @@ func test_parse_config(t *testing.T, testnet bool) {
 
 	// Asserting config
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Fatalf(err.Error())
 	} else {
 		appConfig = config
 		test_config_not_blank(t, testnet)

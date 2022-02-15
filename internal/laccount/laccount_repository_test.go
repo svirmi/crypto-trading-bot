@@ -31,12 +31,12 @@ func TestInsert_FTS(t *testing.T) {
 	exeIds = append(exeIds, laccount.ExeId)
 	err := insert(laccount)
 	if err != nil {
-		t.Errorf("expected err = nil, gotten = %v", err)
+		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 
 	gotten, err := find_latest_by_exeId(laccount.ExeId)
 	if err != nil {
-		t.Errorf("expected err = nil, gotten = %v", err)
+		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 	testutils.AssertLocalAccount_FTS(t, laccount, gotten.(fts.LocalAccountFTS))
 }
@@ -60,7 +60,7 @@ func TestFindLatestByExeId_FTS(t *testing.T) {
 	exeIds = append(exeIds, laccount.ExeId)
 	err := insert(laccount)
 	if err != nil {
-		t.Errorf("expected err = nil, gotten = %v", err)
+		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 
 	laccount.Assets["DOT"] = fts.AssetStatusFTS{
@@ -72,13 +72,13 @@ func TestFindLatestByExeId_FTS(t *testing.T) {
 	laccount.Timestamp = time.Now().UnixMicro()
 	err = insert(laccount)
 	if err != nil {
-		t.Errorf("expected err = nil, gotten = %v", err)
+		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 
 	exeIds = append(exeIds, laccount.AccountId)
 	gotten, err := find_latest_by_exeId(laccount.ExeId)
 	if err != nil {
-		t.Errorf("expected err = nil, gotten = %v", err)
+		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 
 	testutils.AssertLocalAccount_FTS(t, laccount, gotten.(fts.LocalAccountFTS))
@@ -97,9 +97,9 @@ func TestFindLatestByExeId_FTS_None(t *testing.T) {
 
 	gotten, err := find_latest_by_exeId(uuid.NewString())
 	if err != nil {
-		t.Errorf("expected err = nil, gotten = %v", err)
+		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 	if gotten != nil {
-		t.Errorf("expected laccount = nil, gotten = %v", gotten)
+		t.Fatalf("expected laccount = nil, gotten = %v", gotten)
 	}
 }

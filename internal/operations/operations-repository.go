@@ -11,7 +11,7 @@ import (
 
 // Inserts operations in DB
 // Returns an error if computation failed
-func InsertMany(ops []model.Operation) error {
+func insert_many(ops []model.Operation) error {
 	collection := mongodb.GetOperationsCol()
 
 	var payload []interface{}
@@ -26,20 +26,20 @@ func InsertMany(ops []model.Operation) error {
 
 // Inserts an operation in DB
 // Returns an error if computation failed
-func Insert(op model.Operation) error {
+func insert(op model.Operation) error {
 	_, err := mongodb.GetOperationsCol().InsertOne(context.TODO(), op)
 	return err
 }
 
-// Finds all operation by execution id exeId
-// Returns list of operation, if any was found, nil
-// oterwise
+// Finds all operations by execution id exeId
+// Returns list of operations sorted by timestamp (desc), if any
+// was found, nil otherwise
 // Returns an error if computation failed
-func FindByExeId(exeId string) ([]model.Operation, error) {
+func find_by_exe_id(exeId string) ([]model.Operation, error) {
 	collection := mongodb.GetOperationsCol()
 
 	// Defining query
-	options := options.Find().SetSort(bson.D{{"timestamp", 1}})
+	options := options.Find().SetSort(bson.D{{"timestamp", -1}})
 	filter := bson.D{{"exeId", exeId}}
 
 	// Querying DB

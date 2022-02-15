@@ -40,21 +40,21 @@ func GetLocalAccountTest_FTS() fts.LocalAccountFTS {
 
 func AssertLocalAccount_FTS(t *testing.T, expected, gotten fts.LocalAccountFTS) {
 	if expected.AccountId != gotten.AccountId {
-		t.Errorf("AccountId: expected = %s, gotten = %s", expected.AccountId, gotten.AccountId)
+		t.Fatalf("AccountId: expected = %s, gotten = %s", expected.AccountId, gotten.AccountId)
 	}
 	if expected.ExeId != gotten.ExeId {
-		t.Errorf("ExeId: expected = %s, gotten = %s", expected.ExeId, gotten.ExeId)
+		t.Fatalf("ExeId: expected = %s, gotten = %s", expected.ExeId, gotten.ExeId)
 	}
 	if expected.StrategyType != gotten.StrategyType {
-		t.Errorf("StrategyType: expected = %s, gotten = %s", expected.StrategyType, gotten.StrategyType)
+		t.Fatalf("StrategyType: expected = %s, gotten = %s", expected.StrategyType, gotten.StrategyType)
 	}
 	if expected.Timestamp != gotten.Timestamp {
-		t.Errorf("StrategyType: expected = %s, gotten = %s", expected.StrategyType, gotten.StrategyType)
+		t.Fatalf("StrategyType: expected = %s, gotten = %s", expected.StrategyType, gotten.StrategyType)
 	}
 	if !reflect.DeepEqual(expected.Ignored, gotten.Ignored) {
-		t.Errorf("Ignored: expected = %v, gotten = %v", expected.Ignored, gotten.Ignored)
+		t.Fatalf("Ignored: expected = %v, gotten = %v", expected.Ignored, gotten.Ignored)
 	}
 	if !reflect.DeepEqual(expected.Assets, gotten.Assets) {
-		t.Errorf("Assets: expected = %v, gotten = %v", expected.Assets, gotten.Assets)
+		t.Fatalf("Assets: expected = %v, gotten = %v", expected.Assets, gotten.Assets)
 	}
 }

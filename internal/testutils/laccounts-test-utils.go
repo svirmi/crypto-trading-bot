@@ -45,13 +45,13 @@ func GetLocalAccountInitTest(strategyType model.StrategyType) model.LocalAccount
 
 func AssertInitLocalAccount(t *testing.T, init model.LocalAccountInit, gotten model.ILocalAccount) {
 	if gotten.GetExeId() != init.ExeId {
-		t.Errorf("ExeId: expected = %s, gotten = %s", init.ExeId, gotten.GetExeId())
+		t.Fatalf("ExeId: expected = %s, gotten = %s", init.ExeId, gotten.GetExeId())
 	}
 	if gotten.GetAccountId() == "" {
 		t.Error("AccountId: expected != nil, gotten = nil")
 	}
 	if gotten.GetStrategyType() != init.StrategyType {
-		t.Errorf("StrategyType: expected = %s, gotten = %s", init.StrategyType, gotten.GetStrategyType())
+		t.Fatalf("StrategyType: expected = %s, gotten = %s", init.StrategyType, gotten.GetStrategyType())
 	}
 	if gotten.GetTimestamp() == 0 {
 		t.Error("Timestamp: expected != 0, gotten = 0")
