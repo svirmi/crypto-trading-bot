@@ -20,3 +20,7 @@ func GetSymbolFromAsset(base string) string {
 func GetAssetFromSymbol(symbol string) string {
 	return strings.TrimSuffix(symbol, "USDT")
 }
+
+func Xor(a, b bool) bool {
+	return (a || b) && !(a && b)
+}

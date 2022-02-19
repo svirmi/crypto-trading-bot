@@ -5,8 +5,6 @@ import (
 	"reflect"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
 type strategy_config_fts struct {
@@ -20,17 +18,9 @@ func (a strategy_config_fts) is_empty() bool {
 	return reflect.DeepEqual(a, strategy_config_fts{})
 }
 
-func get_fts_config() (s strategy_config_fts) {
-	strategyConfig := config.GetStrategyConfig()
-	strategyType := model.StrategyType(strategyConfig.Type)
-
-	// Check strategy type
-	if strategyType != model.FIXED_THRESHOLD_STRATEGY {
-		log.Fatalf("wrong startegy type %s", strategyConfig.Type)
-	}
-
+func get_fts_config(c interface{}) (s strategy_config_fts) {
 	// Mapping interface{} to strategy_config_fts
-	mapstructure.Decode(strategyConfig.Config, &s)
+	mapstructure.Decode(c, &s)
 
 	// Checking config validity
 	if s.is_empty() {

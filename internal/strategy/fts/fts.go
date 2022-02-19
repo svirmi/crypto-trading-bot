@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
@@ -140,7 +141,12 @@ func (a LocalAccountFTS) GetOperation(mms model.MiniMarketStats) (model.Operatio
 	currentAmntUsdt := assetStatus.Usdt
 	currentPrice := mms.LastPrice
 
-	ftsConfig := get_fts_config()
+	strategyConfig := config.GetStrategyConfig()
+	if strategyConfig.Type != string(model.FIXED_THRESHOLD_STRATEGY) {
+		log.Fatalf("wrong strategy type %v", strategyConfig.Type)
+	}
+
+	ftsConfig := get_fts_config(strategyConfig.Config)
 	sellPrice := get_threshold_rate(lastOpPrice, ftsConfig.SellThreshold)
 	stopLossPrice := get_threshold_rate(lastOpPrice, -ftsConfig.StopLossThreshold)
 	buyPrice := get_threshold_rate(lastOpPrice, -ftsConfig.BuyThreshold)
