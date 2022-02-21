@@ -15,7 +15,7 @@ import (
 func TestInsert_FTS(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockLaccountCollection(mongoClient)
+	old := mock_laccount_collection(mongoClient)
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -23,11 +23,11 @@ func TestInsert_FTS(t *testing.T) {
 		filter := bson.D{{"metadata.exeId", exeIds[0]}}
 		mongodb.GetLocalAccountsCol().DeleteOne(context.TODO(), filter, nil)
 
-		testutils.RestoreLaccountCollection(old)
+		restore_laccount_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
-	laccount := testutils.GetLocalAccountTest_FTS()
+	laccount := get_laccount_test_FTS()
 	exeIds = append(exeIds, laccount.ExeId)
 	err := insert(laccount)
 	if err != nil {
@@ -38,13 +38,13 @@ func TestInsert_FTS(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
-	testutils.AssertLocalAccount_FTS(t, laccount, gotten.(fts.LocalAccountFTS))
+	testutils.AssertStructEq(t, laccount, gotten.(fts.LocalAccountFTS))
 }
 
 func TestFindLatestByExeId_FTS(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockLaccountCollection(mongoClient)
+	old := mock_laccount_collection(mongoClient)
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -52,11 +52,11 @@ func TestFindLatestByExeId_FTS(t *testing.T) {
 		filter := bson.D{{"metadata.exeId", exeIds[0]}}
 		mongodb.GetLocalAccountsCol().DeleteMany(context.TODO(), filter, nil)
 
-		testutils.RestoreLaccountCollection(old)
+		restore_laccount_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
-	laccount := testutils.GetLocalAccountTest_FTS()
+	laccount := get_laccount_test_FTS()
 	exeIds = append(exeIds, laccount.ExeId)
 	err := insert(laccount)
 	if err != nil {
@@ -81,17 +81,17 @@ func TestFindLatestByExeId_FTS(t *testing.T) {
 		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 
-	testutils.AssertLocalAccount_FTS(t, laccount, gotten.(fts.LocalAccountFTS))
+	testutils.AssertStructEq(t, laccount, gotten.(fts.LocalAccountFTS))
 }
 
 func TestFindLatestByExeId_FTS_None(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockLaccountCollection(mongoClient)
+	old := mock_laccount_collection(mongoClient)
 
 	// Restoring status after test execution
 	defer func() {
-		testutils.RestoreLaccountCollection(old)
+		restore_laccount_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 

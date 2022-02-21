@@ -13,7 +13,7 @@ import (
 func TestCreateOrRestore_Create_FTS(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockLaccountCollection(mongoClient)
+	old := mock_laccount_collection(mongoClient)
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -21,13 +21,13 @@ func TestCreateOrRestore_Create_FTS(t *testing.T) {
 		filter := bson.D{{"metadata.exeId", exeIds[0]}}
 		mongodb.GetLocalAccountsCol().DeleteOne(context.TODO(), filter, nil)
 
-		testutils.RestoreLaccountCollection(old)
+		restore_laccount_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
-	local_account_init := testutils.GetLocalAccountInitTest(model.FIXED_THRESHOLD_STRATEGY)
-
+	local_account_init := get_laccount_init_test(model.FIXED_THRESHOLD_STRATEGY)
 	exeIds = append(exeIds, local_account_init.ExeId)
+
 	gotten, err := CreateOrRestore(local_account_init)
 	if err != nil {
 		t.Fatalf("expected err == nil, gotten = %v", err)
@@ -36,13 +36,18 @@ func TestCreateOrRestore_Create_FTS(t *testing.T) {
 		t.Error("expected laccount != nil, gotten = nil")
 	}
 
-	testutils.AssertInitLocalAccount(t, local_account_init, gotten)
+	expected := get_laccount_test_FTS()
+	expected.ExeId = local_account_init.ExeId
+	expected.AccountId = gotten.GetAccountId()
+	expected.Timestamp = gotten.GetTimestamp()
+
+	testutils.AssertStructEq(t, expected, gotten)
 }
 
 func TestCreateOrRestore_Restore_FTS(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockLaccountCollection(mongoClient)
+	old := mock_laccount_collection(mongoClient)
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -50,18 +55,18 @@ func TestCreateOrRestore_Restore_FTS(t *testing.T) {
 		filter := bson.D{{"metadata.exeId", exeIds[0]}}
 		mongodb.GetLocalAccountsCol().DeleteOne(context.TODO(), filter, nil)
 
-		testutils.RestoreLaccountCollection(old)
+		restore_laccount_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
-	laccount := testutils.GetLocalAccountTest_FTS()
-	exeIds = append(exeIds, laccount.ExeId)
-	err := insert(laccount)
+	expected := get_laccount_test_FTS()
+	exeIds = append(exeIds, expected.ExeId)
+	err := insert(expected)
 	if err != nil {
 		t.Fatalf("expected err = nil, gotten err = %v", err)
 	}
 
-	local_account_init := testutils.GetLocalAccountInitTest(model.FIXED_THRESHOLD_STRATEGY)
+	local_account_init := get_laccount_init_test(model.FIXED_THRESHOLD_STRATEGY)
 	local_account_init.ExeId = exeIds[0]
 	gotten, err := CreateOrRestore(local_account_init)
 	if err != nil {
@@ -71,5 +76,5 @@ func TestCreateOrRestore_Restore_FTS(t *testing.T) {
 		t.Error("expected laccount != nil, gotten = nil")
 	}
 
-	testutils.AssertInitLocalAccount(t, local_account_init, gotten)
+	testutils.AssertStructEq(t, expected, gotten)
 }

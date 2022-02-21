@@ -2,7 +2,6 @@ package executions
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 func TestCreateOrRestore_Create(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockExecutionCollection(mongoClient)
+	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -24,7 +23,7 @@ func TestCreateOrRestore_Create(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetExecutionsCol().DeleteOne(context.TODO(), filter, nil)
 
-		testutils.RestoreExecutionCollection(old)
+		restore_execution_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -39,29 +38,24 @@ func TestCreateOrRestore_Create(t *testing.T) {
 		Balances:         balances}
 
 	gotten, err := CreateOrRestore(raccount)
-	exeIds = append(exeIds, gotten.ExeId)
-
 	if err != nil {
-		t.Fatalf("exepected nil, gotten %v", err)
+		t.Fatalf("failed to create or restore execution: %v", err)
 	}
-	if gotten.ExeId == "" {
-		t.Fatalf("expected exeId != \"\", gotten \"\"")
-	}
-	if !reflect.DeepEqual([]string{"BTC", "ETH"}, gotten.Assets) {
-		t.Fatalf("expected assets = [BTC, ETH], gotten = %v", gotten.Assets)
-	}
-	if gotten.Status != model.EXE_ACTIVE {
-		t.Fatalf("expected status = ACTIVE, gotten %v", gotten.Status)
-	}
-	if gotten.Timestamp == 0 {
-		t.Fatalf("expected timestamp != 0, gotten 0")
-	}
+
+	expected := model.Execution{
+		ExeId:     gotten.ExeId,
+		Status:    model.EXE_ACTIVE,
+		Assets:    []string{"BTC", "ETH"},
+		Timestamp: gotten.Timestamp}
+
+	exeIds = append(exeIds, gotten.ExeId)
+	testutils.AssertStructEq(t, expected, gotten)
 }
 
 func TestCreateOrRestore_Restore(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockExecutionCollection(mongoClient)
+	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -69,7 +63,7 @@ func TestCreateOrRestore_Restore(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetExecutionsCol().DeleteOne(context.TODO(), filter, nil)
 
-		testutils.RestoreExecutionCollection(old)
+		restore_execution_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -96,13 +90,13 @@ func TestCreateOrRestore_Restore(t *testing.T) {
 		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
 
-	testutils.AssertExecutions(t, gotten, exe)
+	testutils.AssertStructEq(t, gotten, exe)
 }
 
 func TestGetLatestByExeId(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockExecutionCollection(mongoClient)
+	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 
 	// Restoring status after test execution
@@ -110,7 +104,7 @@ func TestGetLatestByExeId(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
-		testutils.RestoreExecutionCollection(old)
+		restore_execution_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -133,13 +127,13 @@ func TestGetLatestByExeId(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
-	testutils.AssertExecutions(t, exe, gotten)
+	testutils.AssertStructEq(t, exe, gotten)
 }
 
 func TestGetCurrentlyActive(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockExecutionCollection(mongoClient)
+	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString(), uuid.NewString()}
 
 	// Restoring status after test execution
@@ -149,7 +143,7 @@ func TestGetCurrentlyActive(t *testing.T) {
 			bson.D{{"exeId", exeIds[1]}}}}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
-		testutils.RestoreExecutionCollection(old)
+		restore_execution_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -177,17 +171,17 @@ func TestGetCurrentlyActive(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected err = nil, gotten = %v", err)
 	}
-	testutils.AssertExecutions(t, exe, gotten)
+	testutils.AssertStructEq(t, exe, gotten)
 }
 
 func TestGetCurrentlyActive_None(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockExecutionCollection(mongoClient)
+	old := mock_execution_collection(mongoClient)
 
 	// Restoring status after test execution
 	defer func() {
-		testutils.RestoreExecutionCollection(old)
+		restore_execution_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -204,7 +198,7 @@ func TestGetCurrentlyActive_None(t *testing.T) {
 func TestGetCurrentlyActive_Many(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockExecutionCollection(mongoClient)
+	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString(), uuid.NewString()}
 
 	// Restoring status after test execution
@@ -214,7 +208,7 @@ func TestGetCurrentlyActive_Many(t *testing.T) {
 			bson.D{{"exeId", exeIds[1]}}}}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
-		testutils.RestoreExecutionCollection(old)
+		restore_execution_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -250,7 +244,7 @@ func TestGetCurrentlyActive_Many(t *testing.T) {
 func TestStatuses(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockExecutionCollection(mongoClient)
+	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 
 	// Restoring status after test execution
@@ -258,7 +252,7 @@ func TestStatuses(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
-		testutils.RestoreExecutionCollection(old)
+		restore_execution_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 

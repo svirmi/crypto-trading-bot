@@ -16,7 +16,7 @@ import (
 func TestInsertOne(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockExecutionCollection(mongoClient)
+	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 
 	// Restoring status after test execution
@@ -24,7 +24,7 @@ func TestInsertOne(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetExecutionsCol().DeleteOne(context.TODO(), filter, nil)
 
-		testutils.RestoreExecutionCollection(old)
+		restore_execution_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -42,13 +42,13 @@ func TestInsertOne(t *testing.T) {
 	mongodb.GetExecutionsCol().FindOne(context.TODO(), filter).Decode(&gotten)
 
 	// Assertions
-	testutils.AssertExecutions(t, expected, gotten)
+	testutils.AssertStructEq(t, expected, gotten)
 }
 
 func TestFindLatestByExeId(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockExecutionCollection(mongoClient)
+	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 	var otherExeIds = []string{uuid.NewString()}
 
@@ -59,7 +59,7 @@ func TestFindLatestByExeId(t *testing.T) {
 		filter := bson.M{"$or": []bson.M{filter1, filter4}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
-		testutils.RestoreExecutionCollection(old)
+		restore_execution_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -98,17 +98,17 @@ func TestFindLatestByExeId(t *testing.T) {
 	}
 
 	// Assertions
-	testutils.AssertExecutions(t, expected, gotten)
+	testutils.AssertStructEq(t, expected, gotten)
 }
 
 func TestFindLatestByExeId_NoResults(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockExecutionCollection(mongoClient)
+	old := mock_execution_collection(mongoClient)
 
 	// Restoring status after test execution
 	defer func() {
-		testutils.RestoreExecutionCollection(old)
+		restore_execution_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -125,7 +125,7 @@ func TestFindLatestByExeId_NoResults(t *testing.T) {
 func TestFindCurrentlyActive(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockExecutionCollection(mongoClient)
+	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 	var otherExeIds = []string{uuid.NewString(), uuid.NewString()}
 
@@ -137,7 +137,7 @@ func TestFindCurrentlyActive(t *testing.T) {
 		filter := bson.M{"$or": []bson.M{filter1, filter3, filter4}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
-		testutils.RestoreExecutionCollection(old)
+		restore_execution_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
@@ -170,17 +170,17 @@ func TestFindCurrentlyActive(t *testing.T) {
 	}
 
 	// Assertions
-	testutils.AssertExecutions(t, expected, gotten)
+	testutils.AssertStructEq(t, expected, gotten)
 }
 
 func TestFindCurrentlyActive_NoResults(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockExecutionCollection(mongoClient)
+	old := mock_execution_collection(mongoClient)
 
 	// Restoring status after test execution
 	defer func() {
-		testutils.RestoreExecutionCollection(old)
+		restore_execution_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 

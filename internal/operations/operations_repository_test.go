@@ -15,7 +15,7 @@ import (
 func TestInsert(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockOperationCollection(mongoClient)
+	old := mock_operation_collection(mongoClient)
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -23,11 +23,11 @@ func TestInsert(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetOperationsCol().DeleteOne(context.TODO(), filter, nil)
 
-		testutils.RestoreOperationCollection(old)
+		restore_operation_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
-	expected := testutils.GetOperationTest()
+	expected := get_operation_test()
 	exeIds = append(exeIds, expected.ExeId)
 	err := insert(expected)
 	if err != nil {
@@ -43,13 +43,13 @@ func TestInsert(t *testing.T) {
 		t.Fatalf("expected len(results) = 1, gotten len(results) = %d", len(gottens))
 		return
 	}
-	testutils.AssertOperations(t, expected, gottens[0])
+	testutils.AssertStructEq(t, expected, gottens[0])
 }
 
 func TestInsertMany(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockOperationCollection(mongoClient)
+	old := mock_operation_collection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 
 	// Restoring status after test execution
@@ -57,14 +57,14 @@ func TestInsertMany(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetOperationsCol().DeleteMany(context.TODO(), filter, nil)
 
-		testutils.RestoreOperationCollection(old)
+		restore_operation_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 
-	expected1 := testutils.GetOperationTest()
+	expected1 := get_operation_test()
 	expected1.ExeId = exeIds[0]
 	expected1.Timestamp = time.Now().UnixMicro()
-	expected2 := testutils.GetOperationTest()
+	expected2 := get_operation_test()
 	expected2.Timestamp = time.Now().UnixMicro() + 100
 	expected2.ExeId = exeIds[0]
 	err := insert_many([]model.Operation{expected1, expected2})
@@ -81,18 +81,18 @@ func TestInsertMany(t *testing.T) {
 		t.Fatalf("expected len(results) = 2, gotten len(results) = %d", len(gottens))
 		return
 	}
-	testutils.AssertOperations(t, expected2, gottens[0])
-	testutils.AssertOperations(t, expected1, gottens[1])
+	testutils.AssertStructEq(t, expected2, gottens[0])
+	testutils.AssertStructEq(t, expected1, gottens[1])
 }
 
 func TestFindByExeId(t *testing.T) {
 	// Setting up test
 	mongoClient := testutils.GetMongoClientTest()
-	old := testutils.MockOperationCollection(mongoClient)
+	old := mock_operation_collection(mongoClient)
 
 	// Restoring status after test execution
 	defer func() {
-		testutils.RestoreOperationCollection(old)
+		restore_operation_collection(old)
 		mongoClient.Disconnect(context.TODO())
 	}()
 

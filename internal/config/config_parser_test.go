@@ -4,21 +4,32 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
+	"github.com/mitchellh/mapstructure"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 )
 
 var (
 	fts_test_resource_folder = "test-resources"
 )
 
-func TestParseConfig_Fts(t *testing.T) {
+func TestParseConfig(t *testing.T) {
 	test_parse_config(t, false, fts_test_resource_folder)
-	assert_config(t, get_config())
+
+	gotten := appConfig
+	got_sconfig := make(map[string]string)
+	mapstructure.Decode(gotten.Strategy.Config, &got_sconfig)
+	gotten.Strategy.Config = got_sconfig
+	testutils.AssertStructEq(t, get_config(), gotten)
 }
 
-func TestParseConfig_Testnet_Fts(t *testing.T) {
+func TestParseConfig_Testnet(t *testing.T) {
 	test_parse_config(t, true, fts_test_resource_folder)
-	assert_config(t, get_testnet_config())
+
+	gotten := appConfig
+	got_sconfig := make(map[string]string)
+	mapstructure.Decode(gotten.Strategy.Config, &got_sconfig)
+	gotten.Strategy.Config = got_sconfig
+	testutils.AssertStructEq(t, get_testnet_config(), gotten)
 }
 
 func test_parse_config(t *testing.T, testnet bool, test_resource_folder string) {
@@ -41,57 +52,6 @@ func test_parse_config(t *testing.T, testnet bool, test_resource_folder string) 
 	}
 }
 
-func assert_config(t *testing.T, expected config) {
-	if utils.Xor(appConfig.IsEmpty(), expected.IsEmpty()) {
-		t.Fatalf("config: expected = %v, gotten = %v", expected, appConfig)
-	}
-
-	got_bconf := GetBinanceApiConfig()
-	exp_bconf := expected.BinanceApi
-	if utils.Xor(got_bconf.IsEmpty(), exp_bconf.IsEmpty()) {
-		t.Fatalf("binance config: expected = %v, gotten = %v", exp_bconf, got_bconf)
-	}
-	if got_bconf.ApiKey != exp_bconf.ApiKey {
-		t.Fatalf("binance api key: gotten = %v, expected = %v",
-			got_bconf.ApiKey, exp_bconf.ApiKey)
-	}
-	if got_bconf.SecretKey != exp_bconf.SecretKey {
-		t.Fatalf("binance api secret: gotten = %v, expected = %v",
-			got_bconf.SecretKey, exp_bconf.SecretKey)
-	}
-	if got_bconf.UseTestnet != exp_bconf.UseTestnet {
-		t.Fatalf("testnet: expetd = %v, gotten = %v",
-			got_bconf.UseTestnet, exp_bconf.UseTestnet)
-	}
-
-	got_mconf := GetMongoDbConfig()
-	exp_mconf := expected.MongoDb
-	if utils.Xor(got_mconf.IsEmpty(), exp_mconf.IsEmpty()) {
-		t.Fatalf("mongo config: expected = %v, gotten = %v", exp_mconf, got_mconf)
-	}
-	if got_mconf.Database != exp_mconf.Database {
-		t.Fatalf("mongo database: expected = %v, gotten = %v",
-			exp_mconf.Database, got_mconf.Database)
-	}
-	if got_mconf.Uri != exp_mconf.Uri {
-		t.Fatalf("mongo uri: expected = %v, gotten = %v",
-			exp_mconf.Uri, exp_mconf.Uri)
-	}
-
-	got_sconf := GetStrategyConfig()
-	exp_sconf := expected.Strategy
-	if utils.Xor(got_sconf.IsEmpty(), exp_sconf.IsEmpty()) {
-		t.Fatalf("strategy config: expected = %v, gotten = %v", exp_sconf, got_sconf)
-	}
-	if got_sconf.Type != exp_sconf.Type {
-		t.Fatalf("strategy type: expected = %s, gotten = %s",
-			exp_sconf.Type, got_sconf.Type)
-	}
-	if got_sconf.Config == nil {
-		t.Fatal("strategy config: expected != nil, gotten = nil")
-	}
-}
-
 func get_config() config {
 	return config{
 		BinanceApi: binance_api_config{
@@ -103,12 +63,9 @@ func get_config() config {
 			Database: "ctb"},
 		Strategy: strategy_config{
 			Type: "TEST_STRATEGY_TYPE",
-			Config: struct {
-				prop1 string
-				prop2 string
-			}{
-				prop1: "prop1",
-				prop2: "prop2"}}}
+			Config: map[string]string{
+				"prop1": "prop1",
+				"prop2": "prop2"}}}
 }
 
 func get_testnet_config() config {
@@ -122,10 +79,7 @@ func get_testnet_config() config {
 			Database: "ctb-testnet"},
 		Strategy: strategy_config{
 			Type: "TEST_STRATEGY_TYPE",
-			Config: struct {
-				prop1 string
-				prop2 string
-			}{
-				prop1: "prop1",
-				prop2: "prop2"}}}
+			Config: map[string]string{
+				"prop1": "prop1",
+				"prop2": "prop2"}}}
 }
