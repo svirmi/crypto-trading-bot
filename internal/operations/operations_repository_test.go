@@ -14,7 +14,7 @@ import (
 
 func TestInsert(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_operation_collection(mongoClient)
 	var exeIds = []string{}
 
@@ -48,7 +48,7 @@ func TestInsert(t *testing.T) {
 
 func TestInsertMany(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_operation_collection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 
@@ -87,7 +87,7 @@ func TestInsertMany(t *testing.T) {
 
 func TestFindByExeId(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_operation_collection(mongoClient)
 
 	// Restoring status after test execution

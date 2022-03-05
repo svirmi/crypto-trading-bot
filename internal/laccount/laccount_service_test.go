@@ -12,7 +12,7 @@ import (
 
 func TestCreateOrRestore_Create_FTS(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_laccount_collection(mongoClient)
 	var exeIds = []string{}
 
@@ -46,7 +46,7 @@ func TestCreateOrRestore_Create_FTS(t *testing.T) {
 
 func TestCreateOrRestore_Restore_FTS(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_laccount_collection(mongoClient)
 	var exeIds = []string{}
 

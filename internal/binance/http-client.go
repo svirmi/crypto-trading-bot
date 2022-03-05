@@ -7,6 +7,7 @@ import (
 	"time"
 
 	binanceapi "github.com/adshao/go-binance/v2"
+	"github.com/shopspring/decimal"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
@@ -97,9 +98,9 @@ func send_market_order(op model.Operation) error {
 	}
 
 	if op.AmountSide == model.BASE_AMOUNT {
-		ordersvc.Quantity(fmt.Sprintf("%f", op.Amount))
+		ordersvc.Quantity(op.Amount.String())
 	} else {
-		ordersvc.QuoteOrderQty(fmt.Sprintf("%f", op.Amount))
+		ordersvc.QuoteOrderQty(op.Amount.String())
 	}
 
 	order, err := ordersvc.Do(context.TODO())
@@ -114,7 +115,7 @@ func send_market_order(op model.Operation) error {
 /********************** Mapping to local representation **********************/
 
 func to_CCTB_symbol_price(rprice *binanceapi.SymbolPrice) (model.AssetPrice, error) {
-	amount, err := utils.ParseFloat32(rprice.Price)
+	amount, err := decimal.NewFromString(rprice.Price)
 	if err != nil {
 		return model.AssetPrice{}, err
 	}
@@ -127,7 +128,7 @@ func to_CCTB_symbol_price(rprice *binanceapi.SymbolPrice) (model.AssetPrice, err
 func to_CCTB_remote_account(account *binanceapi.Account) (model.RemoteAccount, error) {
 	balances := make([]model.RemoteBalance, 0, len(account.Balances))
 	for _, rbalance := range account.Balances {
-		amount, err := utils.ParseFloat32(rbalance.Free)
+		amount, err := decimal.NewFromString(rbalance.Free)
 		if err != nil {
 			return model.RemoteAccount{}, err
 		}

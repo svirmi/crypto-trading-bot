@@ -5,13 +5,14 @@ import (
 	"reflect"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/shopspring/decimal"
 )
 
 type strategy_config_fts struct {
-	BuyThreshold        float32
-	SellThreshold       float32
-	StopLossThreshold   float32
-	MissProfitThreshold float32
+	BuyThreshold        decimal.Decimal
+	SellThreshold       decimal.Decimal
+	StopLossThreshold   decimal.Decimal
+	MissProfitThreshold decimal.Decimal
 }
 
 func (a strategy_config_fts) is_empty() bool {
@@ -20,16 +21,26 @@ func (a strategy_config_fts) is_empty() bool {
 
 func get_fts_config(c interface{}) (s strategy_config_fts) {
 	// Mapping interface{} to strategy_config_fts
-	mapstructure.Decode(c, &s)
+	tmp := struct {
+		BuyThreshold        float32
+		SellThreshold       float32
+		StopLossThreshold   float32
+		MissProfitThreshold float32
+	}{}
+	mapstructure.Decode(c, &tmp)
+	s.BuyThreshold = decimal.NewFromFloat32(tmp.BuyThreshold)
+	s.SellThreshold = decimal.NewFromFloat32(tmp.SellThreshold)
+	s.StopLossThreshold = decimal.NewFromFloat32(tmp.StopLossThreshold)
+	s.MissProfitThreshold = decimal.NewFromFloat32(tmp.MissProfitThreshold)
 
 	// Checking config validity
 	if s.is_empty() {
 		log.Fatalf("failed to parse fts config")
 	}
-	if s.BuyThreshold <= 0 ||
-		s.SellThreshold <= 0 ||
-		s.MissProfitThreshold <= 0 ||
-		s.StopLossThreshold <= 0 {
+	if s.BuyThreshold.LessThanOrEqual(decimal.Zero) ||
+		s.SellThreshold.LessThanOrEqual(decimal.Zero) ||
+		s.MissProfitThreshold.LessThanOrEqual(decimal.Zero) ||
+		s.StopLossThreshold.LessThanOrEqual(decimal.Zero) {
 		log.Fatalf("fts thresholds must be strictly positive")
 	}
 

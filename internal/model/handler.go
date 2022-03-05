@@ -1,17 +1,21 @@
 package model
 
-import "reflect"
+import (
+	"reflect"
+
+	"github.com/shopspring/decimal"
+)
 
 type MiniMarketStats struct {
 	Event       string
 	Time        int64
 	Asset       string
-	LastPrice   float32
-	OpenPrice   float32
-	HighPrice   float32
-	LowPrice    float32
-	BaseVolume  float32
-	QuoteVolume float32
+	LastPrice   decimal.Decimal
+	OpenPrice   decimal.Decimal
+	HighPrice   decimal.Decimal
+	LowPrice    decimal.Decimal
+	BaseVolume  decimal.Decimal
+	QuoteVolume decimal.Decimal
 }
 
 func (m MiniMarketStats) IsEmpty() bool {

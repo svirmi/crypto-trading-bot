@@ -2,8 +2,8 @@ package handler
 
 import (
 	"log"
-	"math"
 
+	"github.com/shopspring/decimal"
 	abool "github.com/tevino/abool/v2"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
@@ -120,8 +120,8 @@ func handle_mini_markets_stats(miniMarketsStats []model.MiniMarketStats) {
 }
 
 func compute_op_results(old, new model.RemoteAccount, op model.Operation) model.Operation {
-	var oldBaseBalance, newBaseBalance float32
-	var oldQuoteBalance, newQuoteBalance float32
+	var oldBaseBalance, newBaseBalance decimal.Decimal
+	var oldQuoteBalance, newQuoteBalance decimal.Decimal
 
 	// Getting old abase and quote balances
 	for _, balance := range old.Balances {
@@ -144,39 +144,39 @@ func compute_op_results(old, new model.RemoteAccount, op model.Operation) model.
 	}
 
 	// Setting operation results
-	baseDiff := float32(math.Abs(float64(newBaseBalance) - float64(oldBaseBalance)))
-	quoteDiff := float32(math.Abs(float64(newQuoteBalance) - float64(oldQuoteBalance)))
-	if op.AmountSide == model.BASE_AMOUNT && baseDiff == op.Amount {
+	baseDiff := (newBaseBalance.Sub(oldBaseBalance)).Abs()
+	quoteDiff := (newQuoteBalance.Sub(oldQuoteBalance)).Abs()
+	if op.AmountSide == model.BASE_AMOUNT && baseDiff.Equals(op.Amount) {
 		op.Status = model.FILLED
-	} else if op.AmountSide == model.QUOTE_AMOUNT && quoteDiff == op.Amount {
+	} else if op.AmountSide == model.QUOTE_AMOUNT && quoteDiff.Equals(op.Amount) {
 		op.Status = model.FILLED
 	} else {
 		op.Status = model.PARTIALLY_FILLED
 	}
 
 	// Building results
-	actualPrice := quoteDiff / baseDiff
+	actualPrice := quoteDiff.Div(baseDiff)
 	results := model.OpResults{
 		ActualPrice: actualPrice,
 		BaseAmount:  baseDiff,
 		QuoteAmount: quoteDiff,
-		Spread:      ((actualPrice - op.Price) / op.Price) * 100}
+		Spread:      ((actualPrice.Sub(op.Price)).Div(op.Price)).Mul(decimal.NewFromInt(100))}
 	op.Results = results
 	log_operation_results(op, baseDiff, quoteDiff)
 
 	return op
 }
 
-func log_operation_results(op model.Operation, baseDiff, quoteDiff float32) {
+func log_operation_results(op model.Operation, baseDiff, quoteDiff decimal.Decimal) {
 	log.Printf("operation %s: %s", op.OpId, op.Status)
 	log.Printf("side: %s", op.Side)
 	log.Printf("amount side: %s", op.AmountSide)
-	log.Printf("amount: %f", op.Amount)
-	log.Printf("baseDiff: %f", baseDiff)
-	log.Printf("quoteDiff: %f", quoteDiff)
-	log.Printf("price: %f", op.Price)
-	log.Printf("actualPrice: %f", op.Results.ActualPrice)
-	log.Printf("spread: %f", op.Results.Spread)
+	log.Printf("amount: %s", op.Amount.String())
+	log.Printf("baseDiff: %s", baseDiff.String())
+	log.Printf("quoteDiff: %s", quoteDiff.String())
+	log.Printf("price: %s", op.Price.String())
+	log.Printf("actualPrice: %s", op.Results.ActualPrice.String())
+	log.Printf("spread: %s", op.Results.Spread.String())
 }
 
 func trading_context_init() {

@@ -15,7 +15,7 @@ import (
 
 func TestInsertOne(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 
@@ -47,7 +47,7 @@ func TestInsertOne(t *testing.T) {
 
 func TestFindLatestByExeId(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 	var otherExeIds = []string{uuid.NewString()}
@@ -103,7 +103,7 @@ func TestFindLatestByExeId(t *testing.T) {
 
 func TestFindLatestByExeId_NoResults(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_execution_collection(mongoClient)
 
 	// Restoring status after test execution
@@ -124,7 +124,7 @@ func TestFindLatestByExeId_NoResults(t *testing.T) {
 
 func TestFindCurrentlyActive(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 	var otherExeIds = []string{uuid.NewString(), uuid.NewString()}
@@ -175,7 +175,7 @@ func TestFindCurrentlyActive(t *testing.T) {
 
 func TestFindCurrentlyActive_NoResults(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_execution_collection(mongoClient)
 
 	// Restoring status after test execution

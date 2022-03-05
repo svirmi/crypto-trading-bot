@@ -2,6 +2,8 @@ package model
 
 import (
 	"reflect"
+
+	"github.com/shopspring/decimal"
 )
 
 // Representation of remote Binance wallet
@@ -19,7 +21,7 @@ func (a RemoteAccount) IsEmpty() bool {
 
 type RemoteBalance struct {
 	Asset  string
-	Amount float32
+	Amount decimal.Decimal
 }
 
 func (b RemoteBalance) IsEmpty() bool {
@@ -28,7 +30,7 @@ func (b RemoteBalance) IsEmpty() bool {
 
 type AssetPrice struct {
 	Asset string
-	Price float32
+	Price decimal.Decimal
 }
 
 func (p AssetPrice) IsEmpty() bool {

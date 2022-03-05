@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/fts"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
@@ -14,7 +15,7 @@ import (
 
 func TestInsert_FTS(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_laccount_collection(mongoClient)
 	var exeIds = []string{}
 
@@ -43,7 +44,7 @@ func TestInsert_FTS(t *testing.T) {
 
 func TestFindLatestByExeId_FTS(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_laccount_collection(mongoClient)
 	var exeIds = []string{}
 
@@ -65,10 +66,10 @@ func TestFindLatestByExeId_FTS(t *testing.T) {
 
 	laccount.Assets["DOT"] = fts.AssetStatusFTS{
 		Asset:              "DOT",
-		Amount:             55.56,
-		Usdt:               0,
+		Amount:             decimal.NewFromFloat32(55.56),
+		Usdt:               decimal.Zero,
 		LastOperationType:  fts.OP_BUY_FTS,
-		LastOperationPrice: 18.45}
+		LastOperationPrice: decimal.NewFromFloat32(18.45)}
 	laccount.Timestamp = time.Now().UnixMicro()
 	err = insert(laccount)
 	if err != nil {
@@ -86,7 +87,7 @@ func TestFindLatestByExeId_FTS(t *testing.T) {
 
 func TestFindLatestByExeId_FTS_None(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_laccount_collection(mongoClient)
 
 	// Restoring status after test execution

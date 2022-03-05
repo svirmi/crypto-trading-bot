@@ -3,6 +3,8 @@ package model
 import (
 	"log"
 	"reflect"
+
+	"github.com/shopspring/decimal"
 )
 
 // Order type
@@ -62,10 +64,10 @@ func (s AmountSide) Invert() AmountSide {
 }
 
 type OpResults struct {
-	ActualPrice float32 `bson:"actualPrice"` // Actual rate
-	BaseAmount  float32 `bson:"baseAmount"`  // Base amount actually traded
-	QuoteAmount float32 `bson:"quoteAmount"` // Quote amount actually traded
-	Spread      float32 `bson:"spread"`      // Spread percentage expected - actual
+	ActualPrice decimal.Decimal `bson:"actualPrice"` // Actual rate
+	BaseAmount  decimal.Decimal `bson:"baseAmount"`  // Base amount actually traded
+	QuoteAmount decimal.Decimal `bson:"quoteAmount"` // Quote amount actually traded
+	Spread      decimal.Decimal `bson:"spread"`      // Spread percentage expected - actual
 }
 
 func (o OpResults) IsEmpty() bool {
@@ -73,18 +75,18 @@ func (o OpResults) IsEmpty() bool {
 }
 
 type Operation struct {
-	OpId       string     `bson:"opId"`       // Operation id
-	ExeId      string     `bson:"exeId"`      // Execution id
-	Type       OpType     `bson:"type"`       // Manual vs Auto
-	Base       string     `bson:"base"`       // Base crypto
-	Quote      string     `bson:"quote"`      // Quote crypto
-	Side       OpSide     `bson:"side"`       // Buy vs Sell
-	Amount     float32    `bson:"amount"`     // Amount to be bought or sold
-	AmountSide AmountSide `bson:"amountSide"` // What amount refers to, base or quote
-	Price      float32    `bson:"price"`      // How much of "quote" to get one unit of "base"
-	Results    OpResults  `bson:"results"`    // Results
-	Status     OpStatus   `bson:"status"`     // Status
-	Timestamp  int64      `bson:"timestamp"`  // Operation timestamp
+	OpId       string          `bson:"opId"`       // Operation id
+	ExeId      string          `bson:"exeId"`      // Execution id
+	Type       OpType          `bson:"type"`       // Manual vs Auto
+	Base       string          `bson:"base"`       // Base crypto
+	Quote      string          `bson:"quote"`      // Quote crypto
+	Side       OpSide          `bson:"side"`       // Buy vs Sell
+	Amount     decimal.Decimal `bson:"amount"`     // Amount to be bought or sold
+	AmountSide AmountSide      `bson:"amountSide"` // What amount refers to, base or quote
+	Price      decimal.Decimal `bson:"price"`      // How much of "quote" to get one unit of "base"
+	Results    OpResults       `bson:"results"`    // Results
+	Status     OpStatus        `bson:"status"`     // Status
+	Timestamp  int64           `bson:"timestamp"`  // Operation timestamp
 }
 
 func (o Operation) IsEmpty() bool {

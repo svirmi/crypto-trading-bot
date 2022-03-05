@@ -4,13 +4,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
-var _OP_COLLECTION_TEST string = "operations"
 
 func restore_operation_collection(old func() *mongo.Collection) {
 	mongodb.GetOperationsCol = old
@@ -20,8 +18,8 @@ func mock_operation_collection(mongoClient *mongo.Client) func() *mongo.Collecti
 	old := mongodb.GetOperationsCol
 	mongodb.GetOperationsCol = func() *mongo.Collection {
 		return mongoClient.
-			Database(testutils.MONGODB_DATABASE_TEST).
-			Collection(_OP_COLLECTION_TEST)
+			Database(mongodb.MONGODB_DATABASE_TEST).
+			Collection(mongodb.OP_COL_NAME)
 	}
 	return old
 }
@@ -34,14 +32,14 @@ func get_operation_test() model.Operation {
 		Base:       "BTC",
 		Quote:      "USDT",
 		Side:       model.BUY,
-		Amount:     153.78,
+		Amount:     decimal.NewFromFloat32(153.78),
 		AmountSide: model.BASE_AMOUNT,
-		Price:      133.23,
+		Price:      decimal.NewFromFloat32(133.23),
 		Results: model.OpResults{
-			ActualPrice: 133.58,
-			BaseAmount:  153.78,
-			QuoteAmount: 11224.56,
-			Spread:      12.1,
+			ActualPrice: decimal.NewFromFloat32(133.58),
+			BaseAmount:  decimal.NewFromFloat32(153.78),
+			QuoteAmount: decimal.NewFromFloat32(11224.56),
+			Spread:      decimal.NewFromFloat32(12.1),
 		},
 		Status:    model.FILLED,
 		Timestamp: time.Now().UnixMicro()}

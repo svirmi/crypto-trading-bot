@@ -10,12 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-var (
-	executionsColName    = "executions"
-	operationsColName    = "operations"
-	localAccountsColName = "laccounts"
-)
-
 type mongo_connection struct {
 	mongoClient      *mongo.Client
 	executionsCol    *mongo.Collection
@@ -28,7 +22,9 @@ var mongoConnection mongo_connection
 func Initialize() {
 	mongoDbConfig := config.GetMongoDbConfig()
 	log.Printf("connecting to mongo instance: %s", mongoDbConfig.Uri)
-	clientOptions := options.Client().ApplyURI(mongoDbConfig.Uri)
+	clientOptions := options.Client().
+		ApplyURI(mongoDbConfig.Uri).
+		SetRegistry(build_custom_registry())
 	mongoClient, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		log.Fatalf(err.Error())
@@ -43,9 +39,9 @@ func Initialize() {
 	// Getting collection handles
 	mongoConnection = mongo_connection{
 		mongoClient:      mongoClient,
-		executionsCol:    get_collection_handle(mongoClient, executionsColName),
-		operationsCol:    get_collection_handle(mongoClient, operationsColName),
-		localAccountsCol: get_collection_handle(mongoClient, localAccountsColName),
+		executionsCol:    get_collection_handle(mongoClient, EXE_COL_NAME),
+		operationsCol:    get_collection_handle(mongoClient, OP_COL_NAME),
+		localAccountsCol: get_collection_handle(mongoClient, LACC_COL_NAME),
 	}
 }
 

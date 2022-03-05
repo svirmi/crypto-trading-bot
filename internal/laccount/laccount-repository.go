@@ -29,64 +29,33 @@ func find_latest_by_exeId(exeId string) (model.ILocalAccount, error) {
 
 	// Defining query
 	filter := bson.D{{"metadata.exeId", exeId}}
-	options := options.Find()
+	options := options.FindOne()
 	options.SetSort(bson.D{{"metadata.timestamp", -1}})
-	options.SetLimit(1)
 
 	// Querying DB
-	cursor, err := collection.Find(context.TODO(), filter, options)
-	if err != nil {
-		return nil, err
-	}
-
-	results, err := decode_many(cursor)
-	if err != nil {
-		return nil, err
-	}
-
-	// Returning results
-	if len(results) == 0 {
-		return nil, nil
-	}
-	return results[0], nil
+	result := collection.FindOne(context.TODO(), filter, options)
+	return decode(result)
 }
 
-func decode_many(cursor *mongo.Cursor) ([]model.ILocalAccount, error) {
-	laccounts := make([]model.ILocalAccount, 0)
-	for cursor.Next(context.TODO()) {
-		raw := cursor.Current
-		laccount, err := decode_one(raw)
-		if err != nil {
-			return nil, err
-		}
-		laccounts = append(laccounts, laccount)
-	}
-	return laccounts, nil
-}
-
-func decode_one(raw bson.Raw) (model.ILocalAccount, error) {
+func decode(sr *mongo.SingleResult) (model.ILocalAccount, error) {
 	payload := struct {
 		model.LocalAccountMetadata `bson:"metadata"`
 	}{}
 
-	err := bson.Unmarshal(raw, &payload)
+	err := sr.Decode(&payload)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
-	strategyType := model.StrategyType(payload.GetStrategyType())
 
-	var laccount model.ILocalAccount = nil
+	strategyType := model.StrategyType(payload.GetStrategyType())
 	if strategyType == model.FIXED_THRESHOLD_STRATEGY {
 		laccount_fts := fts.LocalAccountFTS{}
-		err = bson.Unmarshal(raw, &laccount_fts)
-		laccount = laccount_fts
+		err := sr.Decode(&laccount_fts)
+		return laccount_fts, err
 	} else {
-		err = fmt.Errorf("unknown strategy type %s", strategyType)
-		return nil, err
+		return nil, fmt.Errorf("unrecognized strategy type %s", strategyType)
 	}
-
-	if err != nil {
-		return nil, err
-	}
-	return laccount, nil
 }

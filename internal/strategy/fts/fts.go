@@ -3,13 +3,14 @@ package fts
 import (
 	"fmt"
 	"log"
-	"math"
 	"reflect"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
 type OperationTypeFts string
@@ -21,10 +22,10 @@ const (
 
 type AssetStatusFTS struct {
 	Asset              string           `bson:"asset"`              // Asset being tracked
-	Amount             float32          `bson:"amount"`             // Amount of that asset currently owned
-	Usdt               float32          `bson:"usdt"`               // Usdt gotten by selling the asset
+	Amount             decimal.Decimal  `bson:"amount"`             // Amount of that asset currently owned
+	Usdt               decimal.Decimal  `bson:"usdt"`               // Usdt gotten by selling the asset
 	LastOperationType  OperationTypeFts `bson:"lastOperationType"`  // Last FTS operation type
-	LastOperationPrice float32          `bson:"lastOperationPrice"` // Asset value at the time last op was executed
+	LastOperationPrice decimal.Decimal  `bson:"lastOperationPrice"` // Asset value at the time last op was executed
 }
 
 func (a AssetStatusFTS) IsEmpty() bool {
@@ -33,8 +34,8 @@ func (a AssetStatusFTS) IsEmpty() bool {
 
 type LocalAccountFTS struct {
 	model.LocalAccountMetadata `bson:"metadata"`
-	Ignored                    map[string]float32        `bson:"ignored"` // Usdt not to be invested
-	Assets                     map[string]AssetStatusFTS `bson:"assets"`  // Value allocation across assets
+	Ignored                    map[string]decimal.Decimal `bson:"ignored"` // Usdt not to be invested
+	Assets                     map[string]AssetStatusFTS  `bson:"assets"`  // Value allocation across assets
 }
 
 func (a LocalAccountFTS) IsEmpty() bool {
@@ -43,12 +44,12 @@ func (a LocalAccountFTS) IsEmpty() bool {
 
 type operation_init struct {
 	asset       string
-	amount      float32
-	targetPrice float32
+	amount      decimal.Decimal
+	targetPrice decimal.Decimal
 }
 
 func (a LocalAccountFTS) Initialize(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
-	var ignored = make(map[string]float32)
+	var ignored = make(map[string]decimal.Decimal)
 	var assets = make(map[string]AssetStatusFTS)
 
 	for _, rbalance := range creationRequest.RAccount.Balances {
@@ -104,18 +105,18 @@ func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	baseAmount := op.Results.BaseAmount
 	quoteAmount := op.Results.QuoteAmount
 	if op.Side == model.BUY {
-		assetStatus.Amount = assetStatus.Amount + baseAmount
-		assetStatus.Usdt = assetStatus.Usdt - quoteAmount
+		assetStatus.Amount = assetStatus.Amount.Add(baseAmount)
+		assetStatus.Usdt = assetStatus.Usdt.Sub(quoteAmount)
 		assetStatus.LastOperationType = OP_BUY_FTS
 	} else if op.Side == model.SELL {
-		assetStatus.Amount = assetStatus.Amount - baseAmount
-		assetStatus.Usdt = assetStatus.Usdt + quoteAmount
+		assetStatus.Amount = assetStatus.Amount.Sub(baseAmount)
+		assetStatus.Usdt = assetStatus.Usdt.Add(quoteAmount)
 		assetStatus.LastOperationType = OP_SELL_FTS
 	} else {
 		err := fmt.Errorf("unsupported operation type %s", op.Type)
 		return a, err
 	}
-	if assetStatus.Amount < 0 || assetStatus.Usdt < 0 {
+	if assetStatus.Amount.LessThan(decimal.Zero) || assetStatus.Usdt.LessThan(decimal.Zero) {
 		err := fmt.Errorf("negative balance detected")
 		return a, err
 	}
@@ -148,31 +149,31 @@ func (a LocalAccountFTS) GetOperation(mms model.MiniMarketStats) (model.Operatio
 
 	ftsConfig := get_fts_config(strategyConfig.Config)
 	sellPrice := get_threshold_rate(lastOpPrice, ftsConfig.SellThreshold)
-	stopLossPrice := get_threshold_rate(lastOpPrice, -ftsConfig.StopLossThreshold)
-	buyPrice := get_threshold_rate(lastOpPrice, -ftsConfig.BuyThreshold)
+	stopLossPrice := get_threshold_rate(lastOpPrice, utils.SignChangeDecimal(ftsConfig.StopLossThreshold))
+	buyPrice := get_threshold_rate(lastOpPrice, utils.SignChangeDecimal(ftsConfig.BuyThreshold))
 	missProfitPrice := get_threshold_rate(lastOpPrice, ftsConfig.MissProfitThreshold)
 
-	if lastOpType == OP_BUY_FTS && currentPrice >= sellPrice {
+	if lastOpType == OP_BUY_FTS && currentPrice.GreaterThanOrEqual(sellPrice) {
 		// sell command
-		operationInit := build_operation_init(asset, currentAmnt/10, currentPrice)
+		operationInit := build_operation_init(asset, currentAmnt.Div(decimal.NewFromInt(10)), currentPrice)
 		log_trading_intent("SELL", asset, lastOpPrice, currentPrice)
 		return build_sell_op(a, operationInit), nil
 
-	} else if lastOpType == OP_BUY_FTS && currentPrice <= stopLossPrice {
+	} else if lastOpType == OP_BUY_FTS && currentPrice.LessThanOrEqual(stopLossPrice) {
 		// stop loss command
-		operationInit := build_operation_init(asset, currentAmnt/10, currentPrice)
+		operationInit := build_operation_init(asset, currentAmnt.Div(decimal.NewFromInt(10)), currentPrice)
 		log_trading_intent("STOP_LOSS", asset, lastOpPrice, currentPrice)
 		return build_sell_op(a, operationInit), nil
 
-	} else if lastOpType == OP_SELL_FTS && currentPrice <= buyPrice {
+	} else if lastOpType == OP_SELL_FTS && currentPrice.LessThanOrEqual(buyPrice) {
 		// buy command
-		operationInit := build_operation_init(asset, currentAmntUsdt/10, currentPrice)
+		operationInit := build_operation_init(asset, currentAmntUsdt.Div(decimal.NewFromInt(10)), currentPrice)
 		log_trading_intent("BUY", asset, lastOpPrice, currentPrice)
 		return build_buy_op(a, operationInit), nil
 
-	} else if lastOpType == OP_SELL_FTS && currentPrice >= missProfitPrice {
+	} else if lastOpType == OP_SELL_FTS && currentPrice.GreaterThanOrEqual(missProfitPrice) {
 		// miss profit command
-		operationInit := build_operation_init(asset, currentAmntUsdt/10, currentPrice)
+		operationInit := build_operation_init(asset, currentAmnt.Div(decimal.NewFromInt(10)), currentPrice)
 		log_trading_intent("MISS_PROFIT", asset, lastOpPrice, currentPrice)
 		return build_buy_op(a, operationInit), nil
 
@@ -182,7 +183,7 @@ func (a LocalAccountFTS) GetOperation(mms model.MiniMarketStats) (model.Operatio
 	return model.Operation{}, nil
 }
 
-func build_operation_init(asset string, amount float32, price float32) operation_init {
+func build_operation_init(asset string, amount, price decimal.Decimal) operation_init {
 	return operation_init{
 		asset:       asset,
 		amount:      amount,
@@ -217,29 +218,29 @@ func build_sell_op(laccount LocalAccountFTS, operationInit operation_init) model
 		Status:     model.PENDING}
 }
 
-func log_noop(asset string, lastOpType OperationTypeFts, lastOpPrice, currentPrice float32) {
-	log.Printf("FTS NOOP: asset=%s, lastOpType=%s, lastOpPrice=%f, currentPrice=%f",
-		asset, lastOpType, lastOpPrice, currentPrice)
+func log_noop(asset string, lastOpType OperationTypeFts, lastOpPrice, currentPrice decimal.Decimal) {
+	log.Printf("FTS NOOP: asset=%s, lastOpType=%s, lastOpPrice=%s, currentPrice=%s",
+		asset, lastOpType, lastOpPrice.String(), currentPrice.String())
 }
 
-func log_trading_intent(cond, asset string, last, current float32) {
+func log_trading_intent(cond, asset string, last, current decimal.Decimal) {
 	message := fmt.Sprintf("FTS %s condition verified: asset=%s, last=%v, current=%v",
 		cond, asset, last, current)
 	log.Println(message)
 }
 
-func get_threshold_rate(price float32, percentage float32) float32 {
-	abs := math.Abs(float64(percentage))
-	sign := float64(percentage) / abs
-	delta := (float64(price) / 100) * abs
-	return price + float32(delta*sign)
+func get_threshold_rate(price decimal.Decimal, percentage decimal.Decimal) decimal.Decimal {
+	abs := percentage.Abs()
+	sign := percentage.Div(abs)
+	delta := price.Div(decimal.NewFromInt(100)).Mul(abs)
+	return price.Add(delta.Mul(sign))
 }
 
 func init_asset_status_fts(rbalance model.RemoteBalance, price model.AssetPrice) (AssetStatusFTS, error) {
 	return AssetStatusFTS{
 		Asset:              rbalance.Asset,
 		Amount:             rbalance.Amount,
-		Usdt:               0,
+		Usdt:               decimal.Zero,
 		LastOperationType:  OP_BUY_FTS,
 		LastOperationPrice: price.Price}, nil
 }

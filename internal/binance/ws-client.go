@@ -4,6 +4,7 @@ import (
 	"log"
 
 	binanceapi "github.com/adshao/go-binance/v2"
+	"github.com/shopspring/decimal"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
@@ -85,27 +86,27 @@ func MiniMarketsStatsStop() {
 /********************** Mapping to local representation **********************/
 
 func to_mini_market_stats(rMiniMarketStat binanceapi.WsMiniMarketsStatEvent) (model.MiniMarketStats, error) {
-	lastPrice, err := utils.ParseFloat32(rMiniMarketStat.LastPrice)
+	lastPrice, err := decimal.NewFromString(rMiniMarketStat.LastPrice)
 	if err != nil {
 		return model.MiniMarketStats{}, err
 	}
-	openPrice, err := utils.ParseFloat32(rMiniMarketStat.OpenPrice)
+	openPrice, err := decimal.NewFromString(rMiniMarketStat.OpenPrice)
 	if err != nil {
 		return model.MiniMarketStats{}, err
 	}
-	lowPrice, err := utils.ParseFloat32(rMiniMarketStat.LowPrice)
+	lowPrice, err := decimal.NewFromString(rMiniMarketStat.LowPrice)
 	if err != nil {
 		return model.MiniMarketStats{}, err
 	}
-	highPrice, err := utils.ParseFloat32(rMiniMarketStat.HighPrice)
+	highPrice, err := decimal.NewFromString(rMiniMarketStat.HighPrice)
 	if err != nil {
 		return model.MiniMarketStats{}, err
 	}
-	baseVolume, err := utils.ParseFloat32(rMiniMarketStat.BaseVolume)
+	baseVolume, err := decimal.NewFromString(rMiniMarketStat.BaseVolume)
 	if err != nil {
 		return model.MiniMarketStats{}, err
 	}
-	quoteVolume, err := utils.ParseFloat32(rMiniMarketStat.QuoteVolume)
+	quoteVolume, err := decimal.NewFromString(rMiniMarketStat.QuoteVolume)
 	if err != nil {
 		return model.MiniMarketStats{}, err
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
@@ -14,7 +15,7 @@ import (
 
 func TestCreateOrRestore_Create(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{}
 
@@ -28,8 +29,8 @@ func TestCreateOrRestore_Create(t *testing.T) {
 	}()
 
 	balances := []model.RemoteBalance{
-		{Asset: "BTC", Amount: 5.0},
-		{Asset: "ETH", Amount: 10.45}}
+		{Asset: "BTC", Amount: decimal.NewFromFloat32(5.0)},
+		{Asset: "ETH", Amount: decimal.NewFromFloat32(10.45)}}
 	raccount := model.RemoteAccount{
 		MakerCommission:  0,
 		TakerCommission:  1,
@@ -54,7 +55,7 @@ func TestCreateOrRestore_Create(t *testing.T) {
 
 func TestCreateOrRestore_Restore(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{}
 
@@ -68,8 +69,8 @@ func TestCreateOrRestore_Restore(t *testing.T) {
 	}()
 
 	balances := []model.RemoteBalance{
-		{Asset: "BTC", Amount: 5.0},
-		{Asset: "ETH", Amount: 10.45}}
+		{Asset: "BTC", Amount: decimal.NewFromFloat32(5.0)},
+		{Asset: "ETH", Amount: decimal.NewFromFloat32(10.45)}}
 	raccount := model.RemoteAccount{
 		MakerCommission:  0,
 		TakerCommission:  1,
@@ -95,7 +96,7 @@ func TestCreateOrRestore_Restore(t *testing.T) {
 
 func TestGetLatestByExeId(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 
@@ -132,7 +133,7 @@ func TestGetLatestByExeId(t *testing.T) {
 
 func TestGetCurrentlyActive(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString(), uuid.NewString()}
 
@@ -176,7 +177,7 @@ func TestGetCurrentlyActive(t *testing.T) {
 
 func TestGetCurrentlyActive_None(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_execution_collection(mongoClient)
 
 	// Restoring status after test execution
@@ -197,7 +198,7 @@ func TestGetCurrentlyActive_None(t *testing.T) {
 
 func TestGetCurrentlyActive_Many(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString(), uuid.NewString()}
 
@@ -243,7 +244,7 @@ func TestGetCurrentlyActive_Many(t *testing.T) {
 
 func TestStatuses(t *testing.T) {
 	// Setting up test
-	mongoClient := testutils.GetMongoClientTest()
+	mongoClient := mongodb.GetMongoClientTest()
 	old := mock_execution_collection(mongoClient)
 	var exeIds = []string{uuid.NewString()}
 
