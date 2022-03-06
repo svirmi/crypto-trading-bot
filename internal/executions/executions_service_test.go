@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/shopspring/decimal"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -29,8 +29,8 @@ func TestCreateOrRestore_Create(t *testing.T) {
 	}()
 
 	balances := []model.RemoteBalance{
-		{Asset: "BTC", Amount: decimal.NewFromFloat32(5.0)},
-		{Asset: "ETH", Amount: decimal.NewFromFloat32(10.45)}}
+		{Asset: "BTC", Amount: utils.DecimalFromString("5.0")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("10.45")}}
 	raccount := model.RemoteAccount{
 		MakerCommission:  0,
 		TakerCommission:  1,
@@ -69,8 +69,8 @@ func TestCreateOrRestore_Restore(t *testing.T) {
 	}()
 
 	balances := []model.RemoteBalance{
-		{Asset: "BTC", Amount: decimal.NewFromFloat32(5.0)},
-		{Asset: "ETH", Amount: decimal.NewFromFloat32(10.45)}}
+		{Asset: "BTC", Amount: utils.DecimalFromString("5.0")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("10.45")}}
 	raccount := model.RemoteAccount{
 		MakerCommission:  0,
 		TakerCommission:  1,

@@ -6,6 +6,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
 type strategy_config_fts struct {
@@ -22,16 +23,16 @@ func (a strategy_config_fts) is_empty() bool {
 func get_fts_config(c interface{}) (s strategy_config_fts) {
 	// Mapping interface{} to strategy_config_fts
 	tmp := struct {
-		BuyThreshold        float32
-		SellThreshold       float32
-		StopLossThreshold   float32
-		MissProfitThreshold float32
+		BuyThreshold        string
+		SellThreshold       string
+		StopLossThreshold   string
+		MissProfitThreshold string
 	}{}
 	mapstructure.Decode(c, &tmp)
-	s.BuyThreshold = decimal.NewFromFloat32(tmp.BuyThreshold)
-	s.SellThreshold = decimal.NewFromFloat32(tmp.SellThreshold)
-	s.StopLossThreshold = decimal.NewFromFloat32(tmp.StopLossThreshold)
-	s.MissProfitThreshold = decimal.NewFromFloat32(tmp.MissProfitThreshold)
+	s.BuyThreshold = utils.DecimalFromString(tmp.BuyThreshold)
+	s.SellThreshold = utils.DecimalFromString(tmp.SellThreshold)
+	s.StopLossThreshold = utils.DecimalFromString(tmp.StopLossThreshold)
+	s.MissProfitThreshold = utils.DecimalFromString(tmp.MissProfitThreshold)
 
 	// Checking config validity
 	if s.is_empty() {

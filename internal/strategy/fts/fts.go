@@ -155,28 +155,27 @@ func (a LocalAccountFTS) GetOperation(mms model.MiniMarketStats) (model.Operatio
 
 	if lastOpType == OP_BUY_FTS && currentPrice.GreaterThanOrEqual(sellPrice) {
 		// sell command
-		operationInit := build_operation_init(asset, currentAmnt.Div(decimal.NewFromInt(10)), currentPrice)
+		operationInit := build_operation_init(asset, currentAmnt, currentPrice)
 		log_trading_intent("SELL", asset, lastOpPrice, currentPrice)
 		return build_sell_op(a, operationInit), nil
 
 	} else if lastOpType == OP_BUY_FTS && currentPrice.LessThanOrEqual(stopLossPrice) {
 		// stop loss command
-		operationInit := build_operation_init(asset, currentAmnt.Div(decimal.NewFromInt(10)), currentPrice)
+		operationInit := build_operation_init(asset, currentAmnt, currentPrice)
 		log_trading_intent("STOP_LOSS", asset, lastOpPrice, currentPrice)
 		return build_sell_op(a, operationInit), nil
 
 	} else if lastOpType == OP_SELL_FTS && currentPrice.LessThanOrEqual(buyPrice) {
 		// buy command
-		operationInit := build_operation_init(asset, currentAmntUsdt.Div(decimal.NewFromInt(10)), currentPrice)
+		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice)
 		log_trading_intent("BUY", asset, lastOpPrice, currentPrice)
 		return build_buy_op(a, operationInit), nil
 
 	} else if lastOpType == OP_SELL_FTS && currentPrice.GreaterThanOrEqual(missProfitPrice) {
 		// miss profit command
-		operationInit := build_operation_init(asset, currentAmnt.Div(decimal.NewFromInt(10)), currentPrice)
+		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice)
 		log_trading_intent("MISS_PROFIT", asset, lastOpPrice, currentPrice)
 		return build_buy_op(a, operationInit), nil
-
 	}
 
 	log_noop(asset, lastOpType, lastOpPrice, currentPrice)

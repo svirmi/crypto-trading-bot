@@ -10,7 +10,7 @@ mongoDb:
 strategy:
   type: FIXED_THRESHOLD_STRATEGY
   config:
-    buyThreshold: 5
-    sellThreshold: 5
-    stopLossThreshold: 10
-    missProfitThreshold: 10
+    buyThreshold: '5'
+    sellThreshold: '5'
+    stopLossThreshold: '10'
+    missProfitThreshold: '10'

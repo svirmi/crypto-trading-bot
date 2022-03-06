@@ -10,6 +10,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/fts"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -66,10 +67,10 @@ func TestFindLatestByExeId_FTS(t *testing.T) {
 
 	laccount.Assets["DOT"] = fts.AssetStatusFTS{
 		Asset:              "DOT",
-		Amount:             decimal.NewFromFloat32(55.56),
+		Amount:             utils.DecimalFromString("55.56"),
 		Usdt:               decimal.Zero,
 		LastOperationType:  fts.OP_BUY_FTS,
-		LastOperationPrice: decimal.NewFromFloat32(18.45)}
+		LastOperationPrice: utils.DecimalFromString("18.45")}
 	laccount.Timestamp = time.Now().UnixMicro()
 	err = insert(laccount)
 	if err != nil {

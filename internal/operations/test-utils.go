@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/shopspring/decimal"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
 func mock_mongo_config() func() config.MongoDbConfig {
@@ -33,14 +33,14 @@ func get_operation_test() model.Operation {
 		Base:       "BTC",
 		Quote:      "USDT",
 		Side:       model.BUY,
-		Amount:     decimal.NewFromFloat32(153.78),
+		Amount:     utils.DecimalFromString("153.78"),
 		AmountSide: model.BASE_AMOUNT,
-		Price:      decimal.NewFromFloat32(133.23),
+		Price:      utils.DecimalFromString("133.23"),
 		Results: model.OpResults{
-			ActualPrice: decimal.NewFromFloat32(133.58),
-			BaseAmount:  decimal.NewFromFloat32(153.78),
-			QuoteAmount: decimal.NewFromFloat32(11224.56),
-			Spread:      decimal.NewFromFloat32(12.1),
+			ActualPrice: utils.DecimalFromString("133.58"),
+			BaseAmount:  utils.DecimalFromString("153.78"),
+			QuoteAmount: utils.DecimalFromString("11224.56"),
+			Spread:      utils.DecimalFromString("12.1"),
 		},
 		Status:    model.FILLED,
 		Timestamp: time.Now().UnixMicro()}

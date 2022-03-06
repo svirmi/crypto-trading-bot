@@ -9,6 +9,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/fts"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
 func mock_mongo_config() func() config.MongoDbConfig {
@@ -35,15 +36,15 @@ func get_laccount_init_test(strategyType model.StrategyType) model.LocalAccountI
 			BuyerCommission:  0,
 			SellerCommission: 0,
 			Balances: []model.RemoteBalance{
-				{Asset: "BTC", Amount: decimal.NewFromFloat32(11.34)},
-				{Asset: "ETH", Amount: decimal.NewFromFloat32(29.12)},
-				{Asset: "DOT", Amount: decimal.NewFromFloat32(13.67)},
-				{Asset: "USDT", Amount: decimal.NewFromFloat32(155.67)},
-				{Asset: "BUSD", Amount: decimal.NewFromFloat32(1232.45)}}},
+				{Asset: "BTC", Amount: utils.DecimalFromString("11.34")},
+				{Asset: "ETH", Amount: utils.DecimalFromString("29.12")},
+				{Asset: "DOT", Amount: utils.DecimalFromString("13.67")},
+				{Asset: "USDT", Amount: utils.DecimalFromString("155.67")},
+				{Asset: "BUSD", Amount: utils.DecimalFromString("1232.45")}}},
 		TradableAssetsPrice: map[string]model.AssetPrice{
-			"BTC": {Asset: "BTC", Price: decimal.NewFromFloat32(39560.45)},
-			"ETH": {Asset: "ETH", Price: decimal.NewFromFloat32(4500.45)},
-			"DOT": {Asset: "DOT", Price: decimal.NewFromFloat32(49.45)}},
+			"BTC": {Asset: "BTC", Price: utils.DecimalFromString("39560.45")},
+			"ETH": {Asset: "ETH", Price: utils.DecimalFromString("4500.45")},
+			"DOT": {Asset: "DOT", Price: utils.DecimalFromString("49.45")}},
 		StrategyType: strategyType}
 }
 
@@ -56,27 +57,27 @@ func get_laccount_test_FTS() fts.LocalAccountFTS {
 			Timestamp:    time.Now().UnixMicro()},
 
 		Ignored: map[string]decimal.Decimal{
-			"USDT": decimal.NewFromFloat32(155.67),
-			"BUSD": decimal.NewFromFloat32(1232.45)},
+			"USDT": utils.DecimalFromString("155.67"),
+			"BUSD": utils.DecimalFromString("1232.45")},
 
 		Assets: map[string]fts.AssetStatusFTS{
 			"BTC": {
 				Asset:              "BTC",
-				Amount:             decimal.NewFromFloat32(11.34),
+				Amount:             utils.DecimalFromString("11.34"),
 				Usdt:               decimal.Zero,
 				LastOperationType:  fts.OP_BUY_FTS,
-				LastOperationPrice: decimal.NewFromFloat32(39560.45),
+				LastOperationPrice: utils.DecimalFromString("39560.45"),
 			},
 			"ETH": {
 				Asset:              "ETH",
-				Amount:             decimal.NewFromFloat32(29.12),
+				Amount:             utils.DecimalFromString("29.12"),
 				Usdt:               decimal.Zero,
 				LastOperationType:  fts.OP_BUY_FTS,
-				LastOperationPrice: decimal.NewFromFloat32(4500.45)},
+				LastOperationPrice: utils.DecimalFromString("4500.45")},
 			"DOT": {
 				Asset:              "DOT",
-				Amount:             decimal.NewFromFloat32(13.67),
+				Amount:             utils.DecimalFromString("13.67"),
 				Usdt:               decimal.Zero,
 				LastOperationType:  fts.OP_BUY_FTS,
-				LastOperationPrice: decimal.NewFromFloat32(49.45)}}}
+				LastOperationPrice: utils.DecimalFromString("49.45")}}}
 }
