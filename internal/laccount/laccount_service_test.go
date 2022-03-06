@@ -12,8 +12,8 @@ import (
 
 func TestCreateOrRestore_Create_FTS(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_laccount_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -21,8 +21,8 @@ func TestCreateOrRestore_Create_FTS(t *testing.T) {
 		filter := bson.D{{"metadata.exeId", exeIds[0]}}
 		mongodb.GetLocalAccountsCol().DeleteOne(context.TODO(), filter, nil)
 
-		restore_laccount_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	local_account_init := get_laccount_init_test(model.FIXED_THRESHOLD_STRATEGY)
@@ -46,8 +46,8 @@ func TestCreateOrRestore_Create_FTS(t *testing.T) {
 
 func TestCreateOrRestore_Restore_FTS(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_laccount_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -55,8 +55,8 @@ func TestCreateOrRestore_Restore_FTS(t *testing.T) {
 		filter := bson.D{{"metadata.exeId", exeIds[0]}}
 		mongodb.GetLocalAccountsCol().DeleteOne(context.TODO(), filter, nil)
 
-		restore_laccount_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	expected := get_laccount_test_FTS()

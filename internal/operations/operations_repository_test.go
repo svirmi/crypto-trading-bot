@@ -14,8 +14,8 @@ import (
 
 func TestInsert(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_operation_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -23,8 +23,8 @@ func TestInsert(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetOperationsCol().DeleteOne(context.TODO(), filter, nil)
 
-		restore_operation_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	expected := get_operation_test()
@@ -48,8 +48,8 @@ func TestInsert(t *testing.T) {
 
 func TestInsertMany(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_operation_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 	var exeIds = []string{uuid.NewString()}
 
 	// Restoring status after test execution
@@ -57,8 +57,8 @@ func TestInsertMany(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetOperationsCol().DeleteMany(context.TODO(), filter, nil)
 
-		restore_operation_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	expected1 := get_operation_test()
@@ -87,13 +87,13 @@ func TestInsertMany(t *testing.T) {
 
 func TestFindByExeId(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_operation_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 
 	// Restoring status after test execution
 	defer func() {
-		restore_operation_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	gottens, err := find_by_exe_id(uuid.NewString())

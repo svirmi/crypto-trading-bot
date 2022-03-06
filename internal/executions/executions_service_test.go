@@ -15,8 +15,8 @@ import (
 
 func TestCreateOrRestore_Create(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_execution_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -24,8 +24,8 @@ func TestCreateOrRestore_Create(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetExecutionsCol().DeleteOne(context.TODO(), filter, nil)
 
-		restore_execution_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	balances := []model.RemoteBalance{
@@ -55,8 +55,8 @@ func TestCreateOrRestore_Create(t *testing.T) {
 
 func TestCreateOrRestore_Restore(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_execution_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -64,8 +64,8 @@ func TestCreateOrRestore_Restore(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetExecutionsCol().DeleteOne(context.TODO(), filter, nil)
 
-		restore_execution_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	balances := []model.RemoteBalance{
@@ -96,8 +96,8 @@ func TestCreateOrRestore_Restore(t *testing.T) {
 
 func TestGetLatestByExeId(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_execution_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 	var exeIds = []string{uuid.NewString()}
 
 	// Restoring status after test execution
@@ -105,8 +105,8 @@ func TestGetLatestByExeId(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
-		restore_execution_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	// Inserting execution v1
@@ -133,8 +133,8 @@ func TestGetLatestByExeId(t *testing.T) {
 
 func TestGetCurrentlyActive(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_execution_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 	var exeIds = []string{uuid.NewString(), uuid.NewString()}
 
 	// Restoring status after test execution
@@ -144,8 +144,8 @@ func TestGetCurrentlyActive(t *testing.T) {
 			bson.D{{"exeId", exeIds[1]}}}}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
-		restore_execution_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	// Inserting exe1 v1
@@ -177,13 +177,13 @@ func TestGetCurrentlyActive(t *testing.T) {
 
 func TestGetCurrentlyActive_None(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_execution_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 
 	// Restoring status after test execution
 	defer func() {
-		restore_execution_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	// Getting latest by exe id
@@ -198,8 +198,8 @@ func TestGetCurrentlyActive_None(t *testing.T) {
 
 func TestGetCurrentlyActive_Many(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_execution_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 	var exeIds = []string{uuid.NewString(), uuid.NewString()}
 
 	// Restoring status after test execution
@@ -209,8 +209,8 @@ func TestGetCurrentlyActive_Many(t *testing.T) {
 			bson.D{{"exeId", exeIds[1]}}}}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
-		restore_execution_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	// Inserting exe1 v1
@@ -244,8 +244,8 @@ func TestGetCurrentlyActive_Many(t *testing.T) {
 
 func TestStatuses(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_execution_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 	var exeIds = []string{uuid.NewString()}
 
 	// Restoring status after test execution
@@ -253,8 +253,8 @@ func TestStatuses(t *testing.T) {
 		filter := bson.D{{"exeId", exeIds[0]}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
-		restore_execution_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	// Inserting execution v1

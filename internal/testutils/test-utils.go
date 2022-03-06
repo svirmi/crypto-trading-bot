@@ -6,6 +6,11 @@ import (
 	"testing"
 )
 
+var (
+	MONGODB_URI_TEST      string = "mongodb://localhost:27017"
+	MONGODB_DATABASE_TEST string = "ctb-unit-tests"
+)
+
 func AssertStructEq(t *testing.T, exp, got interface{}) {
 	bexp, err := json.MarshalIndent(exp, "", "  ")
 	if err != nil {

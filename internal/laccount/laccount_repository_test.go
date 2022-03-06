@@ -15,8 +15,8 @@ import (
 
 func TestInsert_FTS(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_laccount_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -24,8 +24,8 @@ func TestInsert_FTS(t *testing.T) {
 		filter := bson.D{{"metadata.exeId", exeIds[0]}}
 		mongodb.GetLocalAccountsCol().DeleteOne(context.TODO(), filter, nil)
 
-		restore_laccount_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	laccount := get_laccount_test_FTS()
@@ -44,8 +44,8 @@ func TestInsert_FTS(t *testing.T) {
 
 func TestFindLatestByExeId_FTS(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_laccount_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 	var exeIds = []string{}
 
 	// Restoring status after test execution
@@ -53,8 +53,8 @@ func TestFindLatestByExeId_FTS(t *testing.T) {
 		filter := bson.D{{"metadata.exeId", exeIds[0]}}
 		mongodb.GetLocalAccountsCol().DeleteMany(context.TODO(), filter, nil)
 
-		restore_laccount_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	laccount := get_laccount_test_FTS()
@@ -87,13 +87,13 @@ func TestFindLatestByExeId_FTS(t *testing.T) {
 
 func TestFindLatestByExeId_FTS_None(t *testing.T) {
 	// Setting up test
-	mongoClient := mongodb.GetMongoClientTest()
-	old := mock_laccount_collection(mongoClient)
+	old := mock_mongo_config()
+	mongodb.Initialize()
 
 	// Restoring status after test execution
 	defer func() {
-		restore_laccount_collection(old)
-		mongoClient.Disconnect(context.TODO())
+		restore_mongo_config(old)
+		mongodb.Disconnect()
 	}()
 
 	gotten, err := find_latest_by_exeId(uuid.NewString())

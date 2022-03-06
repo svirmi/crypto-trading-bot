@@ -5,23 +5,24 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 )
 
-func restore_operation_collection(old func() *mongo.Collection) {
-	mongodb.GetOperationsCol = old
-}
-
-func mock_operation_collection(mongoClient *mongo.Client) func() *mongo.Collection {
-	old := mongodb.GetOperationsCol
-	mongodb.GetOperationsCol = func() *mongo.Collection {
-		return mongoClient.
-			Database(mongodb.MONGODB_DATABASE_TEST).
-			Collection(mongodb.OP_COL_NAME)
+func mock_mongo_config() func() config.MongoDbConfig {
+	old := config.GetMongoDbConfig
+	config.GetMongoDbConfig = func() config.MongoDbConfig {
+		return config.MongoDbConfig{
+			Uri:      testutils.MONGODB_URI_TEST,
+			Database: testutils.MONGODB_DATABASE_TEST,
+		}
 	}
 	return old
+}
+
+func restore_mongo_config(old func() config.MongoDbConfig) {
+	config.GetMongoDbConfig = old
 }
 
 func get_operation_test() model.Operation {

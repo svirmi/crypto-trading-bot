@@ -10,46 +10,46 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-type binance_api_config struct {
+type BinanceApiConfig struct {
 	ApiKey     string `yaml:"apiKey"`
 	SecretKey  string `yaml:"secretKey"`
 	UseTestnet bool   `yaml:"useTestnet"`
 }
 
-func (b binance_api_config) IsEmpty() bool {
-	return reflect.DeepEqual(b, binance_api_config{})
+func (b BinanceApiConfig) IsEmpty() bool {
+	return reflect.DeepEqual(b, BinanceApiConfig{})
 }
 
-type mongo_db_config struct {
+type MongoDbConfig struct {
 	Uri      string `yaml:"uri"`
 	Database string `yaml:"database"`
 }
 
-func (m mongo_db_config) IsEmpty() bool {
-	return reflect.DeepEqual(m, mongo_db_config{})
+func (m MongoDbConfig) IsEmpty() bool {
+	return reflect.DeepEqual(m, MongoDbConfig{})
 }
 
-type strategy_config struct {
+type StrategyConfig struct {
 	Type   string      `yaml:"type"`
 	Config interface{} `yaml:"config"`
 }
 
-func (s strategy_config) IsEmpty() bool {
-	return reflect.DeepEqual(s, strategy_config{})
+func (s StrategyConfig) IsEmpty() bool {
+	return reflect.DeepEqual(s, StrategyConfig{})
 }
 
-type config struct {
-	BinanceApi binance_api_config `yaml:"binanceApi"`
-	MongoDb    mongo_db_config    `yaml:"mongoDb"`
-	Strategy   strategy_config    `yaml:"strategy"`
+type Config struct {
+	BinanceApi BinanceApiConfig `yaml:"binanceApi"`
+	MongoDb    MongoDbConfig    `yaml:"mongoDb"`
+	Strategy   StrategyConfig   `yaml:"strategy"`
 }
 
-func (c config) IsEmpty() bool {
-	return reflect.DeepEqual(c, config{})
+func (c Config) IsEmpty() bool {
+	return reflect.DeepEqual(c, Config{})
 }
 
 var (
-	appConfig           config
+	appConfig           Config
 	testnet_config_file = "config-testnet.yaml"
 	mainnet_config_file = "config.yaml"
 	resource_folder     = "resources"
@@ -68,19 +68,19 @@ func ParseConfig() {
 	appConfig = config
 }
 
-func GetBinanceApiConfig() binance_api_config {
+var GetBinanceApiConfig = func() BinanceApiConfig {
 	return appConfig.BinanceApi
 }
 
-func GetMongoDbConfig() mongo_db_config {
+var GetMongoDbConfig = func() MongoDbConfig {
 	return appConfig.MongoDb
 }
 
-func GetStrategyConfig() strategy_config {
+var GetStrategyConfig = func() StrategyConfig {
 	return appConfig.Strategy
 }
 
-func parse_config(testnet bool) (config config, err error) {
+func parse_config(testnet bool) (config Config, err error) {
 	configPath := get_config_filepath(testnet)
 	f, err := os.Open(configPath)
 	if err != nil {
