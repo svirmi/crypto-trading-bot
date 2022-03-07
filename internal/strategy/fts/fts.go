@@ -190,6 +190,12 @@ func build_operation_init(asset string, amount, price decimal.Decimal) operation
 }
 
 func build_buy_op(laccount LocalAccountFTS, operationInit operation_init) model.Operation {
+	if !operationInit.amount.GreaterThan(decimal.Zero) {
+		log.Printf("cannot buy %s USDT worth of %s, returning NOOP",
+			operationInit.amount.String(), operationInit.asset)
+		return model.Operation{}
+	}
+
 	return model.Operation{
 		OpId:       uuid.NewString(),
 		ExeId:      laccount.ExeId,
@@ -204,6 +210,12 @@ func build_buy_op(laccount LocalAccountFTS, operationInit operation_init) model.
 }
 
 func build_sell_op(laccount LocalAccountFTS, operationInit operation_init) model.Operation {
+	if !operationInit.amount.GreaterThan(decimal.Zero) {
+		log.Printf("cannot sell %s %s, returning NOOP",
+			operationInit.amount.String(), operationInit.asset)
+		return model.Operation{}
+	}
+
 	return model.Operation{
 		OpId:       uuid.NewString(),
 		ExeId:      laccount.ExeId,
@@ -218,12 +230,12 @@ func build_sell_op(laccount LocalAccountFTS, operationInit operation_init) model
 }
 
 func log_noop(asset string, lastOpType OperationTypeFts, lastOpPrice, currentPrice decimal.Decimal) {
-	log.Printf("FTS NOOP: asset=%s, lastOpType=%s, lastOpPrice=%s, currentPrice=%s",
+	log.Printf("FTS NOOP: asset=%s, lastOpType=%s, lastPrice=%s, currPrice=%s",
 		asset, lastOpType, lastOpPrice.String(), currentPrice.String())
 }
 
 func log_trading_intent(cond, asset string, last, current decimal.Decimal) {
-	message := fmt.Sprintf("FTS %s condition verified: asset=%s, last=%v, current=%v",
+	message := fmt.Sprintf("FTS %s condition verified: asset=%s, lastPrice=%v, currPrice=%v",
 		cond, asset, last, current)
 	log.Println(message)
 }
