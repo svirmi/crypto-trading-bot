@@ -15,6 +15,10 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 )
 
+// TODO: min / max LOT_SIZE
+// TODO: check on input percentages
+// TODO: laccount update
+
 func main() {
 	defer shutdown()
 	sigc := interrupt_handler()

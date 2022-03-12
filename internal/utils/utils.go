@@ -24,5 +24,5 @@ func DecimalFromString(str string) decimal.Decimal {
 }
 
 func SignChangeDecimal(d decimal.Decimal) decimal.Decimal {
-	return decimal.NewFromInt(-1).Mul(d)
+	return decimal.NewFromInt(-1).Mul(d).Round(8)
 }

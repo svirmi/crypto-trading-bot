@@ -105,12 +105,12 @@ func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	baseAmount := op.Results.BaseAmount
 	quoteAmount := op.Results.QuoteAmount
 	if op.Side == model.BUY {
-		assetStatus.Amount = assetStatus.Amount.Add(baseAmount)
-		assetStatus.Usdt = assetStatus.Usdt.Sub(quoteAmount)
+		assetStatus.Amount = assetStatus.Amount.Add(baseAmount).Round(8)
+		assetStatus.Usdt = assetStatus.Usdt.Sub(quoteAmount).Round(8)
 		assetStatus.LastOperationType = OP_BUY_FTS
 	} else if op.Side == model.SELL {
-		assetStatus.Amount = assetStatus.Amount.Sub(baseAmount)
-		assetStatus.Usdt = assetStatus.Usdt.Add(quoteAmount)
+		assetStatus.Amount = assetStatus.Amount.Sub(baseAmount).Round(8)
+		assetStatus.Usdt = assetStatus.Usdt.Add(quoteAmount).Round(8)
 		assetStatus.LastOperationType = OP_SELL_FTS
 	} else {
 		err := fmt.Errorf("unsupported operation type %s", op.Type)
@@ -242,9 +242,9 @@ func log_trading_intent(cond, asset string, last, current decimal.Decimal) {
 
 func get_threshold_rate(price decimal.Decimal, percentage decimal.Decimal) decimal.Decimal {
 	abs := percentage.Abs()
-	sign := percentage.Div(abs)
-	delta := price.Div(decimal.NewFromInt(100)).Mul(abs)
-	return price.Add(delta.Mul(sign))
+	sign := percentage.Div(abs).Round(8)
+	delta := price.Div(decimal.NewFromInt(100)).Mul(abs).Round(8)
+	return price.Add(delta.Mul(sign)).Round(8)
 }
 
 func init_asset_status_fts(rbalance model.RemoteBalance, price model.AssetPrice) (AssetStatusFTS, error) {

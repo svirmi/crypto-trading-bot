@@ -416,10 +416,10 @@ func get_operation_test(amt decimal.Decimal, amtSide model.AmountSide, base, quo
 	var baseAmt, quoteAmt decimal.Decimal
 	if amtSide == model.BASE_AMOUNT {
 		baseAmt = amt
-		quoteAmt = amt.Mul(price)
+		quoteAmt = amt.Mul(price).Round(8)
 	} else {
 		quoteAmt = amt
-		baseAmt = quoteAmt.Div(price)
+		baseAmt = quoteAmt.Div(price).Round(8)
 	}
 
 	return model.Operation{

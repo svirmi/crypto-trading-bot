@@ -49,7 +49,7 @@ func read_mini_markets_stats_ch() {
 	for miniMarketsStats := range scontext.mms {
 		ok := sentinel.SetToIf(false, true)
 		if !ok {
-			log.Printf("skipping mini markets stats update...")
+			skip_mini_markets_stats(miniMarketsStats)
 			continue
 		}
 
@@ -60,7 +60,11 @@ func read_mini_markets_stats_ch() {
 	}
 }
 
-func handle_mini_markets_stats(miniMarketsStats []model.MiniMarketStats) {
+var skip_mini_markets_stats = func([]model.MiniMarketStats) {
+	log.Printf("skipping mini markets stats update...")
+}
+
+var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
 	trading_context_init()
 
 	// If the execution is PAUSED, no action should be applied
@@ -144,8 +148,8 @@ func compute_op_results(old, new model.RemoteAccount, op model.Operation) model.
 	}
 
 	// Setting operation results
-	baseDiff := (newBaseBalance.Sub(oldBaseBalance)).Abs()
-	quoteDiff := (newQuoteBalance.Sub(oldQuoteBalance)).Abs()
+	baseDiff := (newBaseBalance.Sub(oldBaseBalance)).Abs().Round(8)
+	quoteDiff := (newQuoteBalance.Sub(oldQuoteBalance)).Abs().Round(8)
 	if op.AmountSide == model.BASE_AMOUNT && baseDiff.Equals(op.Amount) {
 		op.Status = model.FILLED
 	} else if op.AmountSide == model.QUOTE_AMOUNT && quoteDiff.Equals(op.Amount) {
@@ -155,12 +159,12 @@ func compute_op_results(old, new model.RemoteAccount, op model.Operation) model.
 	}
 
 	// Building results
-	actualPrice := quoteDiff.Div(baseDiff)
+	actualPrice := quoteDiff.Div(baseDiff).Round(8)
 	results := model.OpResults{
 		ActualPrice: actualPrice,
 		BaseAmount:  baseDiff,
 		QuoteAmount: quoteDiff,
-		Spread:      ((actualPrice.Sub(op.Price)).Div(op.Price)).Mul(decimal.NewFromInt(100))}
+		Spread:      ((actualPrice.Sub(op.Price)).Div(op.Price)).Mul(decimal.NewFromInt(100)).Round(8)}
 	op.Results = results
 	log_operation_results(op, baseDiff, quoteDiff)
 
