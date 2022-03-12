@@ -4,7 +4,6 @@ import (
 	"log"
 
 	binanceapi "github.com/adshao/go-binance/v2"
-	"github.com/shopspring/decimal"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
@@ -35,7 +34,7 @@ func MiniMarketsStatsServe(assets []string) error {
 	}
 
 	callback := func(rMiniMarketsStats binanceapi.WsAllMiniMarketsStatEvent) {
-		miniMarketsStats := make([]model.MiniMarketStats, 0, len(rMiniMarketsStats))
+		miniMarketsStats := make([]model.MiniMarketStats, 0, len(assets))
 		for _, rMiniMarketStats := range rMiniMarketsStats {
 			// Filter out symbols that are not in local wallet
 			if !symbolsMap[rMiniMarketStats.Symbol] {
@@ -86,30 +85,12 @@ func MiniMarketsStatsStop() {
 /********************** Mapping to local representation **********************/
 
 func to_mini_market_stats(rMiniMarketStat binanceapi.WsMiniMarketsStatEvent) (model.MiniMarketStats, error) {
-	lastPrice, err := decimal.NewFromString(rMiniMarketStat.LastPrice)
-	if err != nil {
-		return model.MiniMarketStats{}, err
-	}
-	openPrice, err := decimal.NewFromString(rMiniMarketStat.OpenPrice)
-	if err != nil {
-		return model.MiniMarketStats{}, err
-	}
-	lowPrice, err := decimal.NewFromString(rMiniMarketStat.LowPrice)
-	if err != nil {
-		return model.MiniMarketStats{}, err
-	}
-	highPrice, err := decimal.NewFromString(rMiniMarketStat.HighPrice)
-	if err != nil {
-		return model.MiniMarketStats{}, err
-	}
-	baseVolume, err := decimal.NewFromString(rMiniMarketStat.BaseVolume)
-	if err != nil {
-		return model.MiniMarketStats{}, err
-	}
-	quoteVolume, err := decimal.NewFromString(rMiniMarketStat.QuoteVolume)
-	if err != nil {
-		return model.MiniMarketStats{}, err
-	}
+	lastPrice := utils.DecimalFromString(rMiniMarketStat.LastPrice)
+	openPrice := utils.DecimalFromString(rMiniMarketStat.OpenPrice)
+	lowPrice := utils.DecimalFromString(rMiniMarketStat.LowPrice)
+	highPrice := utils.DecimalFromString(rMiniMarketStat.HighPrice)
+	baseVolume := utils.DecimalFromString(rMiniMarketStat.BaseVolume)
+	quoteVolume := utils.DecimalFromString(rMiniMarketStat.QuoteVolume)
 
 	return model.MiniMarketStats{
 		Event:       rMiniMarketStat.Event,

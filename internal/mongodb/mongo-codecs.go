@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/shopspring/decimal"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
@@ -40,10 +41,7 @@ func (de decimal_codec) DecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueR
 	if err != nil {
 		return err
 	}
-	decimal, err := decimal.NewFromString(str)
-	if err != nil {
-		return err
-	}
+	decimal := utils.DecimalFromString(str)
 	val.Set(reflect.ValueOf(decimal))
 	return nil
 }

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	binanceapi "github.com/adshao/go-binance/v2"
-	"github.com/shopspring/decimal"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
@@ -34,7 +33,7 @@ func GetAssetsValue(bases []string) (map[string]model.AssetPrice, error) {
 	pricesService := httpClient.NewListPricesService()
 	for _, base := range bases {
 		symbol := utils.GetSymbolFromAsset(base)
-		rprices, err := pricesService.Symbol(symbol).Do(context.TODO())
+		rprices, err := binance_get_price(pricesService.Symbol(symbol))
 		if err != nil {
 			return nil, err
 		}
@@ -51,10 +50,9 @@ func GetAssetsValue(bases []string) (map[string]model.AssetPrice, error) {
 
 // GetAccount returns account inforamtion
 func GetAccout() (model.RemoteAccount, error) {
-	account, err := httpClient.NewGetAccountService().Do(context.TODO())
+	account, err := binance_get_account(httpClient.NewGetAccountService())
 	if err != nil {
-		log.Printf("%s\n", err.Error())
-		return model.RemoteAccount{}, fmt.Errorf("failed to retrieve account information")
+		return model.RemoteAccount{}, err
 	}
 	return to_CCTB_remote_account(account)
 }
@@ -103,10 +101,9 @@ func send_market_order(op model.Operation) error {
 		ordersvc.QuoteOrderQty(op.Amount.String())
 	}
 
-	order, err := ordersvc.Do(context.TODO())
+	order, err := binance_create_order(ordersvc)
 	if err != nil {
-		log.Printf("%s\n", err.Error())
-		return fmt.Errorf("failed to place market order %s%s", op.Base, op.Quote)
+		return err
 	}
 	log.Printf("symbol: %s, side: %s, status: %s\n", order.Symbol, order.Side, order.Status)
 	return nil
@@ -115,10 +112,7 @@ func send_market_order(op model.Operation) error {
 /********************** Mapping to local representation **********************/
 
 func to_CCTB_symbol_price(rprice *binanceapi.SymbolPrice) (model.AssetPrice, error) {
-	amount, err := decimal.NewFromString(rprice.Price)
-	if err != nil {
-		return model.AssetPrice{}, err
-	}
+	amount := utils.DecimalFromString(rprice.Price)
 
 	return model.AssetPrice{
 		Asset: utils.GetAssetFromSymbol(rprice.Symbol),
@@ -128,11 +122,7 @@ func to_CCTB_symbol_price(rprice *binanceapi.SymbolPrice) (model.AssetPrice, err
 func to_CCTB_remote_account(account *binanceapi.Account) (model.RemoteAccount, error) {
 	balances := make([]model.RemoteBalance, 0, len(account.Balances))
 	for _, rbalance := range account.Balances {
-		amount, err := decimal.NewFromString(rbalance.Free)
-		if err != nil {
-			return model.RemoteAccount{}, err
-		}
-
+		amount := utils.DecimalFromString(rbalance.Free)
 		balances = append(balances, model.RemoteBalance{
 			Asset:  rbalance.Asset,
 			Amount: amount})
@@ -144,4 +134,18 @@ func to_CCTB_remote_account(account *binanceapi.Account) (model.RemoteAccount, e
 		BuyerCommission:  account.BuyerCommission,
 		SellerCommission: account.SellerCommission,
 		Balances:         balances}, nil
+}
+
+/********************** Binance calls **********************/
+
+var binance_get_price = func(b *binanceapi.ListPricesService) ([]*binanceapi.SymbolPrice, error) {
+	return b.Do(context.TODO())
+}
+
+var binance_get_account = func(b *binanceapi.GetAccountService) (*binanceapi.Account, error) {
+	return b.Do(context.TODO())
+}
+
+var binance_create_order = func(b *binanceapi.CreateOrderService) (*binanceapi.CreateOrderResponse, error) {
+	return b.Do(context.TODO())
 }
