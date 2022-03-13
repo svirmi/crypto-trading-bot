@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
@@ -48,6 +49,8 @@ type operation_init struct {
 	targetPrice decimal.Decimal
 }
 
+var limits map[string]model.SpotMarketLimits
+
 func (a LocalAccountFTS) Initialize(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
 	var ignored = make(map[string]decimal.Decimal)
 	var assets = make(map[string]AssetStatusFTS)
@@ -58,6 +61,11 @@ func (a LocalAccountFTS) Initialize(creationRequest model.LocalAccountInit) (mod
 			ignored[rbalance.Asset] = rbalance.Amount
 			continue
 		}
+		symbol := utils.GetSymbolFromAsset(rbalance.Asset)
+		if !binance.CanSpotTrade(symbol) {
+			ignored[rbalance.Asset] = rbalance.Amount
+			continue
+		}
 		assetStatus, err := init_asset_status_fts(rbalance, price)
 		if err != nil {
 			return nil, err
@@ -65,15 +73,16 @@ func (a LocalAccountFTS) Initialize(creationRequest model.LocalAccountInit) (mod
 		assets[rbalance.Asset] = assetStatus
 	}
 
-	a = LocalAccountFTS{
+	limits = creationRequest.SpotMarketLimits
+
+	return LocalAccountFTS{
 		LocalAccountMetadata: model.LocalAccountMetadata{
 			AccountId:    uuid.NewString(),
 			ExeId:        creationRequest.ExeId,
 			StrategyType: model.FIXED_THRESHOLD_STRATEGY,
 			Timestamp:    time.Now().UnixMicro()},
 		Ignored: ignored,
-		Assets:  assets}
-	return a, nil
+		Assets:  assets}, nil
 }
 
 func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccount, error) {
@@ -191,9 +200,15 @@ func build_operation_init(asset string, amount, price decimal.Decimal) operation
 }
 
 func build_buy_op(laccount LocalAccountFTS, operationInit operation_init) model.Operation {
-	if !operationInit.amount.GreaterThan(decimal.Zero) {
-		log.Printf("cannot buy %s USDT worth of %s, returning NOOP",
-			operationInit.amount.String(), operationInit.asset)
+	symbol := utils.GetSymbolFromAsset(operationInit.asset)
+	limit, found := limits[symbol]
+	if !found {
+		log.Fatalf("failed to get market spot sizes for symbol %s", symbol)
+	}
+
+	if operationInit.amount.LessThan(limit.MinQuote) {
+		log.Printf("market order exceeds min notional, symbol %s, amount %s, amountSide = %s",
+			symbol, operationInit.amount.String(), model.QUOTE_AMOUNT)
 		return model.Operation{}
 	}
 
@@ -211,9 +226,13 @@ func build_buy_op(laccount LocalAccountFTS, operationInit operation_init) model.
 }
 
 func build_sell_op(laccount LocalAccountFTS, operationInit operation_init) model.Operation {
-	if !operationInit.amount.GreaterThan(decimal.Zero) {
-		log.Printf("cannot sell %s %s, returning NOOP",
-			operationInit.amount.String(), operationInit.asset)
+	symbol := utils.GetSymbolFromAsset(operationInit.asset)
+	limit, found := limits[symbol]
+	if !found {
+		log.Fatalf("failed to get market spot sizes for symbol %s", symbol)
+	}
+
+	if operationInit.amount.LessThan(limit.MinBase) {
 		return model.Operation{}
 	}
 

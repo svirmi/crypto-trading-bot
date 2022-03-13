@@ -93,7 +93,7 @@ var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
 		}
 
 		// Sending market order
-		operation, err = binance.SendMarketOrder(operation)
+		operation, err = binance.SendSpotMarketOrder(operation)
 		if err != nil {
 			log.Printf("%s", err.Error())
 			continue

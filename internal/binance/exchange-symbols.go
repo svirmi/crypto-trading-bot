@@ -1,0 +1,115 @@
+package binance
+
+import (
+	"fmt"
+
+	binanceapi "github.com/adshao/go-binance/v2"
+	"github.com/shopspring/decimal"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
+)
+
+const (
+	_MIN_NUM float64 = 0
+	_MAX_NUM float64 = 1 << 15
+)
+
+var CanSpotTrade = func(symbol string) bool {
+	status, found := symbols[symbol]
+
+	if !found {
+		return false
+	}
+	return status.Status == string(binanceapi.SymbolStatusTypeTrading) && status.IsSpotTradingAllowed
+}
+
+var GetSpotMarketLimits = func(symbol string) (model.SpotMarketLimits, error) {
+	iLotSize, err := get_spot_limit_sizes(symbol)
+	iMarketLotSize, err := get_spot_market_sizes(symbol)
+	iNotional, err := get_min_notional(symbol)
+	if err != nil {
+		return model.SpotMarketLimits{}, err
+	}
+
+	minBase := decimal.Max(iLotSize.MinBase, iMarketLotSize.MinBase)
+	maxBase := decimal.Min(iLotSize.MaxBase, iMarketLotSize.MaxBase)
+	stepBase := decimal.Max(iLotSize.StepBase, iMarketLotSize.StepBase)
+
+	return model.SpotMarketLimits{
+		MinBase:  minBase,
+		MaxBase:  maxBase,
+		StepBase: stepBase,
+		MinQuote: iNotional}, nil
+}
+
+func get_min_notional(symbol string) (decimal.Decimal, error) {
+	status, found := symbols[symbol]
+
+	if !found {
+		err := fmt.Errorf("exchange symbol %s not found", symbol)
+		return decimal.Zero, err
+	}
+
+	iNotional := extract_filter(status.Filters, "MIN_NOTIONAL")
+	return parse_number(iNotional["minNotional"], decimal.NewFromFloat(_MIN_NUM)), nil
+}
+
+func get_spot_market_sizes(symbol string) (model.SpotMarketLimits, error) {
+	status, found := symbols[symbol]
+
+	if !found {
+		err := fmt.Errorf("exchange symbol %s not found", symbol)
+		return model.SpotMarketLimits{}, err
+	}
+
+	iMarketLotSize := extract_filter(status.Filters, "MARKET_LOT_SIZE")
+	if iMarketLotSize == nil {
+		err := fmt.Errorf("MARKET_LOT_SIZE not found on exchange symbol %s", symbol)
+		return model.SpotMarketLimits{}, err
+	}
+
+	return model.SpotMarketLimits{
+		MinBase:  parse_number(iMarketLotSize["minQty"], utils.DecimalFromFloat64(_MIN_NUM)),
+		MaxBase:  parse_number(iMarketLotSize["maxQty"], utils.DecimalFromFloat64(_MAX_NUM)),
+		StepBase: parse_number(iMarketLotSize["stepSize"], utils.DecimalFromFloat64(_MIN_NUM))}, nil
+}
+
+func get_spot_limit_sizes(symbol string) (model.SpotMarketLimits, error) {
+	status, found := symbols[symbol]
+
+	if !found {
+		err := fmt.Errorf("exchange symbol %s not found", symbol)
+		return model.SpotMarketLimits{}, err
+	}
+
+	iLotSize := extract_filter(status.Filters, "LOT_SIZE")
+	if iLotSize == nil {
+		err := fmt.Errorf("LOT_SIZE not found on exchange symbol %s", symbol)
+		return model.SpotMarketLimits{}, err
+	}
+
+	return model.SpotMarketLimits{
+		MinBase:  parse_number(iLotSize["minQty"], utils.DecimalFromFloat64(_MIN_NUM)),
+		MaxBase:  parse_number(iLotSize["maxQty"], utils.DecimalFromFloat64(_MAX_NUM)),
+		StepBase: parse_number(iLotSize["stepSize"], utils.DecimalFromFloat64(_MIN_NUM))}, nil
+}
+
+func extract_filter(filters []map[string]interface{}, filterType string) map[string]interface{} {
+	for _, filter := range filters {
+		if filterType == fmt.Sprintf("%v", filter["filterType"]) {
+			return filter
+		}
+	}
+	return nil
+}
+
+func parse_number(num interface{}, def decimal.Decimal) decimal.Decimal {
+	if num == nil {
+		return def
+	}
+	str := fmt.Sprintf("%s", num)
+	if str == "" {
+		return def
+	}
+	return utils.DecimalFromString(str)
+}

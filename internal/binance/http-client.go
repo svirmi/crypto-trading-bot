@@ -57,7 +57,7 @@ func GetAccout() (model.RemoteAccount, error) {
 	return to_CCTB_remote_account(account)
 }
 
-func SendMarketOrder(op model.Operation) (model.Operation, error) {
+func SendSpotMarketOrder(op model.Operation) (model.Operation, error) {
 	//Check if symbol or its inverse exists
 	_, dfound := symbols[op.Base+op.Quote]
 	_, ifound := symbols[op.Quote+op.Base]
@@ -67,14 +67,25 @@ func SendMarketOrder(op model.Operation) (model.Operation, error) {
 		return model.Operation{}, err
 	}
 
+	// Check spot market order limits
+	err := check_spot_market_order(op)
+	if err != nil {
+		return op, err
+	}
+
 	// If direct symbol does not exist, invert operation
 	if ifound {
 		op = op.Flip()
 	}
 
+	// Checking if symbol can be traded
+	if !CanSpotTrade(op.Base + op.Quote) {
+		return op, fmt.Errorf("%s trading is disabled", op.Base+op.Quote)
+	}
+
 	// Execute operation
 	op.Timestamp = time.Now().UnixMicro()
-	err := send_market_order(op)
+	err = send_spot_market_order(op)
 	if err != nil {
 		op.Status = model.FAILED
 		return op, err
@@ -82,7 +93,28 @@ func SendMarketOrder(op model.Operation) (model.Operation, error) {
 	return op, nil
 }
 
-func send_market_order(op model.Operation) error {
+func check_spot_market_order(op model.Operation) error {
+	limit, err := GetSpotMarketLimits(op.Base + op.Quote)
+	if err != nil {
+		return err
+	}
+
+	if op.AmountSide == model.QUOTE_AMOUNT {
+		if op.Amount.LessThan(limit.MinQuote) {
+			return fmt.Errorf("below MIN_NOTIONAL")
+		}
+	} else {
+		if op.Amount.LessThan(limit.MinBase) {
+			return fmt.Errorf("below min LOT_SIZE")
+		}
+		if op.Amount.GreaterThan(limit.MaxBase) {
+			return fmt.Errorf("above max LOT_SIZE")
+		}
+	}
+	return nil
+}
+
+func send_spot_market_order(op model.Operation) error {
 	ordersvc := httpClient.NewCreateOrderService().
 		Symbol(op.Base + op.Quote).
 		Type(binanceapi.OrderTypeMarket)

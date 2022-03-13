@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
@@ -15,6 +16,15 @@ import (
 /********************** Testing Initialize() *************************/
 
 func TestInitialize(t *testing.T) {
+	old := binance.CanSpotTrade
+	defer func() {
+		binance.CanSpotTrade = old
+	}()
+
+	binance.CanSpotTrade = func(symbol string) bool {
+		return true
+	}
+
 	gotten, err := LocalAccountFTS{}.Initialize(get_laccount_init_test())
 	if err != nil {
 		t.Fatalf("err: expected = nil, gotten = %v", err)
@@ -276,6 +286,13 @@ func TestGetOperation_Sell(t *testing.T) {
 	old := mock_strategy_config("13.45", "13.45", "20", "20")
 	defer restore_strategy_config(old)
 
+	limits = make(map[string]model.SpotMarketLimits)
+	limits["BTCUSDT"] = model.SpotMarketLimits{
+		MinBase:  utils.DecimalFromString("0.00000001"),
+		MaxBase:  utils.DecimalFromString("99999999"),
+		StepBase: utils.DecimalFromString("0.00000001"),
+		MinQuote: utils.DecimalFromString("0.1")}
+
 	laccount := get_laccount_last_buy_test()
 	amt := utils.DecimalFromString("11.34")
 	price := utils.DecimalFromString("44881.330525")
@@ -297,9 +314,40 @@ func TestGetOperation_Sell(t *testing.T) {
 	testutils.AssertStructEq(t, expected, gotten)
 }
 
+func TestGetOperation_Sell_MinBaseQtyExceed(t *testing.T) {
+	old := mock_strategy_config("13.45", "13.45", "20", "20")
+	defer restore_strategy_config(old)
+
+	limits = make(map[string]model.SpotMarketLimits)
+	limits["BTCUSDT"] = model.SpotMarketLimits{
+		MinBase:  utils.DecimalFromString("12.00"),
+		MaxBase:  utils.DecimalFromString("99999999"),
+		StepBase: utils.DecimalFromString("0.00000001"),
+		MinQuote: utils.DecimalFromString("0.1")}
+
+	laccount := get_laccount_last_buy_test()
+	price := utils.DecimalFromString("44881.330525")
+	mms := get_mms("BTC", price)
+
+	gotten, err := laccount.GetOperation(mms)
+	if err != nil {
+		t.Errorf("err: expected == nil, gotten = %v", err)
+	}
+	if !gotten.IsEmpty() {
+		t.Errorf("expected empty, gotten = %v", gotten)
+	}
+}
+
 func TestGetOperation_StopLoss(t *testing.T) {
 	old := mock_strategy_config("13.45", "13.45", "20", "20")
 	defer restore_strategy_config(old)
+
+	limits = make(map[string]model.SpotMarketLimits)
+	limits["BTCUSDT"] = model.SpotMarketLimits{
+		MinBase:  utils.DecimalFromString("0.00000001"),
+		MaxBase:  utils.DecimalFromString("99999999"),
+		StepBase: utils.DecimalFromString("0.00000001"),
+		MinQuote: utils.DecimalFromString("0.1")}
 
 	laccount := get_laccount_last_buy_test()
 	amt := utils.DecimalFromString("11.34")
@@ -326,6 +374,13 @@ func TestGetOperation_Buy(t *testing.T) {
 	old := mock_strategy_config("13.45", "13.45", "20", "20")
 	defer restore_strategy_config(old)
 
+	limits = make(map[string]model.SpotMarketLimits)
+	limits["DOTUSDT"] = model.SpotMarketLimits{
+		MinBase:  utils.DecimalFromString("0.00000001"),
+		MaxBase:  utils.DecimalFromString("99999999"),
+		StepBase: utils.DecimalFromString("0.00000001"),
+		MinQuote: utils.DecimalFromString("0.1")}
+
 	laccount := get_laccount_last_sell_test()
 	amt := utils.DecimalFromString("999.99")
 	price := utils.DecimalFromString("38.798975")
@@ -347,9 +402,40 @@ func TestGetOperation_Buy(t *testing.T) {
 	testutils.AssertStructEq(t, expected, gotten)
 }
 
+func TestGetOperation_Buy_MinQuoteQtyExceeded(t *testing.T) {
+	old := mock_strategy_config("13.45", "13.45", "20", "20")
+	defer restore_strategy_config(old)
+
+	limits = make(map[string]model.SpotMarketLimits)
+	limits["DOTUSDT"] = model.SpotMarketLimits{
+		MinBase:  utils.DecimalFromString("0.00000001"),
+		MaxBase:  utils.DecimalFromString("99999999"),
+		StepBase: utils.DecimalFromString("0.00000001"),
+		MinQuote: utils.DecimalFromString("1000")}
+
+	laccount := get_laccount_last_sell_test()
+	price := utils.DecimalFromString("38.798975")
+	mms := get_mms("DOT", price)
+
+	gotten, err := laccount.GetOperation(mms)
+	if err != nil {
+		t.Errorf("err: expected == nil, gotten = %v", err)
+	}
+	if !gotten.IsEmpty() {
+		t.Errorf("expected empty, gotten = %v", gotten)
+	}
+}
+
 func TestGetOperation_MissProfit(t *testing.T) {
 	old := mock_strategy_config("13.45", "13.45", "20", "20")
 	defer restore_strategy_config(old)
+
+	limits = make(map[string]model.SpotMarketLimits)
+	limits["DOTUSDT"] = model.SpotMarketLimits{
+		MinBase:  utils.DecimalFromString("0.00000001"),
+		MaxBase:  utils.DecimalFromString("99999999"),
+		StepBase: utils.DecimalFromString("0.00000001"),
+		MinQuote: utils.DecimalFromString("0.1")}
 
 	laccount := get_laccount_last_sell_test()
 	amt := utils.DecimalFromString("999.99")

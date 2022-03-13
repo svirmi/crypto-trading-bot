@@ -22,9 +22,9 @@ func TestReadingMarketStatsCh(t *testing.T) {
 	}()
 
 	// Mocking dependencies
-	hanlded := 0
+	handled := 0
 	handle_mini_markets_stats = func([]model.MiniMarketStats) {
-		hanlded++
+		handled++
 		time.Sleep(time.Millisecond * 500)
 	}
 	skipped := 0
@@ -50,10 +50,10 @@ func TestReadingMarketStatsCh(t *testing.T) {
 	read_mini_markets_stats_ch()
 
 	<-end
-	log.Printf("Mini markets stats hanlded: %d", hanlded)
+	log.Printf("Mini markets stats handled: %d", handled)
 	log.Printf("Mini markets stats skipped: %d", skipped)
-	if hanlded+skipped != 6 {
-		t.Errorf("expected hanlded+skipped=12, gotten handled+skipped=%d", skipped+hanlded)
+	if handled+skipped != 6 {
+		t.Errorf("expected handled+skipped=12, gotten handled+skipped=%d", skipped+handled)
 	}
 }
 

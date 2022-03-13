@@ -13,6 +13,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
 // TODO: min / max LOT_SIZE
@@ -40,13 +41,24 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
+	spotMarketLimits := make(map[string]model.SpotMarketLimits)
+	for _, asset := range tradableAssets {
+		symbol := utils.GetSymbolFromAsset(asset)
+		spotLimit, err := binance.GetSpotMarketLimits(symbol)
+		if err != nil {
+			log.Fatalf("%v", err.Error())
+		}
+		spotMarketLimits[symbol] = spotLimit
+	}
+
 	strategyConfig := config.GetStrategyConfig()
 	strategyType := model.StrategyType(strategyConfig.Type)
 	laCreationRequest := model.LocalAccountInit{
 		ExeId:               exe.ExeId,
 		RAccount:            raccount,
 		StrategyType:        strategyType,
-		TradableAssetsPrice: prices}
+		TradableAssetsPrice: prices,
+		SpotMarketLimits:    spotMarketLimits}
 	laccount, err := laccount.CreateOrRestore(laCreationRequest)
 	if err != nil {
 		log.Fatalf(err.Error())

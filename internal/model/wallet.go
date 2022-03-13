@@ -90,8 +90,20 @@ type LocalAccountInit struct {
 	RAccount            RemoteAccount
 	TradableAssetsPrice map[string]AssetPrice
 	StrategyType        StrategyType
+	SpotMarketLimits    map[string]SpotMarketLimits
 }
 
 func (acr LocalAccountInit) IsEmpty() bool {
 	return reflect.DeepEqual(acr, LocalAccountInit{})
+}
+
+type SpotMarketLimits struct {
+	MinBase  decimal.Decimal
+	MaxBase  decimal.Decimal
+	StepBase decimal.Decimal
+	MinQuote decimal.Decimal
+}
+
+func (s SpotMarketLimits) IsEmpty() bool {
+	return reflect.DeepEqual(s, SpotMarketLimits{})
 }

@@ -16,11 +16,19 @@ func GetAssetFromSymbol(symbol string) string {
 }
 
 func DecimalFromString(str string) decimal.Decimal {
+	if str == "" {
+		return decimal.Zero
+	}
+
 	decimal, err := decimal.NewFromString(str)
 	if err != nil {
 		log.Fatalf("failed to convert string \"%s\" to decimal", str)
 	}
 	return decimal
+}
+
+func DecimalFromFloat64(num float64) decimal.Decimal {
+	return decimal.NewFromFloat(num)
 }
 
 func SignChangeDecimal(d decimal.Decimal) decimal.Decimal {

@@ -90,7 +90,7 @@ func TestSendMarketOrder_NoSuchSymbol(t *testing.T) {
 	price := utils.DecimalFromString("56.12")
 	op := get_operation_test(amt, model.BASE_AMOUNT, "TRX", "USDT", model.BUY, price)
 
-	gotten, err := SendMarketOrder(op)
+	gotten, err := SendSpotMarketOrder(op)
 	if !gotten.IsEmpty() {
 		t.Errorf("op: expected empty, gotten = %v", op)
 	}
@@ -102,9 +102,11 @@ func TestSendMarketOrder_NoSuchSymbol(t *testing.T) {
 func TestSendMarketOrder_Direct_Buy_BaseAmt(t *testing.T) {
 	old_symbols := symbols
 	old_create_order := binance_create_order
+	old_get_spot_limits := GetSpotMarketLimits
 	defer func() {
 		symbols = old_symbols
 		binance_create_order = old_create_order
+		GetSpotMarketLimits = old_get_spot_limits
 	}()
 
 	symbols = get_symbols()
@@ -113,26 +115,116 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt(t *testing.T) {
 			Symbol: "BTCUSDT",
 			Side:   binanceapi.SideTypeBuy,
 			Status: binanceapi.OrderStatusTypeFilled}, nil
+	}
+	GetSpotMarketLimits = func(symbol string) (model.SpotMarketLimits, error) {
+		return model.SpotMarketLimits{
+			MinBase:  utils.DecimalFromString("0.00000001"),
+			MaxBase:  utils.DecimalFromString("99999999"),
+			StepBase: utils.DecimalFromString("0.00000001"),
+			MinQuote: utils.DecimalFromString("0.00000001")}, nil
 	}
 
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("3746.34")
 	expected := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
-	gotten, err := SendMarketOrder(expected)
+	gotten, err := SendSpotMarketOrder(expected)
 	expected.Timestamp = gotten.Timestamp
 
 	if err != nil {
 		t.Errorf("err: expected = nil, gotten = %v", err)
 	}
 	testutils.AssertStructEq(t, expected, gotten)
+}
+
+func TestSendMarketOrder_Direct_Buy_BaseAmt_BelowMinBase(t *testing.T) {
+	old_symbols := symbols
+	old_get_spot_limits := GetSpotMarketLimits
+	defer func() {
+		symbols = old_symbols
+		GetSpotMarketLimits = old_get_spot_limits
+	}()
+
+	symbols = get_symbols()
+	GetSpotMarketLimits = func(symbol string) (model.SpotMarketLimits, error) {
+		return model.SpotMarketLimits{
+			MinBase:  utils.DecimalFromString("100.1"),
+			MaxBase:  utils.DecimalFromString("99999999"),
+			StepBase: utils.DecimalFromString("0.00000001"),
+			MinQuote: utils.DecimalFromString("0.00000001")}, nil
+	}
+
+	amt := utils.DecimalFromString("100")
+	price := utils.DecimalFromString("3746.34")
+	expected := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
+	_, err := SendSpotMarketOrder(expected)
+
+	if err == nil {
+		t.Errorf("err: expected != nil, gotten = nil")
+	}
+}
+
+func TestSendMarketOrder_Direct_Buy_BaseAmt_SpotDisabled(t *testing.T) {
+	old_symbols := symbols
+	old_get_spot_limits := GetSpotMarketLimits
+	defer func() {
+		symbols = old_symbols
+		GetSpotMarketLimits = old_get_spot_limits
+	}()
+
+	symbols = get_symbols()
+	GetSpotMarketLimits = func(symbol string) (model.SpotMarketLimits, error) {
+		return model.SpotMarketLimits{
+			MinBase:  utils.DecimalFromString("0.00000001"),
+			MaxBase:  utils.DecimalFromString("99999999"),
+			StepBase: utils.DecimalFromString("0.00000001"),
+			MinQuote: utils.DecimalFromString("0.00000001")}, nil
+	}
+
+	amt := utils.DecimalFromString("100")
+	price := utils.DecimalFromString("3746.34")
+	expected := get_operation_test(amt, model.BASE_AMOUNT, "SHIBA", "USDT", model.BUY, price)
+	_, err := SendSpotMarketOrder(expected)
+
+	if err == nil {
+		t.Errorf("err: expected != nil, gotten = nil")
+	}
+}
+
+func TestSendMarketOrder_Direct_Buy_BaseAmt_AboveMaxBase(t *testing.T) {
+	old_symbols := symbols
+	old_get_spot_limits := GetSpotMarketLimits
+	defer func() {
+		symbols = old_symbols
+		GetSpotMarketLimits = old_get_spot_limits
+	}()
+
+	symbols = get_symbols()
+	GetSpotMarketLimits = func(symbol string) (model.SpotMarketLimits, error) {
+		return model.SpotMarketLimits{
+			MinBase:  utils.DecimalFromString("0.00000001"),
+			MaxBase:  utils.DecimalFromString("99.9"),
+			StepBase: utils.DecimalFromString("0.00000001"),
+			MinQuote: utils.DecimalFromString("0.00000001")}, nil
+	}
+
+	amt := utils.DecimalFromString("100")
+	price := utils.DecimalFromString("3746.34")
+	expected := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
+	_, err := SendSpotMarketOrder(expected)
+
+	if err == nil {
+		t.Errorf("err: expected != nil, gotten = nil")
+	}
 }
 
 func TestSendMarketOrder_Direct_Sell_QuoteAmt(t *testing.T) {
 	old_symbols := symbols
 	old_create_order := binance_create_order
+	old_get_spot_limits := GetSpotMarketLimits
 	defer func() {
 		symbols = old_symbols
 		binance_create_order = old_create_order
+		GetSpotMarketLimits = old_get_spot_limits
 	}()
 
 	symbols = get_symbols()
@@ -142,11 +234,18 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt(t *testing.T) {
 			Side:   binanceapi.SideTypeBuy,
 			Status: binanceapi.OrderStatusTypeFilled}, nil
 	}
+	GetSpotMarketLimits = func(symbol string) (model.SpotMarketLimits, error) {
+		return model.SpotMarketLimits{
+			MinBase:  utils.DecimalFromString("0.00000001"),
+			MaxBase:  utils.DecimalFromString("99999999"),
+			StepBase: utils.DecimalFromString("0.00000001"),
+			MinQuote: utils.DecimalFromString("0.00000001")}, nil
+	}
 
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("3746.34")
 	expected := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
-	gotten, err := SendMarketOrder(expected)
+	gotten, err := SendSpotMarketOrder(expected)
 	expected.Timestamp = gotten.Timestamp
 
 	if err != nil {
@@ -155,12 +254,41 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt(t *testing.T) {
 	testutils.AssertStructEq(t, expected, gotten)
 }
 
+func TestSendMarketOrder_Direct_Sell_QuoteAmt_BelowMinQuote(t *testing.T) {
+	old_symbols := symbols
+	old_get_spot_limits := GetSpotMarketLimits
+	defer func() {
+		symbols = old_symbols
+		GetSpotMarketLimits = old_get_spot_limits
+	}()
+
+	symbols = get_symbols()
+	GetSpotMarketLimits = func(symbol string) (model.SpotMarketLimits, error) {
+		return model.SpotMarketLimits{
+			MinBase:  utils.DecimalFromString("0.00000001"),
+			MaxBase:  utils.DecimalFromString("99999999"),
+			StepBase: utils.DecimalFromString("0.00000001"),
+			MinQuote: utils.DecimalFromString("100.1")}, nil
+	}
+
+	amt := utils.DecimalFromString("100")
+	price := utils.DecimalFromString("3746.34")
+	expected := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
+	_, err := SendSpotMarketOrder(expected)
+
+	if err == nil {
+		t.Errorf("err: expected != nil, gotten = nil")
+	}
+}
+
 func TestSendMarketOrder_Indirect_Buy_BaseAmt(t *testing.T) {
 	old_symbols := symbols
 	old_create_order := binance_create_order
+	old_get_spot_limits := GetSpotMarketLimits
 	defer func() {
 		symbols = old_symbols
 		binance_create_order = old_create_order
+		GetSpotMarketLimits = old_get_spot_limits
 	}()
 
 	symbols = get_symbols()
@@ -170,11 +298,18 @@ func TestSendMarketOrder_Indirect_Buy_BaseAmt(t *testing.T) {
 			Side:   binanceapi.SideTypeBuy,
 			Status: binanceapi.OrderStatusTypeFilled}, nil
 	}
+	GetSpotMarketLimits = func(symbol string) (model.SpotMarketLimits, error) {
+		return model.SpotMarketLimits{
+			MinBase:  utils.DecimalFromString("0.00000001"),
+			MaxBase:  utils.DecimalFromString("99999999"),
+			StepBase: utils.DecimalFromString("0.00000001"),
+			MinQuote: utils.DecimalFromString("0.00000001")}, nil
+	}
 
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("3746.34")
 	expected := get_operation_test(amt, model.BASE_AMOUNT, "USDT", "BTC", model.BUY, price)
-	gotten, err := SendMarketOrder(expected)
+	gotten, err := SendSpotMarketOrder(expected)
 	expected.Timestamp = gotten.Timestamp
 	expected.Base = "BTC"
 	expected.Quote = "USDT"
@@ -190,9 +325,11 @@ func TestSendMarketOrder_Indirect_Buy_BaseAmt(t *testing.T) {
 func TestSendMarketOrder_Indirect_Sell_QuoteAmt(t *testing.T) {
 	old_symbols := symbols
 	old_create_order := binance_create_order
+	old_get_spot_limits := GetSpotMarketLimits
 	defer func() {
 		symbols = old_symbols
 		binance_create_order = old_create_order
+		GetSpotMarketLimits = old_get_spot_limits
 	}()
 
 	symbols = get_symbols()
@@ -202,11 +339,18 @@ func TestSendMarketOrder_Indirect_Sell_QuoteAmt(t *testing.T) {
 			Side:   binanceapi.SideTypeBuy,
 			Status: binanceapi.OrderStatusTypeFilled}, nil
 	}
+	GetSpotMarketLimits = func(symbol string) (model.SpotMarketLimits, error) {
+		return model.SpotMarketLimits{
+			MinBase:  utils.DecimalFromString("0.00000001"),
+			MaxBase:  utils.DecimalFromString("99999999"),
+			StepBase: utils.DecimalFromString("0.00000001"),
+			MinQuote: utils.DecimalFromString("0.00000001")}, nil
+	}
 
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("3746.34")
 	expected := get_operation_test(amt, model.QUOTE_AMOUNT, "USDT", "BTC", model.SELL, price)
-	gotten, err := SendMarketOrder(expected)
+	gotten, err := SendSpotMarketOrder(expected)
 	expected.Timestamp = gotten.Timestamp
 	expected.Base = "BTC"
 	expected.Quote = "USDT"
@@ -236,14 +380,6 @@ func get_operation_test(amt decimal.Decimal, amtSide model.AmountSide, base, quo
 		Price:      price,
 		Status:     model.PENDING,
 		Timestamp:  time.Now().UnixMicro()}
-}
-
-func get_symbols() map[string]binanceapi.Symbol {
-	symbols = make(map[string]binanceapi.Symbol)
-	symbols["BTCUSDT"] = binanceapi.Symbol{}
-	symbols["ETHUSDT"] = binanceapi.Symbol{}
-	symbols["DOTUSDT"] = binanceapi.Symbol{}
-	return symbols
 }
 
 func get_remote_binance_account() *binanceapi.Account {
