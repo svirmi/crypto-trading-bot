@@ -29,10 +29,10 @@ func get_fts_config(c interface{}) (s strategy_config_fts) {
 		MissProfitThreshold string
 	}{}
 	mapstructure.Decode(c, &tmp)
-	s.BuyThreshold = utils.DecimalFromString(tmp.BuyThreshold)
-	s.SellThreshold = utils.DecimalFromString(tmp.SellThreshold)
-	s.StopLossThreshold = utils.DecimalFromString(tmp.StopLossThreshold)
-	s.MissProfitThreshold = utils.DecimalFromString(tmp.MissProfitThreshold)
+	s.BuyThreshold = utils.DecimalFromString(tmp.BuyThreshold).Round(2)
+	s.SellThreshold = utils.DecimalFromString(tmp.SellThreshold).Round(2)
+	s.StopLossThreshold = utils.DecimalFromString(tmp.StopLossThreshold).Round(2)
+	s.MissProfitThreshold = utils.DecimalFromString(tmp.MissProfitThreshold).Round(2)
 
 	// Checking config validity
 	if s.is_empty() {

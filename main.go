@@ -16,7 +16,6 @@ import (
 )
 
 // TODO: min / max LOT_SIZE
-// TODO: check on input percentages
 // TODO: laccount update
 
 func main() {
