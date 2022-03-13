@@ -50,6 +50,10 @@ func CreateOrRestore(creationRequest model.LocalAccountInit) (model.ILocalAccoun
 	return laccount, nil
 }
 
+func Create(laccout model.ILocalAccount) error {
+	return insert(laccout)
+}
+
 func GetLatestByExeId(exeId string) (model.ILocalAccount, error) {
 	return find_latest_by_exeId(exeId)
 }

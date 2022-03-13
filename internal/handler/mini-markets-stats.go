@@ -118,8 +118,9 @@ var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
 			log.Fatalf(err.Error())
 		}
 
-		// Inserting operation in DB
+		// Inserting operation and updating laccount in DB
 		operations.Create(operation)
+		laccount.Create(tcontext.laccount)
 	}
 }
 

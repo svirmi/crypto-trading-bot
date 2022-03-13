@@ -16,8 +16,6 @@ import (
 )
 
 // TODO: min / max LOT_SIZE
-// TODO: laccount update
-
 func main() {
 	defer shutdown()
 	sigc := interrupt_handler()

@@ -125,6 +125,7 @@ func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	// Returning results
 	a.Assets[op.Base] = assetStatus
 	a.Timestamp = time.Now().UnixMicro()
+	a.AccountId = uuid.NewString()
 	return a, nil
 }
 
