@@ -127,3 +127,34 @@ func TestGetSpotMarketLimits_InvalidValues(t *testing.T) {
 
 	testutils.AssertStructEq(t, expected, gotten)
 }
+
+func TestGetSpotMarketLimits_FilterNotFound(t *testing.T) {
+	old := symbols
+
+	defer func() {
+		symbols = old
+	}()
+
+	symbols = get_symbols()
+
+	btcusdt := symbols["BTCUSDT"]
+	btcusdt.Filters = make([]map[string]interface{}, 0, 3)
+	btcusdt.Filters = append(btcusdt.Filters, make(map[string]interface{}))
+	btcusdt.Filters = append(btcusdt.Filters, make(map[string]interface{}))
+	btcusdt.Filters = append(btcusdt.Filters, make(map[string]interface{}))
+	btcusdt.Filters[0]["filterType"] = "LOT_SIZE"
+	btcusdt.Filters[0]["minQty"] = "0.001"
+	btcusdt.Filters[0]["maxQty"] = "999.999"
+	btcusdt.Filters[0]["stepSize"] = "0.1"
+	btcusdt.Filters[1]["filterType"] = "MIN_NOTIONAL"
+	btcusdt.Filters[1]["minNotional"] = "10.00"
+	symbols["BTCUSDT"] = btcusdt
+
+	gotten, err := GetSpotMarketLimits("BTCUSDT")
+	if err == nil {
+		t.Errorf("err: expected != nil, gotten = nil")
+	}
+	if !gotten.IsEmpty() {
+		t.Errorf("expected empty, gotten = %v", gotten)
+	}
+}

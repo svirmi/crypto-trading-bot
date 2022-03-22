@@ -25,7 +25,13 @@ var CanSpotTrade = func(symbol string) bool {
 
 var GetSpotMarketLimits = func(symbol string) (model.SpotMarketLimits, error) {
 	iLotSize, err := get_spot_limit_sizes(symbol)
+	if err != nil {
+		return model.SpotMarketLimits{}, err
+	}
 	iMarketLotSize, err := get_spot_market_sizes(symbol)
+	if err != nil {
+		return model.SpotMarketLimits{}, err
+	}
 	iNotional, err := get_min_notional(symbol)
 	if err != nil {
 		return model.SpotMarketLimits{}, err
@@ -51,6 +57,11 @@ func get_min_notional(symbol string) (decimal.Decimal, error) {
 	}
 
 	iNotional := extract_filter(status.Filters, "MIN_NOTIONAL")
+	if iNotional == nil {
+		err := fmt.Errorf("MIN_NOTIONAL filter not found for %s", symbol)
+		return decimal.Zero, err
+	}
+
 	return parse_number(iNotional["minNotional"], decimal.NewFromFloat(_MIN_NUM)), nil
 }
 
@@ -64,7 +75,7 @@ func get_spot_market_sizes(symbol string) (model.SpotMarketLimits, error) {
 
 	iMarketLotSize := extract_filter(status.Filters, "MARKET_LOT_SIZE")
 	if iMarketLotSize == nil {
-		err := fmt.Errorf("MARKET_LOT_SIZE not found on exchange symbol %s", symbol)
+		err := fmt.Errorf("MARKET_LOT_SIZE not found for %s", symbol)
 		return model.SpotMarketLimits{}, err
 	}
 
@@ -84,7 +95,7 @@ func get_spot_limit_sizes(symbol string) (model.SpotMarketLimits, error) {
 
 	iLotSize := extract_filter(status.Filters, "LOT_SIZE")
 	if iLotSize == nil {
-		err := fmt.Errorf("LOT_SIZE not found on exchange symbol %s", symbol)
+		err := fmt.Errorf("LOT_SIZE not found for %s", symbol)
 		return model.SpotMarketLimits{}, err
 	}
 

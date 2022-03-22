@@ -16,7 +16,6 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
-// TODO: min / max LOT_SIZE
 func main() {
 	defer shutdown()
 	sigc := interrupt_handler()

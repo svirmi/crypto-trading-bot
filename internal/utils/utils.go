@@ -16,10 +16,6 @@ func GetAssetFromSymbol(symbol string) string {
 }
 
 func DecimalFromString(str string) decimal.Decimal {
-	if str == "" {
-		return decimal.Zero
-	}
-
 	decimal, err := decimal.NewFromString(str)
 	if err != nil {
 		log.Fatalf("failed to convert string \"%s\" to decimal", str)

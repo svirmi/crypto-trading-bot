@@ -1,0 +1,15 @@
+
+# testnet configuration
+
+binanceApi:
+  apiKey: HTqza54XTX09uBANVQOvMO78N478MhDxLbEiBfSRR8Yc7MBIlXGxG2cwK4Ok3KvI
+  secretKey: vOZJYqQrYjgwSL5EDUxLYTv7Gh8nQvRqX5IefmnySqSAUdVvgOTfTe6HJsO9tvTY
+  useTestnet: false
+mongoDb:
+  uri: mongodb://localhost:27017
+  database: ctb
+strategy:
+  type: TEST_STRATEGY_TYPE
+  config:
+    prop1: prop1
+    prop2: prop2
