@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"log"
 	"testing"
 	"time"
 
@@ -38,7 +37,6 @@ func TestReadingMarketStatsCh(t *testing.T) {
 	scontext.mms = make(chan []model.MiniMarketStats)
 	go func() {
 		for i := 0; i < 6; i++ {
-			log.Printf("Sending mocked mini markets stats...")
 			scontext.mms <- []model.MiniMarketStats{}
 			time.Sleep(time.Millisecond * 250)
 		}
@@ -48,13 +46,9 @@ func TestReadingMarketStatsCh(t *testing.T) {
 
 	// Consumer
 	read_mini_markets_stats_ch()
-
 	<-end
-	log.Printf("Mini markets stats handled: %d", handled)
-	log.Printf("Mini markets stats skipped: %d", skipped)
-	if handled+skipped != 6 {
-		t.Errorf("expected handled+skipped=12, gotten handled+skipped=%d", skipped+handled)
-	}
+
+	testutils.AssertEq(t, 6, handled+skipped, "mini_market_stats_read_ch")
 }
 
 func TestComputeOpResults_Filled_NoSpread_Buy_BaseAmt(t *testing.T) {
@@ -73,16 +67,16 @@ func TestComputeOpResults_Filled_NoSpread_Buy_BaseAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("6934.384")}}
 	r2 := get_remote_account(b2)
 
-	gotten := compute_op_results(r1, r2, op)
-	expected := op
-	expected.Status = model.FILLED
-	expected.Results = model.OpResults{
-		ActualPrice: expected.Price,
-		BaseAmount:  utils.DecimalFromString("0.1"),
-		QuoteAmount: utils.DecimalFromString("3288.716"),
+	got := compute_op_results(r1, r2, op)
+	exp := op
+	exp.Status = model.FILLED
+	exp.Results = model.OpResults{
+		ActualPrice: exp.Price,
+		BaseDiff:    utils.DecimalFromString("0.1"),
+		QuoteDiff:   utils.DecimalFromString("3288.716"),
 		Spread:      decimal.Zero}
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "operation_results")
 }
 
 func TestComputeOpResults_Filled_NoSpread_Sell_QuoteAmt(t *testing.T) {
@@ -101,16 +95,16 @@ func TestComputeOpResults_Filled_NoSpread_Sell_QuoteAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("10473.1")}}
 	r2 := get_remote_account(b2)
 
-	gotten := compute_op_results(r1, r2, op)
-	expected := op
-	expected.Status = model.FILLED
-	expected.Results = model.OpResults{
-		ActualPrice: expected.Price,
-		BaseAmount:  utils.DecimalFromString("0.0078125"),
-		QuoteAmount: utils.DecimalFromString("250"),
+	got := compute_op_results(r1, r2, op)
+	exp := op
+	exp.Status = model.FILLED
+	exp.Results = model.OpResults{
+		ActualPrice: exp.Price,
+		BaseDiff:    utils.DecimalFromString("0.0078125"),
+		QuoteDiff:   utils.DecimalFromString("250"),
 		Spread:      decimal.Zero}
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "operation_results")
 }
 
 func TestComputeOpResults_Filled_PositiveSpread_Buy_BaseAmt(t *testing.T) {
@@ -129,16 +123,16 @@ func TestComputeOpResults_Filled_PositiveSpread_Buy_BaseAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("6923.1")}}
 	r2 := get_remote_account(b2)
 
-	gotten := compute_op_results(r1, r2, op)
-	expected := op
-	expected.Status = model.FILLED
-	expected.Results = model.OpResults{
+	got := compute_op_results(r1, r2, op)
+	exp := op
+	exp.Status = model.FILLED
+	exp.Results = model.OpResults{
 		ActualPrice: utils.DecimalFromString("33000"),
-		BaseAmount:  utils.DecimalFromString("0.1"),
-		QuoteAmount: utils.DecimalFromString("3300"),
+		BaseDiff:    utils.DecimalFromString("0.1"),
+		QuoteDiff:   utils.DecimalFromString("3300"),
 		Spread:      utils.DecimalFromString("0.34311263")}
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "operation_results")
 }
 
 func TestComputeOpResults_Filled_NegativeSpread_Buy_BaseAmt(t *testing.T) {
@@ -157,16 +151,16 @@ func TestComputeOpResults_Filled_NegativeSpread_Buy_BaseAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("7023.1")}}
 	r2 := get_remote_account(b2)
 
-	gotten := compute_op_results(r1, r2, op)
-	expected := op
-	expected.Status = model.FILLED
-	expected.Results = model.OpResults{
+	got := compute_op_results(r1, r2, op)
+	exp := op
+	exp.Status = model.FILLED
+	exp.Results = model.OpResults{
 		ActualPrice: utils.DecimalFromString("32000"),
-		BaseAmount:  utils.DecimalFromString("0.1"),
-		QuoteAmount: utils.DecimalFromString("3200"),
+		BaseDiff:    utils.DecimalFromString("0.1"),
+		QuoteDiff:   utils.DecimalFromString("3200"),
 		Spread:      utils.DecimalFromString("-2.69758775")}
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "operation_results")
 }
 
 func TestComputeOpResults_Filled_Spread_Sell_QuoteAmt(t *testing.T) {
@@ -185,16 +179,16 @@ func TestComputeOpResults_Filled_Spread_Sell_QuoteAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("10473.1")}}
 	r2 := get_remote_account(b2)
 
-	gotten := compute_op_results(r1, r2, op)
-	expected := op
-	expected.Status = model.FILLED
-	expected.Results = model.OpResults{
+	got := compute_op_results(r1, r2, op)
+	exp := op
+	exp.Status = model.FILLED
+	exp.Results = model.OpResults{
 		ActualPrice: utils.DecimalFromString("32999.98944"),
-		BaseAmount:  utils.DecimalFromString("0.00757576"),
-		QuoteAmount: utils.DecimalFromString("250"),
+		BaseDiff:    utils.DecimalFromString("0.00757576"),
+		QuoteDiff:   utils.DecimalFromString("250"),
 		Spread:      utils.DecimalFromString("1.53842905")}
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "operation_results")
 }
 
 func TestComputeOpResults_PartiallyFilled_Spread_Buy_BaseAmt(t *testing.T) {
@@ -213,16 +207,16 @@ func TestComputeOpResults_PartiallyFilled_Spread_Buy_BaseAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("6923.1")}}
 	r2 := get_remote_account(b2)
 
-	gotten := compute_op_results(r1, r2, op)
-	expected := op
-	expected.Status = model.PARTIALLY_FILLED
-	expected.Results = model.OpResults{
+	got := compute_op_results(r1, r2, op)
+	exp := op
+	exp.Status = model.PARTIALLY_FILLED
+	exp.Results = model.OpResults{
 		ActualPrice: utils.DecimalFromString("33333.33333333"),
-		BaseAmount:  utils.DecimalFromString("0.099"),
-		QuoteAmount: utils.DecimalFromString("3300"),
+		BaseDiff:    utils.DecimalFromString("0.099"),
+		QuoteDiff:   utils.DecimalFromString("3300"),
 		Spread:      utils.DecimalFromString("1.35667943")}
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "operation_results")
 }
 
 func TestComputeOpResults_PartiallyFilled_Spread_Sell_QuoteAmt(t *testing.T) {
@@ -241,16 +235,16 @@ func TestComputeOpResults_PartiallyFilled_Spread_Sell_QuoteAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("10472.9")}}
 	r2 := get_remote_account(b2)
 
-	gotten := compute_op_results(r1, r2, op)
-	expected := op
-	expected.Status = model.PARTIALLY_FILLED
-	expected.Results = model.OpResults{
+	got := compute_op_results(r1, r2, op)
+	exp := op
+	exp.Status = model.PARTIALLY_FILLED
+	exp.Results = model.OpResults{
 		ActualPrice: utils.DecimalFromString("31225"),
-		BaseAmount:  utils.DecimalFromString("0.008"),
-		QuoteAmount: utils.DecimalFromString("249.8"),
+		BaseDiff:    utils.DecimalFromString("0.008"),
+		QuoteDiff:   utils.DecimalFromString("249.8"),
 		Spread:      utils.DecimalFromString("-3.92307692")}
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "operation_results")
 }
 
 func get_operation_test(amt decimal.Decimal, amtSide model.AmountSide, base, quote string,

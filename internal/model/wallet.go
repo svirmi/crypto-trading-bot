@@ -44,6 +44,23 @@ const (
 	FIXED_THRESHOLD_STRATEGY StrategyType = "FIXED_THRESHOLD_STRATEGY"
 )
 
+type CtbError struct {
+	msg         string
+	recoverable bool
+}
+
+func (e CtbError) Error() string {
+	return e.msg
+}
+
+func (e CtbError) IsRecoverable() bool {
+	return e.recoverable
+}
+
+func NewCtbError(msg string, recoverable bool) CtbError {
+	return CtbError{msg: msg, recoverable: recoverable}
+}
+
 type ILocalAccount interface {
 	GetAccountId() string
 	GetExeId() string

@@ -1,14 +1,24 @@
 package operations
 
 import (
+	"os"
+	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
+
+func TestMain(m *testing.M) {
+	logger.Initialize(true, logrus.TraceLevel)
+	code := m.Run()
+	os.Exit(code)
+}
 
 func mock_mongo_config() func() config.MongoDbConfig {
 	old := config.GetMongoDbConfig
@@ -38,8 +48,8 @@ func get_operation_test() model.Operation {
 		Price:      utils.DecimalFromString("133.23"),
 		Results: model.OpResults{
 			ActualPrice: utils.DecimalFromString("133.58"),
-			BaseAmount:  utils.DecimalFromString("153.78"),
-			QuoteAmount: utils.DecimalFromString("11224.56"),
+			BaseDiff:    utils.DecimalFromString("153.78"),
+			QuoteDiff:   utils.DecimalFromString("11224.56"),
 			Spread:      utils.DecimalFromString("12.1"),
 		},
 		Status:    model.FILLED,

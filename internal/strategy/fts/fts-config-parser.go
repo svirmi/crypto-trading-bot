@@ -1,11 +1,15 @@
 package fts
 
 import (
-	"log"
+	"fmt"
 	"reflect"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
@@ -20,7 +24,14 @@ func (a strategy_config_fts) is_empty() bool {
 	return reflect.DeepEqual(a, strategy_config_fts{})
 }
 
-func get_fts_config(c interface{}) (s strategy_config_fts) {
+func get_fts_config(strategyConfig config.StrategyConfig) (s strategy_config_fts, err error) {
+	if strategyConfig.Type != string(model.FIXED_THRESHOLD_STRATEGY) {
+		msg := fmt.Sprintf(logger.FTS_ERR_MISMATCHING_STRATEGY,
+			model.FIXED_THRESHOLD_STRATEGY, strategyConfig.Type)
+		logrus.Error(msg)
+		return strategy_config_fts{}, model.NewCtbError(msg, false)
+	}
+
 	// Mapping interface{} to strategy_config_fts
 	tmp := struct {
 		BuyThreshold        string
@@ -28,7 +39,7 @@ func get_fts_config(c interface{}) (s strategy_config_fts) {
 		StopLossThreshold   string
 		MissProfitThreshold string
 	}{}
-	mapstructure.Decode(c, &tmp)
+	mapstructure.Decode(strategyConfig.Config, &tmp)
 	s.BuyThreshold = utils.DecimalFromString(tmp.BuyThreshold).Round(2)
 	s.SellThreshold = utils.DecimalFromString(tmp.SellThreshold).Round(2)
 	s.StopLossThreshold = utils.DecimalFromString(tmp.StopLossThreshold).Round(2)
@@ -36,15 +47,18 @@ func get_fts_config(c interface{}) (s strategy_config_fts) {
 
 	// Checking config validity
 	if s.is_empty() {
-		log.Fatalf("failed to parse fts config")
+		msg := fmt.Sprintf(logger.FTS_ERR_FAILED_TO_PARSE_CONFIG, strategyConfig.Config)
+		logrus.Error(msg)
+		return strategy_config_fts{}, model.NewCtbError(msg, true)
 	}
 	if s.BuyThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.SellThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.MissProfitThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.StopLossThreshold.LessThanOrEqual(decimal.Zero) {
-		log.Fatalf("fts thresholds must be strictly positive")
+		msg := fmt.Sprintf(logger.FTS_ERR_NEGATIVE_THRESHOLDS)
+		logrus.Error(msg)
+		return strategy_config_fts{}, model.NewCtbError(msg, true)
 	}
 
-	log.Printf("fts strategy config: %+v", s)
-	return s
+	return s, nil
 }

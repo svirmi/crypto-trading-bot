@@ -1,9 +1,20 @@
 package executions
 
 import (
+	"os"
+	"testing"
+
+	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 )
+
+func TestMain(m *testing.M) {
+	logger.Initialize(true, logrus.TraceLevel)
+	code := m.Run()
+	os.Exit(code)
+}
 
 func mock_mongo_config() func() config.MongoDbConfig {
 	old := config.GetMongoDbConfig

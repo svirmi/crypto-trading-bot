@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/fts"
@@ -56,6 +58,8 @@ func decode(sr *mongo.SingleResult) (model.ILocalAccount, error) {
 		err := sr.Decode(&laccount_fts)
 		return laccount_fts, err
 	} else {
-		return nil, fmt.Errorf("unrecognized strategy type %s", strategyType)
+		err := fmt.Errorf(logger.LACC_ERR_UNKNOWN_STRATEGY, strategyType)
+		logrus.Error(err.Error())
+		return nil, err
 	}
 }

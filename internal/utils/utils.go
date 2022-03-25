@@ -1,10 +1,11 @@
 package utils
 
 import (
-	"log"
 	"strings"
 
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 )
 
 func GetSymbolFromAsset(base string) string {
@@ -18,7 +19,7 @@ func GetAssetFromSymbol(symbol string) string {
 func DecimalFromString(str string) decimal.Decimal {
 	decimal, err := decimal.NewFromString(str)
 	if err != nil {
-		log.Fatalf("failed to convert string \"%s\" to decimal", str)
+		logrus.Panicf(logger.UTILS_ERR_FAILED_TO_DECODE_DECIMAL, str)
 	}
 	return decimal
 }

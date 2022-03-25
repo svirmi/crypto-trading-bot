@@ -35,20 +35,15 @@ func TestCreateOrRestore_Create_FTS(t *testing.T) {
 	local_account_init := get_laccount_init_test(model.FIXED_THRESHOLD_STRATEGY)
 	exeIds = append(exeIds, local_account_init.ExeId)
 
-	gotten, err := CreateOrRestore(local_account_init)
-	if err != nil {
-		t.Fatalf("expected err == nil, gotten = %v", err)
-	}
-	if gotten == nil {
-		t.Error("expected laccount != nil, gotten = nil")
-	}
+	got, err := CreateOrRestore(local_account_init)
+	testutils.AssertNil(t, err, "err")
 
-	expected := get_laccount_test_FTS()
-	expected.ExeId = local_account_init.ExeId
-	expected.AccountId = gotten.GetAccountId()
-	expected.Timestamp = gotten.GetTimestamp()
+	exp := get_laccount_test_FTS()
+	exp.ExeId = local_account_init.ExeId
+	exp.AccountId = got.GetAccountId()
+	exp.Timestamp = got.GetTimestamp()
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "laccount")
 }
 
 func TestCreateOrRestore_Restore_FTS(t *testing.T) {
@@ -66,22 +61,15 @@ func TestCreateOrRestore_Restore_FTS(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	expected := get_laccount_test_FTS()
-	exeIds = append(exeIds, expected.ExeId)
-	err := insert(expected)
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten err = %v", err)
-	}
+	exp := get_laccount_test_FTS()
+	exeIds = append(exeIds, exp.ExeId)
+	err := insert(exp)
+	testutils.AssertNil(t, err, "err")
 
 	local_account_init := get_laccount_init_test(model.FIXED_THRESHOLD_STRATEGY)
 	local_account_init.ExeId = exeIds[0]
-	gotten, err := CreateOrRestore(local_account_init)
-	if err != nil {
-		t.Fatalf("expected err == nil, gotten = %v", err)
-	}
-	if gotten == nil {
-		t.Error("expected laccount != nil, gotten = nil")
-	}
+	got, err := CreateOrRestore(local_account_init)
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "laccount")
 }

@@ -1,10 +1,13 @@
 package config
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 )
 
@@ -12,24 +15,32 @@ var (
 	fts_test_resource_folder = "test-resources"
 )
 
-func TestParseConfig(t *testing.T) {
-	test_parse_config(t, false, fts_test_resource_folder)
-
-	gotten := appConfig
-	got_sconfig := make(map[string]string)
-	mapstructure.Decode(gotten.Strategy.Config, &got_sconfig)
-	gotten.Strategy.Config = got_sconfig
-	testutils.AssertStructEq(t, get_config(), gotten)
+func TestMain(m *testing.M) {
+	logger.Initialize(true, logrus.TraceLevel)
+	code := m.Run()
+	os.Exit(code)
 }
 
-func TestParseConfig_Testnet(t *testing.T) {
+func TestInitialize(t *testing.T) {
+	test_parse_config(t, false, fts_test_resource_folder)
+
+	got := appConfig
+	got_sconfig := make(map[string]string)
+	mapstructure.Decode(got.Strategy.Config, &got_sconfig)
+	got.Strategy.Config = got_sconfig
+
+	testutils.AssertEq(t, get_config(), got, "config")
+}
+
+func TestInitialize_Testnet(t *testing.T) {
 	test_parse_config(t, true, fts_test_resource_folder)
 
-	gotten := appConfig
+	got := appConfig
 	got_sconfig := make(map[string]string)
-	mapstructure.Decode(gotten.Strategy.Config, &got_sconfig)
-	gotten.Strategy.Config = got_sconfig
-	testutils.AssertStructEq(t, get_testnet_config(), gotten)
+	mapstructure.Decode(got.Strategy.Config, &got_sconfig)
+	got.Strategy.Config = got_sconfig
+
+	testutils.AssertEq(t, get_testnet_config(), got, "config")
 }
 
 func test_parse_config(t *testing.T, testnet bool, test_resource_folder string) {
@@ -42,14 +53,8 @@ func test_parse_config(t *testing.T, testnet bool, test_resource_folder string) 
 
 	// Testing testnet config parsing
 	resource_folder = filepath.Join("..", "..", resource_folder)
-	config, err := parse_config(testnet)
-
-	// Asserting config
-	if err != nil {
-		t.Fatalf(err.Error())
-	} else {
-		appConfig = config
-	}
+	config, _ := parse_config(testnet)
+	appConfig = config
 }
 
 func get_config() Config {

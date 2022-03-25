@@ -3,11 +3,13 @@ package fts
 import (
 	"testing"
 
+	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 )
 
 func TestStrategyConfig(t *testing.T) {
-	expected :=
+	exp :=
 		struct {
 			BuyThreshold        string
 			SellThreshold       string
@@ -20,6 +22,11 @@ func TestStrategyConfig(t *testing.T) {
 			MissProfitThreshold: "45.67",
 		}
 
-	gotten := get_fts_config(expected)
-	testutils.AssertStructEq(t, expected, gotten)
+	strategyConfig := config.StrategyConfig{
+		Type:   string(model.FIXED_THRESHOLD_STRATEGY),
+		Config: exp,
+	}
+	got, _ := get_fts_config(strategyConfig)
+
+	testutils.AssertEq(t, exp, got, "fts_config")
 }

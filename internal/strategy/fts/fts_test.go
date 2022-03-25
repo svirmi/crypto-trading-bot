@@ -25,17 +25,15 @@ func TestInitialize(t *testing.T) {
 		return true
 	}
 
-	gotten, err := LocalAccountFTS{}.Initialize(get_laccount_init_test())
-	if err != nil {
-		t.Fatalf("err: expected = nil, gotten = %v", err)
-	}
+	got, err := LocalAccountFTS{}.Initialize(get_laccount_init_test())
+	testutils.AssertNil(t, err, "err")
 
-	expected := get_laccount_last_buy_test()
-	expected.ExeId = gotten.GetExeId()
-	expected.AccountId = gotten.GetAccountId()
-	expected.Timestamp = gotten.GetTimestamp()
+	exp := get_laccount_last_buy_test()
+	exp.ExeId = got.GetExeId()
+	exp.AccountId = got.GetAccountId()
+	exp.Timestamp = got.GetTimestamp()
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "fts_laccount")
 }
 
 /********************** Testing RegisterTrading() *************************/
@@ -51,22 +49,20 @@ func TestRegisterTrading_BaseAmt_BuySide(t *testing.T) {
 	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
 	op.ExeId = laccount.ExeId
 
-	gotten, err := laccount.RegisterTrading(op)
-	if err != nil {
-		t.Fatalf("err: expected = nil, gotten = %v", err)
-	}
+	got, err := laccount.RegisterTrading(op)
+	testutils.AssertNil(t, err, "err")
 
-	expected := get_laccount_last_buy_test()
-	expected.ExeId = gotten.GetExeId()
-	expected.AccountId = gotten.GetAccountId()
-	expected.Timestamp = gotten.GetTimestamp()
-	assetStatus = expected.Assets["BTC"]
+	exp := get_laccount_last_buy_test()
+	exp.ExeId = got.GetExeId()
+	exp.AccountId = got.GetAccountId()
+	exp.Timestamp = got.GetTimestamp()
+	assetStatus = exp.Assets["BTC"]
 	assetStatus.Amount = utils.DecimalFromString("11.44")
 	assetStatus.Usdt = decimal.Zero
 	assetStatus.LastOperationPrice = price
-	expected.Assets["BTC"] = assetStatus
+	exp.Assets["BTC"] = assetStatus
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "fts_laccount")
 }
 
 func TestRegisterTrading_WrongExeId(t *testing.T) {
@@ -80,22 +76,20 @@ func TestRegisterTrading_WrongExeId(t *testing.T) {
 	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
 	op.ExeId = laccount.ExeId
 
-	gotten, err := laccount.RegisterTrading(op)
-	if err != nil {
-		t.Fatalf("err: expected = nil, gotten = %v", err)
-	}
+	got, err := laccount.RegisterTrading(op)
+	testutils.AssertNil(t, err, "err")
 
-	expected := get_laccount_last_buy_test()
-	expected.ExeId = gotten.GetExeId()
-	expected.AccountId = gotten.GetAccountId()
-	expected.Timestamp = gotten.GetTimestamp()
-	assetStatus = expected.Assets["BTC"]
+	exp := get_laccount_last_buy_test()
+	exp.ExeId = got.GetExeId()
+	exp.AccountId = got.GetAccountId()
+	exp.Timestamp = got.GetTimestamp()
+	assetStatus = exp.Assets["BTC"]
 	assetStatus.Amount = utils.DecimalFromString("11.44")
 	assetStatus.Usdt = decimal.Zero
 	assetStatus.LastOperationPrice = price
-	expected.Assets["BTC"] = assetStatus
+	exp.Assets["BTC"] = assetStatus
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "fts_laccount")
 }
 
 func TestRegisterTrading_BaseAmt_SellSide(t *testing.T) {
@@ -106,24 +100,22 @@ func TestRegisterTrading_BaseAmt_SellSide(t *testing.T) {
 	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.SELL, price)
 	op.ExeId = laccount.ExeId
 
-	gotten, err := laccount.RegisterTrading(op)
-	if err != nil {
-		t.Fatalf("err: expected = nil, gotten = %v", err)
-	}
+	got, err := laccount.RegisterTrading(op)
+	testutils.AssertNil(t, err, "err")
 
-	expected := get_laccount_last_buy_test()
-	expected.ExeId = gotten.GetExeId()
-	expected.AccountId = gotten.GetAccountId()
-	expected.Timestamp = gotten.GetTimestamp()
-	assetStatus := expected.Assets["BTC"]
+	exp := get_laccount_last_buy_test()
+	exp.ExeId = got.GetExeId()
+	exp.AccountId = got.GetAccountId()
+	exp.Timestamp = got.GetTimestamp()
+	assetStatus := exp.Assets["BTC"]
 	assetStatus.Amount = decimal.Zero
 	assetStatus.Usdt = utils.DecimalFromString("5670")
 	assetStatus.LastOperationType = OP_SELL_FTS
 	assetStatus.LastOperationPrice = price
-	expected.Assets["BTC"] = assetStatus
-	expected.Ignored["USDT"] = utils.DecimalFromString("155.67")
+	exp.Assets["BTC"] = assetStatus
+	exp.Ignored["USDT"] = utils.DecimalFromString("155.67")
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "fts_laccount")
 }
 
 func TestRegisterTrading_QuoteAmt_BuySide(t *testing.T) {
@@ -137,116 +129,108 @@ func TestRegisterTrading_QuoteAmt_BuySide(t *testing.T) {
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.BUY, price)
 	op.ExeId = laccount.ExeId
 
-	gotten, err := laccount.RegisterTrading(op)
-	if err != nil {
-		t.Fatalf("err: expected = nil, gotten = %v", err)
-	}
+	got, err := laccount.RegisterTrading(op)
+	testutils.AssertNil(t, err, "err")
 
-	expected := get_laccount_last_buy_test()
-	expected.ExeId = gotten.GetExeId()
-	expected.AccountId = gotten.GetAccountId()
-	expected.Timestamp = gotten.GetTimestamp()
-	assetStatus = expected.Assets["BTC"]
+	exp := get_laccount_last_buy_test()
+	exp.ExeId = got.GetExeId()
+	exp.AccountId = got.GetAccountId()
+	exp.Timestamp = got.GetTimestamp()
+	assetStatus = exp.Assets["BTC"]
 	assetStatus.Amount = utils.DecimalFromString("11.55134")
 	assetStatus.Usdt = utils.DecimalFromString("4.51")
 	assetStatus.LastOperationType = OP_BUY_FTS
 	assetStatus.LastOperationPrice = price
-	expected.Assets["BTC"] = assetStatus
-	expected.Ignored["USDT"] = utils.DecimalFromString("155.67")
+	exp.Assets["BTC"] = assetStatus
+	exp.Ignored["USDT"] = utils.DecimalFromString("155.67")
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "fts_laccount")
 }
 
 func TestRegisterTrading_QuoteAmt_SellSide(t *testing.T) {
-	laccount := get_laccount_last_buy_test()
+	exp := get_laccount_last_buy_test()
 
 	amt := utils.DecimalFromString("105.67")
 	price := utils.DecimalFromString("500")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
 
-	gotten, err := laccount.RegisterTrading(op)
-	if err == nil {
-		t.Fatalf("err: expected != nil, gotten = nil")
-	}
-	testutils.AssertStructEq(t, laccount, gotten)
+	got, err := exp.RegisterTrading(op)
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "fts_laccount")
 }
 
 func TestRegisterTrading_OpFailed(t *testing.T) {
-	laccount := get_laccount_last_buy_test()
+	exp := get_laccount_last_buy_test()
 
 	amt := utils.DecimalFromString("105.67")
 	price := utils.DecimalFromString("500")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
-	op.ExeId = laccount.ExeId
+	op.ExeId = exp.ExeId
 	op.Status = model.FAILED
 
-	gotten, err := laccount.RegisterTrading(op)
-	if err != nil {
-		t.Fatalf("err: expected == nil, gotten = %s", err)
-	}
-	testutils.AssertStructEq(t, laccount, gotten)
+	got, err := exp.RegisterTrading(op)
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "fts_laccount")
 }
 
 func TestRegisterTrading_BadQuoteCurrency(t *testing.T) {
-	laccount := get_laccount_last_buy_test()
+	exp := get_laccount_last_buy_test()
 
 	amt := utils.DecimalFromString("105.67")
 	price := utils.DecimalFromString("500")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
-	op.ExeId = laccount.ExeId
+	op.ExeId = exp.ExeId
 	op.Quote = "ETH"
 
-	gotten, err := laccount.RegisterTrading(op)
-	if err == nil {
-		t.Fatalf("err: expected != nil, gotten == nil")
-	}
-	testutils.AssertStructEq(t, laccount, gotten)
+	got, err := exp.RegisterTrading(op)
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "fts_laccount")
 }
 
 func TestRegisterTrading_AssetNotFound(t *testing.T) {
-	laccount := get_laccount_last_buy_test()
+	exp := get_laccount_last_buy_test()
 
 	amt := utils.DecimalFromString("105.67")
 	price := utils.DecimalFromString("500")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
-	op.ExeId = laccount.ExeId
+	op.ExeId = exp.ExeId
 	op.Base = "CRO"
 
-	gotten, err := laccount.RegisterTrading(op)
-	if err == nil {
-		t.Fatalf("err: expected != nil, gotten == nil")
-	}
-	testutils.AssertStructEq(t, laccount, gotten)
+	got, err := exp.RegisterTrading(op)
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "fts_laccount")
 }
 
 func TestRegisterTrading_NegativeBalanceBase(t *testing.T) {
-	laccount := get_laccount_last_buy_test()
+	exp := get_laccount_last_buy_test()
 
 	amt := utils.DecimalFromString("1923789.12")
 	price := utils.DecimalFromString("500")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
-	op.ExeId = laccount.ExeId
+	op.ExeId = exp.ExeId
 
-	gotten, err := laccount.RegisterTrading(op)
-	if err == nil {
-		t.Fatalf("err: expected != nil, gotten == nil")
-	}
-	testutils.AssertStructEq(t, laccount, gotten)
+	got, err := exp.RegisterTrading(op)
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "fts_laccount")
 }
 
 func TestRegisterTrading_NegativeBalanceQuote(t *testing.T) {
-	laccount := get_laccount_last_buy_test()
+	exp := get_laccount_last_buy_test()
 
 	amt := utils.DecimalFromString("1923789.12")
 	price := utils.DecimalFromString("500")
 	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
-	op.ExeId = laccount.ExeId
+	op.ExeId = exp.ExeId
 
-	gotten, err := laccount.RegisterTrading(op)
-	if err == nil {
-		t.Fatalf("err: expected != nil, gotten == nil")
-	}
-	testutils.AssertStructEq(t, laccount, gotten)
+	got, err := exp.RegisterTrading(op)
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "fts_laccount")
 }
 
 /********************** Testing GetOperation() *************************/
@@ -257,12 +241,8 @@ func TestGetOperation_AssetNotFound(t *testing.T) {
 
 	op, err := laccount.GetOperation(mms)
 
-	if !op.IsEmpty() {
-		t.Errorf("op: expected empty, gotten %v", op)
-	}
-	if err == nil {
-		t.Errorf("err: expected != nil, gotten nil")
-	}
+	testutils.AssertTrue(t, op.IsEmpty(), "operation")
+	testutils.AssertNotNil(t, err, "err")
 }
 
 func TestGetOperation_Noop(t *testing.T) {
@@ -272,14 +252,10 @@ func TestGetOperation_Noop(t *testing.T) {
 	laccount := get_laccount_last_buy_test()
 	mms := get_mms("BTC", utils.DecimalFromString("39560.1"))
 
-	gotten, err := laccount.GetOperation(mms)
+	got, err := laccount.GetOperation(mms)
 
-	if err != nil {
-		t.Errorf("err: expected == nil, gotten = %v", err)
-	}
-	if !gotten.IsEmpty() {
-		t.Errorf("op: expected empty, gotten %v", gotten)
-	}
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertTrue(t, got.IsEmpty(), "operation")
 }
 
 func TestGetOperation_Sell(t *testing.T) {
@@ -291,20 +267,18 @@ func TestGetOperation_Sell(t *testing.T) {
 	price := utils.DecimalFromString("44881.330525")
 	mms := get_mms("BTC", price)
 
-	gotten, err := laccount.GetOperation(mms)
-	if err != nil {
-		t.Errorf("err: expected == nil, gotten = %v", err)
-	}
+	got, err := laccount.GetOperation(mms)
+	testutils.AssertNil(t, err, "err")
 
-	expected := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.SELL, price)
-	expected.ExeId = gotten.ExeId
-	expected.OpId = gotten.OpId
-	expected.Timestamp = gotten.Timestamp
-	expected.Status = model.PENDING
-	expected.Results = model.OpResults{}
-	expected.Type = model.AUTO
+	exp := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.SELL, price)
+	exp.ExeId = got.ExeId
+	exp.OpId = got.OpId
+	exp.Timestamp = got.Timestamp
+	exp.Status = model.PENDING
+	exp.Results = model.OpResults{}
+	exp.Type = model.AUTO
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "operation")
 }
 
 func TestGetOperation_Sell_MinBaseQtyExceed(t *testing.T) {
@@ -322,13 +296,10 @@ func TestGetOperation_Sell_MinBaseQtyExceed(t *testing.T) {
 	price := utils.DecimalFromString("44881.330525")
 	mms := get_mms("BTC", price)
 
-	gotten, err := laccount.GetOperation(mms)
-	if err != nil {
-		t.Errorf("err: expected == nil, gotten = %v", err)
-	}
-	if !gotten.IsEmpty() {
-		t.Errorf("expected empty, gotten = %v", gotten)
-	}
+	got, err := laccount.GetOperation(mms)
+
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertTrue(t, got.IsEmpty(), "operation")
 }
 
 func TestGetOperation_StopLoss(t *testing.T) {
@@ -340,20 +311,18 @@ func TestGetOperation_StopLoss(t *testing.T) {
 	price := utils.DecimalFromString("31648.36")
 	mms := get_mms("BTC", price)
 
-	gotten, err := laccount.GetOperation(mms)
-	if err != nil {
-		t.Errorf("err: expected == nil, gotten = %v", err)
-	}
+	got, err := laccount.GetOperation(mms)
+	testutils.AssertNil(t, err, "err")
 
-	expected := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.SELL, price)
-	expected.ExeId = gotten.ExeId
-	expected.OpId = gotten.OpId
-	expected.Timestamp = gotten.Timestamp
-	expected.Status = model.PENDING
-	expected.Results = model.OpResults{}
-	expected.Type = model.AUTO
+	exp := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.SELL, price)
+	exp.ExeId = got.ExeId
+	exp.OpId = got.OpId
+	exp.Timestamp = got.Timestamp
+	exp.Status = model.PENDING
+	exp.Results = model.OpResults{}
+	exp.Type = model.AUTO
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "operation")
 }
 
 func TestGetOperation_Buy(t *testing.T) {
@@ -365,20 +334,18 @@ func TestGetOperation_Buy(t *testing.T) {
 	price := utils.DecimalFromString("38.798975")
 	mms := get_mms("DOT", price)
 
-	gotten, err := laccount.GetOperation(mms)
-	if err != nil {
-		t.Errorf("err: expected == nil, gotten = %v", err)
-	}
+	got, err := laccount.GetOperation(mms)
+	testutils.AssertNil(t, err, "err")
 
-	expected := get_operation_test(amt, model.QUOTE_AMOUNT, "DOT", "USDT", model.BUY, price)
-	expected.ExeId = gotten.ExeId
-	expected.OpId = gotten.OpId
-	expected.Timestamp = gotten.Timestamp
-	expected.Status = model.PENDING
-	expected.Results = model.OpResults{}
-	expected.Type = model.AUTO
+	exp := get_operation_test(amt, model.QUOTE_AMOUNT, "DOT", "USDT", model.BUY, price)
+	exp.ExeId = got.ExeId
+	exp.OpId = got.OpId
+	exp.Timestamp = got.Timestamp
+	exp.Status = model.PENDING
+	exp.Results = model.OpResults{}
+	exp.Type = model.AUTO
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "operation")
 }
 
 func TestGetOperation_Buy_MinQuoteQtyExceeded(t *testing.T) {
@@ -396,13 +363,10 @@ func TestGetOperation_Buy_MinQuoteQtyExceeded(t *testing.T) {
 	price := utils.DecimalFromString("38.798975")
 	mms := get_mms("DOT", price)
 
-	gotten, err := laccount.GetOperation(mms)
-	if err != nil {
-		t.Errorf("err: expected == nil, gotten = %v", err)
-	}
-	if !gotten.IsEmpty() {
-		t.Errorf("expected empty, gotten = %v", gotten)
-	}
+	got, err := laccount.GetOperation(mms)
+
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertTrue(t, got.IsEmpty(), "operation")
 }
 
 func TestGetOperation_MissProfit(t *testing.T) {
@@ -414,20 +378,18 @@ func TestGetOperation_MissProfit(t *testing.T) {
 	price := utils.DecimalFromString("59.34")
 	mms := get_mms("DOT", price)
 
-	gotten, err := laccount.GetOperation(mms)
-	if err != nil {
-		t.Errorf("err: expected == nil, gotten = %v", err)
-	}
+	got, err := laccount.GetOperation(mms)
+	testutils.AssertNil(t, err, "err")
 
-	expected := get_operation_test(amt, model.QUOTE_AMOUNT, "DOT", "USDT", model.BUY, price)
-	expected.ExeId = gotten.ExeId
-	expected.OpId = gotten.OpId
-	expected.Timestamp = gotten.Timestamp
-	expected.Status = model.PENDING
-	expected.Results = model.OpResults{}
-	expected.Type = model.AUTO
+	exp := get_operation_test(amt, model.QUOTE_AMOUNT, "DOT", "USDT", model.BUY, price)
+	exp.ExeId = got.ExeId
+	exp.OpId = got.OpId
+	exp.Timestamp = got.Timestamp
+	exp.Status = model.PENDING
+	exp.Results = model.OpResults{}
+	exp.Type = model.AUTO
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "operation")
 }
 
 /********************** Helpers *************************/
@@ -492,8 +454,8 @@ func get_operation_test(amt decimal.Decimal, amtSide model.AmountSide, base, quo
 		Price:      price,
 		Results: model.OpResults{
 			ActualPrice: price,
-			BaseAmount:  baseAmt,
-			QuoteAmount: quoteAmt,
+			BaseDiff:    baseAmt,
+			QuoteDiff:   quoteAmt,
 			Spread:      decimal.Zero,
 		},
 		Status:    model.FILLED,

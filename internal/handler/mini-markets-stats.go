@@ -4,10 +4,12 @@ import (
 	"log"
 
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 	abool "github.com/tevino/abool/v2"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/operations"
 )
@@ -61,7 +63,7 @@ func read_mini_markets_stats_ch() {
 }
 
 var skip_mini_markets_stats = func([]model.MiniMarketStats) {
-	log.Printf("skipping mini markets stats update...")
+	logrus.Info(logger.HANDL_SKIP_MMS_UPDATE)
 }
 
 var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
@@ -75,9 +77,12 @@ var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
 	for _, mms := range miniMarketsStats {
 		// Getting target operation
 		operation, err := tcontext.laccount.GetOperation(mms)
-		if err != nil {
-			log.Printf("%s", err.Error())
+		if err != nil && err.(model.CtbError).IsRecoverable() {
+			logrus.Errorf(logger.HANDL_ERR_RECOVERABLE, err.Error())
 			continue
+		}
+		if err != nil {
+			logrus.Panicf(logger.HANDL_ERR_UNRECOVERABLE, err.Error())
 		}
 
 		// NOOP
@@ -88,25 +93,26 @@ var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
 		// Getting remote account before operation
 		raccount1, err := binance.GetAccout()
 		if err != nil {
-			log.Fatalf("failed to get remote account")
+			logrus.Errorf(logger.HANDL_ERR_RECOVERABLE, err.Error())
 			continue
 		}
 
 		// Sending market order
 		operation, err = binance.SendSpotMarketOrder(operation)
 		if err != nil {
-			log.Printf("%s", err.Error())
+			logrus.Errorf(logger.HANDL_ERR_RECOVERABLE, err.Error())
 			continue
 		}
 		if operation.Status == model.FAILED {
-			log.Printf("failed to place market order %v", operation)
+			logrus.Errorf(logger.HANDL_ERR_MKT_ODR_FAILED, operation.OpId)
 			continue
 		}
 
 		// Getting remote account after operation
 		raccount2, err := binance.GetAccout()
 		if err != nil {
-			log.Fatalf("failed to get remote account")
+			logrus.Panicf(logger.HANDL_ERR_UNRECOVERABLE, err.Error())
+			continue
 		}
 
 		// Computing operation results
@@ -163,32 +169,21 @@ func compute_op_results(old, new model.RemoteAccount, op model.Operation) model.
 	actualPrice := quoteDiff.Div(baseDiff).Round(8)
 	results := model.OpResults{
 		ActualPrice: actualPrice,
-		BaseAmount:  baseDiff,
-		QuoteAmount: quoteDiff,
+		BaseDiff:    baseDiff,
+		QuoteDiff:   quoteDiff,
 		Spread:      ((actualPrice.Sub(op.Price)).Div(op.Price)).Mul(decimal.NewFromInt(100)).Round(8)}
 	op.Results = results
-	log_operation_results(op, baseDiff, quoteDiff)
 
+	logrus.Infof(logger.HANDL_OPERATION_RESULTS,
+		op.Results.BaseDiff, op.Results.QuoteDiff, op.Results.ActualPrice, op.Results.Spread, op.Status)
 	return op
-}
-
-func log_operation_results(op model.Operation, baseDiff, quoteDiff decimal.Decimal) {
-	log.Printf("operation %s: %s", op.OpId, op.Status)
-	log.Printf("side: %s", op.Side)
-	log.Printf("amount side: %s", op.AmountSide)
-	log.Printf("amount: %s", op.Amount.String())
-	log.Printf("baseDiff: %s", baseDiff.String())
-	log.Printf("quoteDiff: %s", quoteDiff.String())
-	log.Printf("price: %s", op.Price.String())
-	log.Printf("actualPrice: %s", op.Results.ActualPrice.String())
-	log.Printf("spread: %s", op.Results.Spread.String())
 }
 
 func trading_context_init() {
 	if tcontext.execution.IsEmpty() {
 		execution, err := executions.GetCurrentlyActive()
 		if err != nil {
-			log.Fatalf("failed to retrieve active execution")
+			logrus.Panicf(logger.HANDL_ERR_UNRECOVERABLE, err.Error())
 		}
 		tcontext.execution = execution
 	}
@@ -196,7 +191,7 @@ func trading_context_init() {
 	if tcontext.laccount == nil {
 		laccount, err := laccount.GetLatestByExeId(tcontext.execution.ExeId)
 		if err != nil {
-			log.Fatalf("failed to retrieve local account")
+			logrus.Panicf(logger.HANDL_ERR_UNRECOVERABLE, err.Error())
 		}
 		tcontext.laccount = laccount
 	}

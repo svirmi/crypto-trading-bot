@@ -18,15 +18,9 @@ func TestCanSpotTrade(t *testing.T) {
 
 	symbols = get_symbols()
 
-	if !CanSpotTrade("BTCUSDT") {
-		t.Errorf("expected true, gotten false")
-	}
-	if CanSpotTrade("SHIBAUSDT") {
-		t.Errorf("expected false, gotten true")
-	}
-	if CanSpotTrade("SHITUSDT") {
-		t.Errorf("expected false, gotten true")
-	}
+	testutils.AssertTrue(t, CanSpotTrade("BTCUSDT"), "can_spot_trade")
+	testutils.AssertFalse(t, CanSpotTrade("SHIBAUSDT"), "can_spot_trade")
+	testutils.AssertFalse(t, CanSpotTrade("SHITUSDT"), "can_spot_trade")
 }
 
 func TestGetSpotMarketLimits(t *testing.T) {
@@ -55,17 +49,15 @@ func TestGetSpotMarketLimits(t *testing.T) {
 	btcusdt.Filters[2]["minNotional"] = "10.00"
 	symbols["BTCUSDT"] = btcusdt
 
-	expected := model.SpotMarketLimits{
+	exp := model.SpotMarketLimits{
 		MinBase:  utils.DecimalFromString("0.002"),
 		MaxBase:  utils.DecimalFromString("999.998"),
 		StepBase: utils.DecimalFromString("0.1"),
 		MinQuote: utils.DecimalFromString("10.00")}
-	gotten, err := GetSpotMarketLimits("BTCUSDT")
-	if err != nil {
-		t.Errorf("err: expected nil, gotten = %v", err)
-	}
+	got, err := GetSpotMarketLimits("BTCUSDT")
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "spot_market_limits")
 }
 
 func TestGetSpotMarketLimits_InvalidValues(t *testing.T) {
@@ -93,17 +85,15 @@ func TestGetSpotMarketLimits_InvalidValues(t *testing.T) {
 	btcusdt.Filters[2]["minNotional"] = "10.00"
 	symbols["BTCUSDT"] = btcusdt
 
-	expected := model.SpotMarketLimits{
+	exp := model.SpotMarketLimits{
 		MinBase:  utils.DecimalFromString("0.002"),
 		MaxBase:  utils.DecimalFromString("999.999"),
 		StepBase: utils.DecimalFromString("0.1"),
 		MinQuote: utils.DecimalFromString("10.00")}
-	gotten, err := GetSpotMarketLimits("BTCUSDT")
-	if err != nil {
-		t.Errorf("err: expected nil, gotten = %v", err)
-	}
+	got, err := GetSpotMarketLimits("BTCUSDT")
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "spot_market_limits")
 
 	btcusdt = symbols["BTCUSDT"]
 	btcusdt.Filters = make([]map[string]interface{}, 0, 3)
@@ -115,17 +105,15 @@ func TestGetSpotMarketLimits_InvalidValues(t *testing.T) {
 	btcusdt.Filters[2]["filterType"] = "MIN_NOTIONAL"
 	symbols["BTCUSDT"] = btcusdt
 
-	expected = model.SpotMarketLimits{
+	exp = model.SpotMarketLimits{
 		MinBase:  utils.DecimalFromString(fmt.Sprintf("%f", _MIN_NUM)),
 		MaxBase:  utils.DecimalFromString(fmt.Sprintf("%f", _MAX_NUM)),
 		StepBase: utils.DecimalFromString(fmt.Sprintf("%f", _MIN_NUM)),
 		MinQuote: utils.DecimalFromString(fmt.Sprintf("%f", _MIN_NUM))}
-	gotten, err = GetSpotMarketLimits("BTCUSDT")
-	if err != nil {
-		t.Errorf("err: expected nil, gotten = %v", err)
-	}
+	got, err = GetSpotMarketLimits("BTCUSDT")
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "spot_market_limits")
 }
 
 func TestGetSpotMarketLimits_FilterNotFound(t *testing.T) {
@@ -150,11 +138,8 @@ func TestGetSpotMarketLimits_FilterNotFound(t *testing.T) {
 	btcusdt.Filters[1]["minNotional"] = "10.00"
 	symbols["BTCUSDT"] = btcusdt
 
-	gotten, err := GetSpotMarketLimits("BTCUSDT")
-	if err == nil {
-		t.Errorf("err: expected != nil, gotten = nil")
-	}
-	if !gotten.IsEmpty() {
-		t.Errorf("expected empty, gotten = %v", gotten)
-	}
+	got, err := GetSpotMarketLimits("BTCUSDT")
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertTrue(t, got.IsEmpty(), "spot_market_limits")
 }

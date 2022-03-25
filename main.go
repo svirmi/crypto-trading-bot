@@ -1,43 +1,68 @@
 package main
 
 import (
-	"log"
+	"flag"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/handler"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
 func main() {
-	defer shutdown()
-	sigc := interrupt_handler()
+	// Register interrupt handler
+	register_interrupt_handler()
 
-	config.ParseConfig()
-	mongodb.Initialize()
-	binance.Initialize()
+	// Parsing command line
+	testnet := flag.Bool("testnet", false, "if present, application runs on testnet")
+	noColors := flag.Bool("nocolors", false, "if present, logs are not colored")
+	v := flag.Bool("v", false, "if present, debug logs are shown")
+	vv := flag.Bool("vv", false, "if present, trace logs are shown")
+	flag.Parse()
+
+	if *vv {
+		logger.Initialize(*noColors, logrus.TraceLevel)
+	} else if *v {
+		logger.Initialize(*noColors, logrus.DebugLevel)
+	} else {
+		logger.Initialize(*noColors, logrus.InfoLevel)
+	}
+
+	config.Initialize(*testnet)
+
+	err := mongodb.Initialize()
+	if err != nil {
+		logrus.Panic(err.Error())
+	}
+
+	err = binance.Initialize()
+	if err != nil {
+		logrus.Panic(err.Error())
+	}
 
 	raccount, err := binance.GetAccout()
 	if err != nil {
-		log.Fatalf(err.Error())
+		logrus.Panic(err.Error())
 	}
 
 	exe, err := executions.CreateOrRestore(raccount)
 	if err != nil {
-		log.Fatalf(err.Error())
+		logrus.Panic(err.Error())
 	}
 
 	tradableAssets := binance.FilterTradableAssets(exe.Assets)
 	prices, err := binance.GetAssetsValue(tradableAssets)
 	if err != nil {
-		log.Fatalf(err.Error())
+		logrus.Panic(err.Error())
 	}
 
 	spotMarketLimits := make(map[string]model.SpotMarketLimits)
@@ -45,7 +70,7 @@ func main() {
 		symbol := utils.GetSymbolFromAsset(asset)
 		spotLimit, err := binance.GetSpotMarketLimits(symbol)
 		if err != nil {
-			log.Fatalf("%v", err.Error())
+			logrus.Panic(err.Error())
 		}
 		spotMarketLimits[symbol] = spotLimit
 	}
@@ -60,7 +85,7 @@ func main() {
 		SpotMarketLimits:    spotMarketLimits}
 	laccount, err := laccount.CreateOrRestore(laCreationRequest)
 	if err != nil {
-		log.Fatalf(err.Error())
+		logrus.Panic(err.Error())
 	}
 
 	mms := make(chan []model.MiniMarketStats)
@@ -72,21 +97,23 @@ func main() {
 	binance.MiniMarketsStatsServe(tradableAssets)
 
 	// Terminate when the application is stopped
-	<-sigc
+	<-make(chan struct{})
 }
 
-func interrupt_handler() chan os.Signal {
+func register_interrupt_handler() chan os.Signal {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc,
 		syscall.SIGHUP,
 		syscall.SIGINT,
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
-	return sigc
-}
 
-func shutdown() {
-	binance.MiniMarketsStatsStop()
-	mongodb.Disconnect()
-	log.Printf("bye, bye")
+	go func() {
+		<-sigc
+		binance.MiniMarketsStatsStop()
+		mongodb.Disconnect()
+		logrus.Info("bye, bye")
+		os.Exit(0)
+	}()
+	return sigc
 }

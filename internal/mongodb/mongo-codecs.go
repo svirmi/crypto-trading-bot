@@ -1,7 +1,6 @@
 package mongodb
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/shopspring/decimal"
@@ -9,7 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
 
 type decimal_codec struct{}
@@ -31,10 +29,6 @@ func (de decimal_codec) DecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueR
 			Name:     "DecimalDecodeValue",
 			Kinds:    []reflect.Kind{reflect.TypeOf(decimal.Zero).Kind()},
 			Received: val}
-	}
-
-	if vr.Type() != bsontype.String {
-		return fmt.Errorf("cannot decode %v into a string type", vr.Type())
 	}
 
 	str, err := vr.ReadString()

@@ -2,9 +2,10 @@ package mongodb
 
 import (
 	"context"
-	"log"
 
+	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -26,21 +27,21 @@ type mongo_connection struct {
 
 var mongoConnection mongo_connection
 
-func Initialize() {
+func Initialize() error {
 	mongoDbConfig := config.GetMongoDbConfig()
-	log.Printf("connecting to mongo instance: %s", mongoDbConfig.Uri)
+	logrus.Infof(logger.MONGO_CONNECTING, mongoDbConfig.Uri)
 	clientOptions := options.Client().
 		ApplyURI(mongoDbConfig.Uri).
 		SetRegistry(build_custom_registry())
 	mongoClient, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
-		log.Fatalf(err.Error())
+		return err
 	}
 
 	// Pinging db to test connection
 	err = mongoClient.Ping(context.TODO(), readpref.Primary())
 	if err != nil {
-		log.Fatalf(err.Error())
+		return err
 	}
 
 	// Getting collection handles
@@ -50,6 +51,7 @@ func Initialize() {
 		operationsCol:    get_collection_handle(mongoClient, _OP_COL_NAME),
 		localAccountsCol: get_collection_handle(mongoClient, _LACC_COL_NAME),
 	}
+	return nil
 }
 
 var GetExecutionsCol = func() *mongo.Collection {
@@ -65,7 +67,7 @@ var GetLocalAccountsCol = func() *mongo.Collection {
 }
 
 func Disconnect() {
-	log.Printf("disconnecting from mongodb")
+	logrus.Info(logger.MONGO_DISCONNECTING)
 
 	if mongoConnection.mongoClient != nil {
 		mongoConnection.mongoClient.Disconnect(context.TODO())
@@ -73,9 +75,9 @@ func Disconnect() {
 }
 
 func get_collection_handle(mongoClient *mongo.Client, collection string) *mongo.Collection {
-	mongoDbConfig := config.GetMongoDbConfig()
-	log.Printf("getting handle to %s collection", collection)
+	database := config.GetMongoDbConfig().Database
+	logrus.Infof(logger.MONGO_COLLECTION_HANLDE, database, collection)
 	return mongoClient.
-		Database(mongoDbConfig.Database).
+		Database(database).
 		Collection(collection)
 }

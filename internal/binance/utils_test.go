@@ -1,6 +1,19 @@
 package binance
 
-import binanceapi "github.com/adshao/go-binance/v2"
+import (
+	"os"
+	"testing"
+
+	binanceapi "github.com/adshao/go-binance/v2"
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
+)
+
+func TestMain(m *testing.M) {
+	logger.Initialize(true, logrus.TraceLevel)
+	code := m.Run()
+	os.Exit(code)
+}
 
 func get_symbols() map[string]binanceapi.Symbol {
 	symbols = make(map[string]binanceapi.Symbol)

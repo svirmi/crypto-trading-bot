@@ -1,8 +1,9 @@
 package testutils
 
 import (
-	"bytes"
 	"encoding/json"
+	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -11,21 +12,89 @@ var (
 	MONGODB_DATABASE_TEST string = "ctb-unit-tests"
 )
 
-func AssertStructEq(t *testing.T, exp, got interface{}) {
-	bexp, err := json.MarshalIndent(exp, "", "  ")
-	if err != nil {
-		t.Fatalf("failed to enocode payload: %v", exp)
+func AssertTrue(t *testing.T, value bool, comp string) {
+	t.Helper()
+	if !value {
+		t.Errorf("%s | exp=true, got=false", comp)
+	}
+}
+
+func AssertFalse(t *testing.T, value bool, comp string) {
+	t.Helper()
+	if value {
+		t.Errorf("%s | exp=false, got=true", comp)
+	}
+}
+
+func AssertNil(t *testing.T, value interface{}, comp string) {
+	t.Helper()
+	if value != nil {
+		t.Errorf("%s | exp=nil, got=%v", comp, format(value))
+	}
+}
+
+func AssertNotNil(t *testing.T, value interface{}, comp string) {
+	t.Helper()
+	if value == nil {
+		t.Errorf("%s | exp!=nil, got=nil", comp)
+	}
+}
+
+func AssertEq(t *testing.T, exp, got interface{}, comp string) {
+	t.Helper()
+	if exp == nil && got == nil {
+		return
 	}
 
-	bgot, err := json.MarshalIndent(got, "", "  ")
-	if err != nil {
-		t.Fatalf("failed to enocode payload: %v", got)
+	if exp != nil && got == nil {
+		t.Errorf("%s | exp=%v, got=nil", comp, format(exp))
+		return
 	}
 
-	res := bytes.Compare(bexp, bgot)
-	if res != 0 {
-		t.Errorf("exp = %s", string(bexp[:]))
-		t.Errorf("got = %s", string(bgot[:]))
-		t.Fatal("exp and got structs are not equivalent")
+	if exp == nil && got != nil {
+		t.Errorf("%s | exp=nil, got=%v", comp, format(got))
+		return
 	}
+
+	kexp := reflect.ValueOf(exp).Kind()
+	kgot := reflect.ValueOf(got).Kind()
+	if kexp != kgot {
+		t.Errorf("%s | exp_type=%v, got_type=%v", comp, kexp, kgot)
+	}
+
+	exp = format(exp)
+	got = format(got)
+	if fmt.Sprintf("%v", exp) == fmt.Sprintf("%v", got) {
+		return
+	}
+
+	t.Errorf("%s | exp=%v, got=%v", comp, exp, got)
+}
+
+func format(value interface{}) interface{} {
+	if value == nil {
+		return "nil"
+	}
+
+	if reflect.ValueOf(value).Kind() == reflect.Ptr {
+		payload := reflect.Indirect(reflect.ValueOf(value))
+		reflect.ValueOf(value).Elem().Set(payload)
+	}
+
+	if reflect.ValueOf(value).Kind() == reflect.Struct {
+		bytes, _ := json.MarshalIndent(value, "", "  ")
+		return string(bytes[:])
+	}
+
+	if reflect.ValueOf(value).Kind() == reflect.Map {
+		bytes, _ := json.MarshalIndent(value, "", "  ")
+		return string(bytes[:])
+	}
+
+	if reflect.ValueOf(value).Kind() == reflect.Slice {
+		bytes, _ := json.MarshalIndent(value, "", "  ")
+		return string(bytes[:])
+	}
+
+	return value
 }

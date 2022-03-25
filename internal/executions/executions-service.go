@@ -2,10 +2,11 @@ package executions
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
@@ -23,20 +24,13 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 
 	// Active execution found, restoring it
 	if !exe.IsEmpty() {
-		log.Printf("restoring execution %s", exe.ExeId)
-		log.Printf("execution status: %s", exe.Status)
-		log.Printf("assets to be traded: %v", exe.Assets)
+		logrus.Infof(logger.EXE_RESTORE, exe.ExeId, exe.Status, exe.Assets)
 		return exe, nil
 	}
 
 	// No active execution found, starting a new one
-	if raccount.IsEmpty() {
-		return model.Execution{}, fmt.Errorf("empty remote account received")
-	}
-
 	exe = build_execution(raccount)
-	log.Printf("starting execution %s", exe.ExeId)
-	log.Printf("assets to be traded: %v", exe.Assets)
+	logrus.Infof(logger.EXE_START, exe.ExeId, exe.Status, exe.Assets)
 	if insert_one(exe); err != nil {
 		return model.Execution{}, err
 	}
@@ -72,15 +66,20 @@ func Pause(exeId string) (model.Execution, error) {
 		return model.Execution{}, err
 	}
 	if exe.IsEmpty() {
-		err = fmt.Errorf("no active execution found")
+		err = fmt.Errorf(logger.EXE_ERR_NOT_FOUND, exeId)
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 	if exe.Status == model.EXE_PAUSED {
-		err = fmt.Errorf("execution %s is already PAUSED", exe.ExeId)
+		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
+			exe.ExeId, model.EXE_PAUSED, model.EXE_PAUSED)
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 	if exe.Status == model.EXE_TERMINATED {
-		err = fmt.Errorf("execution %s is TERMINATED. Cannot be paused", exe.ExeId)
+		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
+			exeId, model.EXE_TERMINATED, model.EXE_PAUSED)
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 
@@ -106,15 +105,20 @@ func Resume(exeId string) (model.Execution, error) {
 		return model.Execution{}, err
 	}
 	if exe.IsEmpty() {
-		err = fmt.Errorf("no active execution found")
+		err = fmt.Errorf(logger.EXE_ERR_NOT_FOUND, exeId)
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 	if exe.Status == model.EXE_ACTIVE {
-		err = fmt.Errorf("execution %s is already ACTIVE", exe.ExeId)
+		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
+			exe.ExeId, model.EXE_ACTIVE, model.EXE_ACTIVE)
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 	if exe.Status == model.EXE_TERMINATED {
-		err = fmt.Errorf("execution %s is TERMINATED. Cannot be resumed", exe.ExeId)
+		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
+			exe.ExeId, model.EXE_TERMINATED, model.EXE_ACTIVE)
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 
@@ -140,11 +144,14 @@ func Terminate(exeId string) (model.Execution, error) {
 		return model.Execution{}, err
 	}
 	if exe.IsEmpty() {
-		err = fmt.Errorf("no active execution found")
+		err = fmt.Errorf(logger.EXE_ERR_NOT_FOUND, exeId)
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 	if exe.Status == model.EXE_TERMINATED {
-		err = fmt.Errorf("execution %s is already TERMINATED", exe.ExeId)
+		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
+			exe.ExeId, model.EXE_TERMINATED, model.EXE_TERMINATED)
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 

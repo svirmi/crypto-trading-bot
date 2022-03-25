@@ -3,10 +3,11 @@ package binance
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	binanceapi "github.com/adshao/go-binance/v2"
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
@@ -18,7 +19,8 @@ func FilterTradableAssets(bases []string) []string {
 	for _, base := range bases {
 		_, found := symbols[utils.GetSymbolFromAsset(base)]
 		if !found {
-			log.Printf("%s is not a tradable asset", base)
+			logrus.WithField("comp", "binance").
+				Warnf(logger.BINANCE_STABLECOIN_ASSET, base)
 			continue
 		}
 		tradables = append(tradables, base)
@@ -58,12 +60,12 @@ func GetAccout() (model.RemoteAccount, error) {
 }
 
 func SendSpotMarketOrder(op model.Operation) (model.Operation, error) {
-	//Check if symbol or its inverse exists
+	// Check if symbol or its inverse exists
 	_, dfound := symbols[op.Base+op.Quote]
 	_, ifound := symbols[op.Quote+op.Base]
 	if !dfound && !ifound {
-		err := fmt.Errorf("neither %s%s nor %s%s is a valid exchange symbol",
-			op.Base, op.Quote, op.Quote, op.Base)
+		err := fmt.Errorf(logger.BINANCE_ERR_INVALID_SYMBOL, op.Base, op.Quote, op.Quote, op.Base)
+		logrus.Error(err.Error())
 		return model.Operation{}, err
 	}
 
@@ -80,7 +82,9 @@ func SendSpotMarketOrder(op model.Operation) (model.Operation, error) {
 
 	// Checking if symbol can be traded
 	if !CanSpotTrade(op.Base + op.Quote) {
-		return op, fmt.Errorf("%s trading is disabled", op.Base+op.Quote)
+		err := fmt.Errorf(logger.BINANCE_TRADING_DISABLED, op.Base+op.Quote)
+		logrus.Error(err.Error())
+		return op, err
 	}
 
 	// Execute operation
@@ -101,14 +105,18 @@ func check_spot_market_order(op model.Operation) error {
 
 	if op.AmountSide == model.QUOTE_AMOUNT {
 		if op.Amount.LessThan(limit.MinQuote) {
-			return fmt.Errorf("below MIN_NOTIONAL")
+			return fmt.Errorf(logger.BINANCE_BELOW_LIMIT, "min quote")
 		}
 	} else {
 		if op.Amount.LessThan(limit.MinBase) {
-			return fmt.Errorf("below min LOT_SIZE")
+			err := fmt.Errorf(logger.BINANCE_BELOW_LIMIT, "min base")
+			logrus.Error(err.Error())
+			return err
 		}
 		if op.Amount.GreaterThan(limit.MaxBase) {
-			return fmt.Errorf("above max LOT_SIZE")
+			err := fmt.Errorf(logger.BINANCE_ABOVE_LIMIT, "max base")
+			logrus.Error(err.Error())
+			return err
 		}
 	}
 	return nil
@@ -124,7 +132,9 @@ func send_spot_market_order(op model.Operation) error {
 	} else if op.Side == model.SELL {
 		ordersvc.Side(binanceapi.SideTypeSell)
 	} else {
-		return fmt.Errorf("unknown operation side %s", op.Side)
+		err := fmt.Errorf(logger.BINANCE_ERR_UNKNOWN_SIDE, op.Side)
+		logrus.Error(err.Error())
+		return err
 	}
 
 	if op.AmountSide == model.BASE_AMOUNT {
@@ -137,7 +147,13 @@ func send_spot_market_order(op model.Operation) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("symbol: %s, side: %s, status: %s\n", order.Symbol, order.Side, order.Status)
+	logrus.WithField("comp", "binance").
+		Infof(logger.BINANCE_MKT_ORDER_RESULT,
+			order.Symbol,
+			order.OrigQuantity,
+			order.ExecutedQuantity,
+			order.Status,
+			order.Side)
 	return nil
 }
 

@@ -38,19 +38,18 @@ func TestCreateOrRestore_Create(t *testing.T) {
 		SellerCommission: 1,
 		Balances:         balances}
 
-	gotten, err := CreateOrRestore(raccount)
-	if err != nil {
-		t.Fatalf("failed to create or restore execution: %v", err)
-	}
+	got, err := CreateOrRestore(raccount)
+	testutils.AssertNil(t, err, "err")
 
-	expected := model.Execution{
-		ExeId:     gotten.ExeId,
+	exp := model.Execution{
+		ExeId:     got.ExeId,
 		Status:    model.EXE_ACTIVE,
 		Assets:    []string{"BTC", "ETH"},
-		Timestamp: gotten.Timestamp}
+		Timestamp: got.Timestamp}
 
-	exeIds = append(exeIds, gotten.ExeId)
-	testutils.AssertStructEq(t, expected, gotten)
+	exeIds = append(exeIds, got.ExeId)
+
+	testutils.AssertEq(t, exp, got, "execution")
 }
 
 func TestCreateOrRestore_Restore(t *testing.T) {
@@ -78,20 +77,18 @@ func TestCreateOrRestore_Restore(t *testing.T) {
 		SellerCommission: 1,
 		Balances:         balances}
 
-	exe := model.Execution{
+	exp := model.Execution{
 		ExeId:     uuid.NewString(),
 		Status:    model.EXE_ACTIVE,
 		Assets:    []string{"BTC", "ETH"},
 		Timestamp: time.Now().UnixMicro()}
-	insert_one(exe)
-	exeIds = append(exeIds, exe.ExeId)
+	insert_one(exp)
+	exeIds = append(exeIds, exp.ExeId)
 
-	gotten, err := CreateOrRestore(raccount)
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten = %v", err)
-	}
+	got, err := CreateOrRestore(raccount)
 
-	testutils.AssertStructEq(t, gotten, exe)
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "execution")
 }
 
 func TestGetLatestByExeId(t *testing.T) {
@@ -110,25 +107,24 @@ func TestGetLatestByExeId(t *testing.T) {
 	}()
 
 	// Inserting execution v1
-	exe := model.Execution{
+	exp := model.Execution{
 		ExeId:     exeIds[0],
 		Status:    model.EXE_ACTIVE,
 		Assets:    []string{"BTC", "ETH"},
 		Timestamp: time.Now().UnixMicro()}
-	insert_one(exe)
+	insert_one(exp)
 
 	// Inserting execution v2
-	exe.Status = model.EXE_TERMINATED
-	exe.Assets = append(exe.Assets, "DOT")
-	exe.Timestamp = time.Now().UnixMicro() + 500
-	insert_one(exe)
+	exp.Status = model.EXE_TERMINATED
+	exp.Assets = append(exp.Assets, "DOT")
+	exp.Timestamp = time.Now().UnixMicro() + 500
+	insert_one(exp)
 
 	// Getting latest by exe id
-	gotten, err := GetLatestByExeId(exeIds[0])
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten = %v", err)
-	}
-	testutils.AssertStructEq(t, exe, gotten)
+	got, err := GetLatestByExeId(exeIds[0])
+
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "execution")
 }
 
 func TestGetCurrentlyActive(t *testing.T) {
@@ -149,30 +145,30 @@ func TestGetCurrentlyActive(t *testing.T) {
 	}()
 
 	// Inserting exe1 v1
-	exe := model.Execution{
+	exp := model.Execution{
 		ExeId:     exeIds[0],
 		Status:    model.EXE_ACTIVE,
 		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro()}
-	insert_one(exe)
+		Timestamp: time.Now().UnixMicro() + 100}
+	insert_one(exp)
 
 	// Inserting exe2 v2
-	exe.Status = model.EXE_TERMINATED
-	exe.Assets = append(exe.Assets, "DOT")
-	exe.Timestamp = time.Now().UnixMicro() + 500
-	insert_one(exe)
+	exp.Status = model.EXE_TERMINATED
+	exp.Assets = append(exp.Assets, "DOT")
+	exp.Timestamp = time.Now().UnixMicro() + 200
+	insert_one(exp)
 
 	// Inserting exe3 v1
-	exe.ExeId = exeIds[1]
-	exe.Status = model.EXE_PAUSED
-	insert_one(exe)
+	exp.ExeId = exeIds[1]
+	exp.Status = model.EXE_ACTIVE
+	exp.Timestamp = time.Now().UnixMicro() + 300
+	insert_one(exp)
 
 	// Getting latest by exe id
-	gotten, err := GetCurrentlyActive()
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten = %v", err)
-	}
-	testutils.AssertStructEq(t, exe, gotten)
+	got, err := GetCurrentlyActive()
+
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, got, exp, "execution")
 }
 
 func TestGetCurrentlyActive_None(t *testing.T) {
@@ -187,59 +183,10 @@ func TestGetCurrentlyActive_None(t *testing.T) {
 	}()
 
 	// Getting latest by exe id
-	gotten, err := GetCurrentlyActive()
-	if err != nil {
-		t.Fatalf("expected err = nil, gptten = %v", err)
-	}
-	if !gotten.IsEmpty() {
-		t.Fatalf("expected exe = model.Execution{}, gotten = %v", gotten)
-	}
-}
+	got, err := GetCurrentlyActive()
 
-func TestGetCurrentlyActive_Many(t *testing.T) {
-	// Setting up test
-	old := mock_mongo_config()
-	mongodb.Initialize()
-	var exeIds = []string{uuid.NewString(), uuid.NewString()}
-
-	// Restoring status after test execution
-	defer func() {
-		filter := bson.D{{"$or", bson.A{
-			bson.D{{"exeId", exeIds[0]}},
-			bson.D{{"exeId", exeIds[1]}}}}}
-		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
-
-		restore_mongo_config(old)
-		mongodb.Disconnect()
-	}()
-
-	// Inserting exe1 v1
-	exe := model.Execution{
-		ExeId:     exeIds[0],
-		Status:    model.EXE_ACTIVE,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro()}
-	insert_one(exe)
-
-	// Inserting exe2 v2
-	exe.Status = model.EXE_ACTIVE
-	exe.Assets = append(exe.Assets, "DOT")
-	exe.Timestamp = time.Now().UnixMicro() + 500
-	insert_one(exe)
-
-	// Inserting exe3 v1
-	exe.ExeId = exeIds[1]
-	exe.Status = model.EXE_PAUSED
-	insert_one(exe)
-
-	// Getting latest by exe id
-	gotten, err := GetCurrentlyActive()
-	if err == nil {
-		t.Fatalf("expected err != nil, gotten = nil")
-	}
-	if !gotten.IsEmpty() {
-		t.Fatalf("expected exe = model.Execution{}, gotten = %v", gotten)
-	}
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertTrue(t, got.IsEmpty(), "execution")
 }
 
 func TestStatuses(t *testing.T) {
@@ -266,38 +213,22 @@ func TestStatuses(t *testing.T) {
 	insert_one(exe)
 
 	// Updating status to PAUSED
-	gotten, err := Pause(exeIds[0])
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten = %v", err)
-	}
-	if gotten.Status != model.EXE_PAUSED {
-		t.Fatalf("expected exe.Status = PAUSED, gotten = %v", gotten.Status)
-	}
+	got, err := Pause(exeIds[0])
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, model.EXE_PAUSED, got.Status, "execution")
 
 	// Updating status to ACTIVE
-	gotten, err = Resume(exeIds[0])
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten = %v", err)
-	}
-	if gotten.Status != model.EXE_ACTIVE {
-		t.Fatalf("expected exe.Status = ACTIVE, gotten = %v", gotten.Status)
-	}
+	got, err = Resume(exeIds[0])
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, model.EXE_ACTIVE, got.Status, "execution")
 
 	// Updating status to ACTIVE again
-	gotten, err = Resume(exeIds[0])
-	if err == nil {
-		t.Error("expected err != nil, gotten = nil", err)
-	}
-	if !gotten.IsEmpty() {
-		t.Fatalf("expected exe = model.Execution{}, gotten = %v", gotten)
-	}
+	got, err = Resume(exeIds[0])
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertTrue(t, got.IsEmpty(), "execution")
 
 	// Updating status to TERMINATED
-	gotten, err = Terminate(exeIds[0])
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten = %v", err)
-	}
-	if gotten.Status != model.EXE_TERMINATED {
-		t.Fatalf("expected exe.Status = TERMINATED, gotten = %v", gotten.Status)
-	}
+	got, err = Terminate(exeIds[0])
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, model.EXE_TERMINATED, got.Status, "execution")
 }

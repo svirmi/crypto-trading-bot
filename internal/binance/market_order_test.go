@@ -21,10 +21,10 @@ func TestFilterTradableAsset(t *testing.T) {
 	symbols = get_symbols()
 	assets := []string{"BTC", "ETH", "TRX", "BNB"}
 
-	gotten := FilterTradableAssets(assets)
-	expected := []string{"BTC", "ETH"}
+	got := FilterTradableAssets(assets)
+	exp := []string{"BTC", "ETH"}
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "tradable_assets")
 }
 
 func TestGetAssetsValue(t *testing.T) {
@@ -47,17 +47,15 @@ func TestGetAssetsValue(t *testing.T) {
 	}
 	symbols = get_symbols()
 
-	gotten, err := GetAssetsValue([]string{"BTC", "ETH", "DOT", "BNB", "TRX"})
-	if err != nil {
-		t.Errorf("err: expected nil, gotten = %v", err)
-	}
+	got, err := GetAssetsValue([]string{"BTC", "ETH", "DOT", "BNB", "TRX"})
+	testutils.AssertNil(t, err, "err")
 
-	expected := make(map[string]model.AssetPrice)
-	expected["BTC"] = model.AssetPrice{Asset: "BTC", Price: utils.DecimalFromString("35998.34")}
-	expected["ETH"] = model.AssetPrice{Asset: "ETH", Price: utils.DecimalFromString("44978.12")}
-	expected["DOT"] = model.AssetPrice{Asset: "DOT", Price: utils.DecimalFromString("98.12")}
+	exp := make(map[string]model.AssetPrice)
+	exp["BTC"] = model.AssetPrice{Asset: "BTC", Price: utils.DecimalFromString("35998.34")}
+	exp["ETH"] = model.AssetPrice{Asset: "ETH", Price: utils.DecimalFromString("44978.12")}
+	exp["DOT"] = model.AssetPrice{Asset: "DOT", Price: utils.DecimalFromString("98.12")}
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "asset_value")
 }
 
 func TestGetAccount(t *testing.T) {
@@ -70,13 +68,11 @@ func TestGetAccount(t *testing.T) {
 		return get_remote_binance_account(), nil
 	}
 
-	gotten, err := GetAccout()
-	if err != nil {
-		t.Errorf("err: expected = nil, gotten = %s", err)
-	}
-	expected := get_remote_account()
+	got, err := GetAccout()
+	testutils.AssertNil(t, err, "err")
+	exp := get_remote_account()
 
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "remote_account")
 }
 
 func TestSendMarketOrder_NoSuchSymbol(t *testing.T) {
@@ -90,13 +86,10 @@ func TestSendMarketOrder_NoSuchSymbol(t *testing.T) {
 	price := utils.DecimalFromString("56.12")
 	op := get_operation_test(amt, model.BASE_AMOUNT, "TRX", "USDT", model.BUY, price)
 
-	gotten, err := SendSpotMarketOrder(op)
-	if !gotten.IsEmpty() {
-		t.Errorf("op: expected empty, gotten = %v", op)
-	}
-	if err == nil {
-		t.Errorf("err: expected != nil, gotten = nil")
-	}
+	got, err := SendSpotMarketOrder(op)
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertTrue(t, got.IsEmpty(), "operation")
 }
 
 func TestSendMarketOrder_Direct_Buy_BaseAmt(t *testing.T) {
@@ -126,14 +119,12 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt(t *testing.T) {
 
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("3746.34")
-	expected := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
-	gotten, err := SendSpotMarketOrder(expected)
-	expected.Timestamp = gotten.Timestamp
+	exp := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
+	got, err := SendSpotMarketOrder(exp)
+	exp.Timestamp = got.Timestamp
 
-	if err != nil {
-		t.Errorf("err: expected = nil, gotten = %v", err)
-	}
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "operation")
 }
 
 func TestSendMarketOrder_Direct_Buy_BaseAmt_BelowMinBase(t *testing.T) {
@@ -155,12 +146,10 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_BelowMinBase(t *testing.T) {
 
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("3746.34")
-	expected := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
-	_, err := SendSpotMarketOrder(expected)
+	exp := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
+	_, err := SendSpotMarketOrder(exp)
 
-	if err == nil {
-		t.Errorf("err: expected != nil, gotten = nil")
-	}
+	testutils.AssertNotNil(t, err, "err")
 }
 
 func TestSendMarketOrder_Direct_Buy_BaseAmt_SpotDisabled(t *testing.T) {
@@ -182,12 +171,10 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_SpotDisabled(t *testing.T) {
 
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("3746.34")
-	expected := get_operation_test(amt, model.BASE_AMOUNT, "SHIBA", "USDT", model.BUY, price)
-	_, err := SendSpotMarketOrder(expected)
+	exp := get_operation_test(amt, model.BASE_AMOUNT, "SHIBA", "USDT", model.BUY, price)
+	_, err := SendSpotMarketOrder(exp)
 
-	if err == nil {
-		t.Errorf("err: expected != nil, gotten = nil")
-	}
+	testutils.AssertNotNil(t, err, "err")
 }
 
 func TestSendMarketOrder_Direct_Buy_BaseAmt_AboveMaxBase(t *testing.T) {
@@ -209,12 +196,10 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_AboveMaxBase(t *testing.T) {
 
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("3746.34")
-	expected := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
-	_, err := SendSpotMarketOrder(expected)
+	exp := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
+	_, err := SendSpotMarketOrder(exp)
 
-	if err == nil {
-		t.Errorf("err: expected != nil, gotten = nil")
-	}
+	testutils.AssertNotNil(t, err, "err")
 }
 
 func TestSendMarketOrder_Direct_Sell_QuoteAmt(t *testing.T) {
@@ -244,14 +229,12 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt(t *testing.T) {
 
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("3746.34")
-	expected := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
-	gotten, err := SendSpotMarketOrder(expected)
-	expected.Timestamp = gotten.Timestamp
+	exp := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
+	got, err := SendSpotMarketOrder(exp)
+	exp.Timestamp = got.Timestamp
 
-	if err != nil {
-		t.Errorf("err: expected = nil, gotten = %v", err)
-	}
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "operation")
 }
 
 func TestSendMarketOrder_Direct_Sell_QuoteAmt_BelowMinQuote(t *testing.T) {
@@ -273,12 +256,10 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt_BelowMinQuote(t *testing.T) {
 
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("3746.34")
-	expected := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
-	_, err := SendSpotMarketOrder(expected)
+	exp := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
+	_, err := SendSpotMarketOrder(exp)
 
-	if err == nil {
-		t.Errorf("err: expected != nil, gotten = nil")
-	}
+	testutils.AssertNotNil(t, err, "err")
 }
 
 func TestSendMarketOrder_Indirect_Buy_BaseAmt(t *testing.T) {
@@ -308,18 +289,16 @@ func TestSendMarketOrder_Indirect_Buy_BaseAmt(t *testing.T) {
 
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("3746.34")
-	expected := get_operation_test(amt, model.BASE_AMOUNT, "USDT", "BTC", model.BUY, price)
-	gotten, err := SendSpotMarketOrder(expected)
-	expected.Timestamp = gotten.Timestamp
-	expected.Base = "BTC"
-	expected.Quote = "USDT"
-	expected.Side = model.SELL
-	expected.AmountSide = model.QUOTE_AMOUNT
+	exp := get_operation_test(amt, model.BASE_AMOUNT, "USDT", "BTC", model.BUY, price)
+	got, err := SendSpotMarketOrder(exp)
+	exp.Timestamp = got.Timestamp
+	exp.Base = "BTC"
+	exp.Quote = "USDT"
+	exp.Side = model.SELL
+	exp.AmountSide = model.QUOTE_AMOUNT
 
-	if err != nil {
-		t.Errorf("err: expected = nil, gotten = %v", err)
-	}
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "operation")
 }
 
 func TestSendMarketOrder_Indirect_Sell_QuoteAmt(t *testing.T) {
@@ -349,18 +328,16 @@ func TestSendMarketOrder_Indirect_Sell_QuoteAmt(t *testing.T) {
 
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("3746.34")
-	expected := get_operation_test(amt, model.QUOTE_AMOUNT, "USDT", "BTC", model.SELL, price)
-	gotten, err := SendSpotMarketOrder(expected)
-	expected.Timestamp = gotten.Timestamp
-	expected.Base = "BTC"
-	expected.Quote = "USDT"
-	expected.Side = model.BUY
-	expected.AmountSide = model.BASE_AMOUNT
+	exp := get_operation_test(amt, model.QUOTE_AMOUNT, "USDT", "BTC", model.SELL, price)
+	got, err := SendSpotMarketOrder(exp)
+	exp.Timestamp = got.Timestamp
+	exp.Base = "BTC"
+	exp.Quote = "USDT"
+	exp.Side = model.BUY
+	exp.AmountSide = model.BASE_AMOUNT
 
-	if err != nil {
-		t.Errorf("err: expected = nil, gotten = %v", err)
-	}
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "operation")
 }
 
 /************************* Helpers ***************************/

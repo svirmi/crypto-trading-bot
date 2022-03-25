@@ -2,8 +2,9 @@ package laccount
 
 import (
 	"fmt"
-	"log"
 
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/fts"
 )
@@ -15,30 +16,33 @@ import (
 // error was thrown.
 // Returns an error if computation failed
 // TRUSTS that exeId corresponds to an active execution
-func CreateOrRestore(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
+func CreateOrRestore(req model.LocalAccountInit) (model.ILocalAccount, error) {
 	// Get current local account from DB by execution id
-	laccount, err := find_latest_by_exeId(creationRequest.ExeId)
+	laccount, err := find_latest_by_exeId(req.ExeId)
 	if err != nil {
 		return nil, err
 	}
 
 	// Restore existing local account
-	if laccount != nil && laccount.GetStrategyType() != creationRequest.StrategyType {
-		err = fmt.Errorf("strategy type mismatch for exeId %s", creationRequest.ExeId)
+	if laccount != nil && laccount.GetStrategyType() != req.StrategyType {
+		err = fmt.Errorf(logger.LACC_ERR_STRATEGY_MISMATCH,
+			req.ExeId, req.StrategyType, laccount.GetAccountId(), laccount.GetStrategyType())
+		logrus.Error(err.Error())
 		return nil, err
 	}
-	if laccount != nil && laccount.GetStrategyType() == creationRequest.StrategyType {
-		log.Printf("restoring local account %s", laccount.GetAccountId())
+	if laccount != nil && laccount.GetStrategyType() == req.StrategyType {
+		logrus.Infof(logger.LACC_RESTORE, laccount.GetAccountId())
 		return laccount, nil
 	}
 
 	// Initialise new local account
-	laccount, err = initialise_local_account(creationRequest)
+	laccount, err = initialise_local_account(req)
 	if err != nil {
 		return nil, err
 	}
 	if laccount == nil {
-		err = fmt.Errorf("failed to build local account from remote account")
+		err = fmt.Errorf(logger.LACC_ERR_BUILD_FAILURE)
+		logrus.Error(err.Error())
 		return nil, err
 	}
 
@@ -46,7 +50,7 @@ func CreateOrRestore(creationRequest model.LocalAccountInit) (model.ILocalAccoun
 	if err := insert(laccount); err != nil {
 		return nil, err
 	}
-	log.Printf("registering local account %s", laccount.GetAccountId())
+	logrus.Infof(logger.LACC_REGISTER, laccount.GetAccountId())
 	return laccount, nil
 }
 
@@ -64,7 +68,8 @@ func initialise_local_account(creationRequest model.LocalAccountInit) (model.ILo
 	if creationRequest.StrategyType == model.FIXED_THRESHOLD_STRATEGY {
 		laccount = fts.LocalAccountFTS{}
 	} else {
-		err := fmt.Errorf("unknwon strategy type %s", creationRequest.StrategyType)
+		err := fmt.Errorf(logger.LACC_ERR_UNKNOWN_STRATEGY, creationRequest.StrategyType)
+		logrus.Error(err.Error())
 		return nil, err
 	}
 	laccount, err := laccount.Initialize(creationRequest)

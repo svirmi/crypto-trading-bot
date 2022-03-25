@@ -1,12 +1,12 @@
 package config
 
 import (
-	"flag"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
 
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -55,17 +55,15 @@ var (
 	resource_folder     = "resources"
 )
 
-func ParseConfig() {
-	// Parsing command line
-	testnet := flag.Bool("testnet", false, "if present, application runs on testnet")
-	flag.Parse()
-
+func Initialize(testnet bool) error {
 	// Parsing config
-	config, err := parse_config(*testnet)
+	config, err := parse_config(testnet)
 	if err != nil {
-		log.Fatalf(err.Error())
+		return err
 	}
+
 	appConfig = config
+	return nil
 }
 
 var GetBinanceApiConfig = func() BinanceApiConfig {
@@ -84,15 +82,15 @@ func parse_config(testnet bool) (config Config, err error) {
 	configPath := get_config_filepath(testnet)
 	f, err := os.Open(configPath)
 	if err != nil {
-		log.Fatalf("could not open %s", configPath)
+		return Config{}, err
 	}
 	defer f.Close()
 
-	log.Printf("parsing config file %s", configPath)
+	logrus.Infof(logger.CONFIG_PARSING, configPath)
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(&config)
 	if err != nil {
-		log.Fatalf("could not parse %s", configPath)
+		return Config{}, err
 	}
 	return config, nil
 }

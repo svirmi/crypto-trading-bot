@@ -2,7 +2,6 @@ package executions
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
@@ -29,20 +28,19 @@ func TestInsertOne(t *testing.T) {
 	}()
 
 	// Building test execution
-	expected := model.Execution{
+	exp := model.Execution{
 		ExeId:     exeIds[0],
 		Status:    model.EXE_ACTIVE,
 		Assets:    []string{"BTC", "ETH"},
 		Timestamp: time.Now().UnixMicro()}
-	insert_one(expected)
+	insert_one(exp)
 
 	// Getting execution object from DB
-	var gotten model.Execution
-	filter := bson.D{{"exeId", expected.ExeId}}
-	mongodb.GetExecutionsCol().FindOne(context.TODO(), filter).Decode(&gotten)
+	var got model.Execution
+	filter := bson.D{{"exeId", exp.ExeId}}
+	mongodb.GetExecutionsCol().FindOne(context.TODO(), filter).Decode(&got)
 
-	// Assertions
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertEq(t, exp, got, "execution")
 }
 
 func TestFindLatestByExeId(t *testing.T) {
@@ -77,12 +75,12 @@ func TestFindLatestByExeId(t *testing.T) {
 		Assets:    []string{"BTC", "ETH"},
 		Timestamp: time.Now().UnixMicro() + 200}
 	docs = append(docs, exe2)
-	expected := model.Execution{
+	exp := model.Execution{
 		ExeId:     exeIds[0],
 		Status:    model.EXE_ACTIVE,
 		Assets:    []string{"BTC", "ETH"},
 		Timestamp: time.Now().UnixMicro() + 300}
-	docs = append(docs, expected)
+	docs = append(docs, exp)
 	other1 := model.Execution{
 		ExeId:     otherExeIds[0],
 		Status:    model.EXE_TERMINATED,
@@ -92,13 +90,10 @@ func TestFindLatestByExeId(t *testing.T) {
 	mongodb.GetExecutionsCol().InsertMany(context.TODO(), docs, nil)
 
 	// Getting execution object from DB
-	gotten, err := find_latest_by_exeId(exeIds[0])
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
+	got, err := find_latest_by_exeId(exeIds[0])
 
-	// Assertions
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "execution")
 }
 
 func TestFindLatestByExeId_NoResults(t *testing.T) {
@@ -113,13 +108,10 @@ func TestFindLatestByExeId_NoResults(t *testing.T) {
 	}()
 
 	// Getting execution object from DB
-	gotten, err := find_latest_by_exeId(uuid.NewString())
-	if !reflect.DeepEqual(gotten, model.Execution{}) {
-		t.Fatalf("execution object: expected {}, gotten %v", gotten)
-	}
-	if err == nil {
-		t.Fatalf("execution repository error: expected != nil, gotten nil")
-	}
+	got, err := find_latest_by_exeId(uuid.NewString())
+
+	testutils.AssertTrue(t, got.IsEmpty(), "execution")
+	testutils.AssertNotNil(t, err, "err")
 }
 
 func TestFindCurrentlyActive(t *testing.T) {
@@ -143,34 +135,31 @@ func TestFindCurrentlyActive(t *testing.T) {
 
 	// Building test execution
 	var docs []interface{}
-	expected := model.Execution{
-		ExeId:     exeIds[0],
-		Status:    model.EXE_ACTIVE,
+	exe1 := model.Execution{
+		ExeId:     otherExeIds[1],
+		Status:    model.EXE_TERMINATED,
 		Assets:    []string{"BTC", "ETH"},
 		Timestamp: time.Now().UnixMicro() + 100}
-	docs = append(docs, expected)
-	exe1 := model.Execution{
+	docs = append(docs, exe1)
+	exe2 := model.Execution{
 		ExeId:     otherExeIds[0],
 		Status:    model.EXE_TERMINATED,
 		Assets:    []string{"BTC", "ETH"},
 		Timestamp: time.Now().UnixMicro() + 200}
-	docs = append(docs, exe1)
-	exe2 := model.Execution{
-		ExeId:     otherExeIds[1],
-		Status:    model.EXE_TERMINATED,
+	docs = append(docs, exe2)
+	exp := model.Execution{
+		ExeId:     exeIds[0],
+		Status:    model.EXE_ACTIVE,
 		Assets:    []string{"BTC", "ETH"},
 		Timestamp: time.Now().UnixMicro() + 300}
-	docs = append(docs, exe2)
+	docs = append(docs, exp)
 	mongodb.GetExecutionsCol().InsertMany(context.TODO(), docs, nil)
 
 	// Getting execution object from DB
-	gotten, err := find_currently_active()
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
+	got, err := find_currently_active()
 
-	// Assertions
-	testutils.AssertStructEq(t, expected, gotten)
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "execution")
 }
 
 func TestFindCurrentlyActive_NoResults(t *testing.T) {
@@ -185,11 +174,8 @@ func TestFindCurrentlyActive_NoResults(t *testing.T) {
 	}()
 
 	// Getting execution object from DB
-	gotten, err := find_currently_active()
-	if !reflect.DeepEqual(gotten, model.Execution{}) {
-		t.Fatalf("execution object: expected {}, gotten %v", gotten)
-	}
-	if err != nil {
-		t.Fatalf("execution repository error: expected == nil, gotten %v", err)
-	}
+	got, err := find_currently_active()
+
+	testutils.AssertTrue(t, got.IsEmpty(), "execution")
+	testutils.AssertNil(t, err, "err")
 }

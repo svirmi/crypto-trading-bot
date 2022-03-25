@@ -2,7 +2,6 @@ package executions
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
@@ -32,45 +31,21 @@ func find_latest_by_exeId(exeId string) (model.Execution, error) {
 	return result, err
 }
 
-// Finds currently active execution object.
-// Returns the execution object, if found, an empty execution
-// object if nothing was found or an error was thrown.
-// Returns an error if computation failed
 func find_currently_active() (model.Execution, error) {
 	collection := mongodb.GetExecutionsCol()
 
-	// Defining query stages
-	sort := bson.D{{"$sort", bson.D{{"timestamp", 1}}}}
-	group := bson.D{{"$group", bson.D{
-		{"_id", "$exeId"},
-		{"status", bson.D{{"$last", "$status"}}},
-		{"assets", bson.D{{"$last", "$assets"}}},
-		{"timestamp", bson.D{{"$last", "$timestamp"}}}}}}
-	project := bson.D{{"$project", bson.D{
-		{"timestamp", 1},
-		{"assets", 1},
-		{"status", 1},
-		{"exeId", "$_id"},
-		{"_id", 0}}}}
-	filter := bson.D{{"$match", bson.D{{"status", bson.D{{"$ne", model.EXE_TERMINATED}}}}}}
-
-	// Querying DB
-	var results []model.Execution
-	cursor, err := collection.Aggregate(context.TODO(), mongo.Pipeline{sort, group, project, filter})
+	var result model.Execution
+	opts := options.FindOne().SetSort(bson.D{{"timestamp", -1}})
+	err := collection.FindOne(context.TODO(), bson.D{{}}, opts).Decode(&result)
+	if err == mongo.ErrNoDocuments {
+		return model.Execution{}, nil
+	}
 	if err != nil {
 		return model.Execution{}, err
 	}
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return model.Execution{}, err
-	}
 
-	// Returning results
-	if len(results) > 1 {
-		err = fmt.Errorf("more then one active executions found")
-		return model.Execution{}, err
-	}
-	if len(results) == 0 {
+	if result.Status != model.EXE_ACTIVE {
 		return model.Execution{}, nil
 	}
-	return results[0], nil
+	return result, nil
 }

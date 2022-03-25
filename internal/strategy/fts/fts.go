@@ -2,14 +2,15 @@ package fts
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
@@ -24,7 +25,7 @@ const (
 type AssetStatusFTS struct {
 	Asset              string           `bson:"asset"`              // Asset being tracked
 	Amount             decimal.Decimal  `bson:"amount"`             // Amount of that asset currently owned
-	Usdt               decimal.Decimal  `bson:"usdt"`               // Usdt gotten by selling the asset
+	Usdt               decimal.Decimal  `bson:"usdt"`               // Usdt got by selling the asset
 	LastOperationType  OperationTypeFts `bson:"lastOperationType"`  // Last FTS operation type
 	LastOperationPrice decimal.Decimal  `bson:"lastOperationPrice"` // Asset value at the time last op was executed
 }
@@ -56,6 +57,8 @@ func (a LocalAccountFTS) Initialize(creationRequest model.LocalAccountInit) (mod
 	for _, rbalance := range creationRequest.RAccount.Balances {
 		price, found := creationRequest.TradableAssetsPrice[rbalance.Asset]
 		if !found {
+			logrus.WithField("comp", "fts").
+				Warnf(logger.FTS_IGNORED_ASSET, rbalance.Asset)
 			ignored[rbalance.Asset] = rbalance.Amount
 			continue
 		}
@@ -64,10 +67,7 @@ func (a LocalAccountFTS) Initialize(creationRequest model.LocalAccountInit) (mod
 			ignored[rbalance.Asset] = rbalance.Amount
 			continue
 		}
-		assetStatus, err := init_asset_status_fts(rbalance, price)
-		if err != nil {
-			return nil, err
-		}
+		assetStatus := init_asset_status_fts(rbalance, price)
 		assets[rbalance.Asset] = assetStatus
 	}
 
@@ -85,31 +85,36 @@ func (a LocalAccountFTS) Initialize(creationRequest model.LocalAccountInit) (mod
 func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccount, error) {
 	// Check execution ids
 	if op.ExeId != a.ExeId {
-		err := fmt.Errorf("mismatching execution ids")
-		return a, err
+		msg := fmt.Sprintf(logger.FTS_ERR_MISMATCHING_EXE_IDS, a.ExeId, op.ExeId)
+		logrus.Error(msg)
+		return a, model.NewCtbError(msg, false)
 	}
 
 	// If the result status is failed, NOP
 	if op.Status == model.FAILED {
-		return a, nil
+		msg := fmt.Sprintf(logger.FTS_ERR_FAILED_OP, op.OpId)
+		logrus.Error(msg)
+		return a, model.NewCtbError(msg, true)
 	}
 
 	// FTS only handle operation back and forth USDT
 	if op.Quote != "USDT" {
-		err := fmt.Errorf("FTS can only hande trading to USDT")
-		return a, err
+		msg := fmt.Sprintf(logger.FTS_ERR_BAD_QUOTE_CURRENCY, op.Quote)
+		logrus.Error(msg)
+		return a, model.NewCtbError(msg, true)
 	}
 
 	// Getting asset status
 	assetStatus, found := a.Assets[op.Base]
 	if !found {
-		err := fmt.Errorf("asset %s not found in local wallet", op.Base)
-		return a, err
+		msg := fmt.Sprintf(logger.FTS_ERR_ASSET_NOT_FOUND, op.Base)
+		logrus.Error(msg)
+		return a, model.NewCtbError(msg, true)
 	}
 
 	// Updating asset status
-	baseAmount := op.Results.BaseAmount
-	quoteAmount := op.Results.QuoteAmount
+	baseAmount := op.Results.BaseDiff
+	quoteAmount := op.Results.QuoteDiff
 	if op.Side == model.BUY {
 		assetStatus.Amount = assetStatus.Amount.Add(baseAmount).Round(8)
 		assetStatus.Usdt = assetStatus.Usdt.Sub(quoteAmount).Round(8)
@@ -119,12 +124,19 @@ func (a LocalAccountFTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 		assetStatus.Usdt = assetStatus.Usdt.Add(quoteAmount).Round(8)
 		assetStatus.LastOperationType = OP_SELL_FTS
 	} else {
-		err := fmt.Errorf("unsupported operation type %s", op.Type)
-		return a, err
+		msg := fmt.Sprintf(logger.FTS_ERR_UNKNWON_OP_TYPE, op.Type)
+		logrus.Error(msg)
+		return a, model.NewCtbError(msg, true)
 	}
-	if assetStatus.Amount.LessThan(decimal.Zero) || assetStatus.Usdt.LessThan(decimal.Zero) {
-		err := fmt.Errorf("negative balance detected")
-		return a, err
+	if assetStatus.Amount.LessThan(decimal.Zero) {
+		msg := fmt.Sprintf(logger.FTS_ERR_NEGATIVE_BALANCE, assetStatus.Asset, assetStatus.Amount)
+		logrus.Error(msg)
+		return a, model.NewCtbError(msg, false)
+	}
+	if assetStatus.Usdt.LessThan(decimal.Zero) {
+		msg := fmt.Sprintf(logger.FTS_ERR_NEGATIVE_BALANCE, "USDT", assetStatus.Usdt)
+		logrus.Error(msg)
+		return a, model.NewCtbError(msg, false)
 	}
 	assetStatus.LastOperationPrice = op.Results.ActualPrice
 
@@ -139,8 +151,9 @@ func (a LocalAccountFTS) GetOperation(mms model.MiniMarketStats) (model.Operatio
 	asset := mms.Asset
 	assetStatus, found := a.Assets[asset]
 	if !found {
-		err := fmt.Errorf("asset %s not in local wallet", asset)
-		return model.Operation{}, err
+		msg := fmt.Sprintf(logger.FTS_ERR_ASSET_NOT_FOUND, asset)
+		logrus.Error(msg)
+		return model.Operation{}, model.NewCtbError(msg, true)
 	}
 
 	lastOpType := assetStatus.LastOperationType
@@ -149,12 +162,11 @@ func (a LocalAccountFTS) GetOperation(mms model.MiniMarketStats) (model.Operatio
 	currentAmntUsdt := assetStatus.Usdt
 	currentPrice := mms.LastPrice
 
-	strategyConfig := config.GetStrategyConfig()
-	if strategyConfig.Type != string(model.FIXED_THRESHOLD_STRATEGY) {
-		log.Fatalf("wrong strategy type %v", strategyConfig.Type)
+	ftsConfig, err := get_fts_config(config.GetStrategyConfig())
+	if err != nil {
+		return model.Operation{}, err
 	}
 
-	ftsConfig := get_fts_config(strategyConfig.Config)
 	sellPrice := get_threshold_rate(lastOpPrice, ftsConfig.SellThreshold)
 	stopLossPrice := get_threshold_rate(lastOpPrice, utils.SignChangeDecimal(ftsConfig.StopLossThreshold))
 	buyPrice := get_threshold_rate(lastOpPrice, utils.SignChangeDecimal(ftsConfig.BuyThreshold))
@@ -163,29 +175,33 @@ func (a LocalAccountFTS) GetOperation(mms model.MiniMarketStats) (model.Operatio
 	if lastOpType == OP_BUY_FTS && currentPrice.GreaterThanOrEqual(sellPrice) {
 		// sell command
 		operationInit := build_operation_init(asset, currentAmnt, currentPrice)
-		log_trading_intent("SELL", asset, lastOpPrice, currentPrice)
-		return build_sell_op(a, operationInit), nil
+		logrus.WithField("comp", "fts").
+			Infof(logger.FTS_TRADE, "SELL", asset, lastOpType, lastOpPrice, currentPrice)
+		return build_sell_op(a, operationInit)
 
 	} else if lastOpType == OP_BUY_FTS && currentPrice.LessThanOrEqual(stopLossPrice) {
 		// stop loss command
 		operationInit := build_operation_init(asset, currentAmnt, currentPrice)
-		log_trading_intent("STOP_LOSS", asset, lastOpPrice, currentPrice)
-		return build_sell_op(a, operationInit), nil
+		logrus.WithField("comp", "fts").
+			Infof(logger.FTS_TRADE, "STOP_LOSS", asset, lastOpType, lastOpPrice, currentPrice)
+		return build_sell_op(a, operationInit)
 
 	} else if lastOpType == OP_SELL_FTS && currentPrice.LessThanOrEqual(buyPrice) {
 		// buy command
 		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice)
-		log_trading_intent("BUY", asset, lastOpPrice, currentPrice)
-		return build_buy_op(a, operationInit), nil
+		logrus.WithField("comp", "fts").
+			Infof(logger.FTS_TRADE, "BUY", asset, lastOpType, lastOpPrice, currentPrice)
+		return build_buy_op(a, operationInit)
 
 	} else if lastOpType == OP_SELL_FTS && currentPrice.GreaterThanOrEqual(missProfitPrice) {
 		// miss profit command
 		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice)
-		log_trading_intent("MISS_PROFIT", asset, lastOpPrice, currentPrice)
-		return build_buy_op(a, operationInit), nil
+		logrus.WithField("comp", "fts").
+			Infof(logger.FTS_TRADE, "MISS_PROFIT", asset, lastOpType, lastOpPrice, currentPrice)
+		return build_buy_op(a, operationInit)
 	}
 
-	log_noop(asset, lastOpType, lastOpPrice, currentPrice)
+	logrus.WithField("comp", "fts").Debugf(logger.FTS_TRADE, "NO_OP", asset, lastOpType, lastOpPrice, currentPrice)
 	return model.Operation{}, nil
 }
 
@@ -196,20 +212,22 @@ func build_operation_init(asset string, amount, price decimal.Decimal) operation
 		targetPrice: price}
 }
 
-func build_buy_op(laccount LocalAccountFTS, operationInit operation_init) model.Operation {
+func build_buy_op(laccount LocalAccountFTS, operationInit operation_init) (model.Operation, error) {
 	symbol := utils.GetSymbolFromAsset(operationInit.asset)
 	limit, found := laccount.SpotMarketLimits[symbol]
 	if !found {
-		log.Fatalf("failed to get market spot sizes for symbol %s", symbol)
+		msg := fmt.Sprintf(logger.FTS_ERR_SPOT_MARKET_SIZE_NOT_FOUND, symbol)
+		logrus.Error(msg)
+		return model.Operation{}, model.NewCtbError(msg, true)
 	}
 
 	if operationInit.amount.LessThan(limit.MinQuote) {
-		log.Printf("market order exceeds min notional, symbol %s, amount %s, amountSide = %s",
-			symbol, operationInit.amount.String(), model.QUOTE_AMOUNT)
-		return model.Operation{}
+		logrus.WithField("comp", "fts").Infof(logger.FTS_BELOW_QUOTE_LIMIT,
+			symbol, model.BUY, operationInit.amount, model.QUOTE_AMOUNT, limit.MinQuote)
+		return model.Operation{}, nil
 	}
 
-	return model.Operation{
+	op := model.Operation{
 		OpId:       uuid.NewString(),
 		ExeId:      laccount.ExeId,
 		Type:       model.AUTO,
@@ -220,20 +238,28 @@ func build_buy_op(laccount LocalAccountFTS, operationInit operation_init) model.
 		AmountSide: model.QUOTE_AMOUNT,
 		Price:      operationInit.targetPrice,
 		Status:     model.PENDING}
+
+	logrus.WithField("comp", "fts").
+		Infof(logger.FTS_OPERATION, op.Base, op.Quote, op.Amount, op.AmountSide, op.Side)
+	return op, nil
 }
 
-func build_sell_op(laccount LocalAccountFTS, operationInit operation_init) model.Operation {
+func build_sell_op(laccount LocalAccountFTS, operationInit operation_init) (model.Operation, error) {
 	symbol := utils.GetSymbolFromAsset(operationInit.asset)
 	limit, found := laccount.SpotMarketLimits[symbol]
 	if !found {
-		log.Fatalf("failed to get market spot sizes for symbol %s", symbol)
+		msg := fmt.Sprintf(logger.FTS_ERR_SPOT_MARKET_SIZE_NOT_FOUND, symbol)
+		logrus.Error(msg)
+		return model.Operation{}, model.NewCtbError(msg, true)
 	}
 
 	if operationInit.amount.LessThan(limit.MinBase) {
-		return model.Operation{}
+		logrus.WithField("comp", "fts").Infof(logger.FTS_BELOW_BASE_LIMIT,
+			symbol, model.SELL, operationInit.amount, model.BASE_AMOUNT, limit.MinBase)
+		return model.Operation{}, nil
 	}
 
-	return model.Operation{
+	op := model.Operation{
 		OpId:       uuid.NewString(),
 		ExeId:      laccount.ExeId,
 		Type:       model.AUTO,
@@ -244,17 +270,10 @@ func build_sell_op(laccount LocalAccountFTS, operationInit operation_init) model
 		AmountSide: model.BASE_AMOUNT,
 		Price:      operationInit.targetPrice,
 		Status:     model.PENDING}
-}
 
-func log_noop(asset string, lastOpType OperationTypeFts, lastOpPrice, currentPrice decimal.Decimal) {
-	log.Printf("FTS NOOP: asset=%s, lastOpType=%s, lastPrice=%s, currPrice=%s",
-		asset, lastOpType, lastOpPrice.String(), currentPrice.String())
-}
-
-func log_trading_intent(cond, asset string, last, current decimal.Decimal) {
-	message := fmt.Sprintf("FTS %s condition verified: asset=%s, lastPrice=%v, currPrice=%v",
-		cond, asset, last, current)
-	log.Println(message)
+	logrus.WithField("comp", "fts").
+		Infof(logger.FTS_OPERATION, op.Base, op.Quote, op.Amount, op.AmountSide, op.Side)
+	return op, nil
 }
 
 func get_threshold_rate(price decimal.Decimal, percentage decimal.Decimal) decimal.Decimal {
@@ -264,11 +283,11 @@ func get_threshold_rate(price decimal.Decimal, percentage decimal.Decimal) decim
 	return price.Add(delta.Mul(sign)).Round(8)
 }
 
-func init_asset_status_fts(rbalance model.RemoteBalance, price model.AssetPrice) (AssetStatusFTS, error) {
+func init_asset_status_fts(rbalance model.RemoteBalance, price model.AssetPrice) AssetStatusFTS {
 	return AssetStatusFTS{
 		Asset:              rbalance.Asset,
 		Amount:             rbalance.Amount,
 		Usdt:               decimal.Zero,
 		LastOperationType:  OP_BUY_FTS,
-		LastOperationPrice: price.Price}, nil
+		LastOperationPrice: price.Price}
 }

@@ -29,18 +29,15 @@ func TestInsert_FTS(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	laccount := get_laccount_test_FTS()
-	exeIds = append(exeIds, laccount.ExeId)
-	err := insert(laccount)
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten = %v", err)
-	}
+	exp := get_laccount_test_FTS()
+	exeIds = append(exeIds, exp.ExeId)
+	err := insert(exp)
+	testutils.AssertNil(t, err, "err")
 
-	gotten, err := find_latest_by_exeId(laccount.ExeId)
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten = %v", err)
-	}
-	testutils.AssertStructEq(t, laccount, gotten.(fts.LocalAccountFTS))
+	got, err := find_latest_by_exeId(exp.ExeId)
+
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "laccount")
 }
 
 func TestFindLatestByExeId_FTS(t *testing.T) {
@@ -58,32 +55,26 @@ func TestFindLatestByExeId_FTS(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	laccount := get_laccount_test_FTS()
-	exeIds = append(exeIds, laccount.ExeId)
-	err := insert(laccount)
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten = %v", err)
-	}
+	exp := get_laccount_test_FTS()
+	exeIds = append(exeIds, exp.ExeId)
+	err := insert(exp)
+	testutils.AssertNil(t, err, "err")
 
-	laccount.Assets["DOT"] = fts.AssetStatusFTS{
+	exp.Assets["DOT"] = fts.AssetStatusFTS{
 		Asset:              "DOT",
 		Amount:             utils.DecimalFromString("55.56"),
 		Usdt:               decimal.Zero,
 		LastOperationType:  fts.OP_BUY_FTS,
 		LastOperationPrice: utils.DecimalFromString("18.45")}
-	laccount.Timestamp = time.Now().UnixMicro()
-	err = insert(laccount)
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten = %v", err)
-	}
+	exp.Timestamp = time.Now().UnixMicro()
+	err = insert(exp)
+	testutils.AssertNil(t, err, "err")
 
-	exeIds = append(exeIds, laccount.AccountId)
-	gotten, err := find_latest_by_exeId(laccount.ExeId)
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten = %v", err)
-	}
+	exeIds = append(exeIds, exp.AccountId)
+	got, err := find_latest_by_exeId(exp.ExeId)
 
-	testutils.AssertStructEq(t, laccount, gotten.(fts.LocalAccountFTS))
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "laccount")
 }
 
 func TestFindLatestByExeId_FTS_None(t *testing.T) {
@@ -97,11 +88,8 @@ func TestFindLatestByExeId_FTS_None(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	gotten, err := find_latest_by_exeId(uuid.NewString())
-	if err != nil {
-		t.Fatalf("expected err = nil, gotten = %v", err)
-	}
-	if gotten != nil {
-		t.Fatalf("expected laccount = nil, gotten = %v", gotten)
-	}
+	got, err := find_latest_by_exeId(uuid.NewString())
+
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertNil(t, got, "laccount")
 }

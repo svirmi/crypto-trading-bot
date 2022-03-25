@@ -4,6 +4,7 @@ import (
 	"log"
 
 	binanceapi "github.com/adshao/go-binance/v2"
+	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
@@ -73,7 +74,8 @@ func MiniMarketsStatsStop() {
 		return
 	}
 
-	log.Printf("closing mini markets stats ws")
+	logrus.WithField("comp", "binance").
+		WithField("comp", "binance").Info("closing mini markets stats ws")
 	mms_ctl.mms_stop <- struct{}{}
 	<-mms_ctl.mms_done
 

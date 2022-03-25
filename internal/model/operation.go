@@ -65,9 +65,9 @@ func (s AmountSide) Invert() AmountSide {
 
 type OpResults struct {
 	ActualPrice decimal.Decimal `bson:"actualPrice"` // Actual rate
-	BaseAmount  decimal.Decimal `bson:"baseAmount"`  // Base amount actually traded
-	QuoteAmount decimal.Decimal `bson:"quoteAmount"` // Quote amount actually traded
-	Spread      decimal.Decimal `bson:"spread"`      // Spread percentage expected - actual
+	BaseDiff    decimal.Decimal `bson:"baseAmount"`  // Base amount actually traded
+	QuoteDiff   decimal.Decimal `bson:"quoteAmount"` // Quote amount actually traded
+	Spread      decimal.Decimal `bson:"spread"`      // Spread percentage exp - actual
 }
 
 func (o OpResults) IsEmpty() bool {
