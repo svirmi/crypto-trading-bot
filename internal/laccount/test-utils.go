@@ -28,12 +28,6 @@ func restore_mongo_config(old func() config.MongoDbConfig) {
 }
 
 func get_laccount_init_test(strategyType model.StrategyType) model.LocalAccountInit {
-	spotMarketLimits := model.SpotMarketLimits{
-		MinBase:  utils.DecimalFromString("0.00000001"),
-		MaxBase:  utils.DecimalFromString("99999999"),
-		StepBase: utils.DecimalFromString("0.00000001"),
-		MinQuote: utils.DecimalFromString("0.00000001")}
-
 	return model.LocalAccountInit{
 		ExeId: uuid.NewString(),
 		RAccount: model.RemoteAccount{
@@ -52,21 +46,18 @@ func get_laccount_init_test(strategyType model.StrategyType) model.LocalAccountI
 			"BTC": {Asset: "BTC", Price: utils.DecimalFromString("39560.45")},
 			"ETH": {Asset: "ETH", Price: utils.DecimalFromString("4500.45")},
 			"DOT": {Asset: "DOT", Price: utils.DecimalFromString("49.45")}},
-		StrategyType: strategyType,
-		SpotMarketLimits: map[string]model.SpotMarketLimits{
-			"BTCUSDT":  spotMarketLimits,
-			"ETHUSDT":  spotMarketLimits,
-			"DOTUSDT":  spotMarketLimits,
-			"LUNAUSDT": spotMarketLimits}}
+		StrategyType:     strategyType,
+		SpotMarketLimits: get_spot_market_limits()}
 }
 
 func get_laccount_test_FTS() fts.LocalAccountFTS {
 	return fts.LocalAccountFTS{
 		LocalAccountMetadata: model.LocalAccountMetadata{
-			AccountId:    uuid.NewString(),
-			ExeId:        uuid.NewString(),
-			StrategyType: model.FIXED_THRESHOLD_STRATEGY,
-			Timestamp:    time.Now().UnixMicro()},
+			AccountId:        uuid.NewString(),
+			ExeId:            uuid.NewString(),
+			StrategyType:     model.FIXED_THRESHOLD_STRATEGY,
+			SpotMarketLimits: get_spot_market_limits(),
+			Timestamp:        time.Now().UnixMicro()},
 
 		Ignored: map[string]decimal.Decimal{
 			"USDT": utils.DecimalFromString("155.67"),
@@ -93,4 +84,19 @@ func get_laccount_test_FTS() fts.LocalAccountFTS {
 				Usdt:               decimal.Zero,
 				LastOperationType:  fts.OP_BUY_FTS,
 				LastOperationPrice: utils.DecimalFromString("49.45")}}}
+}
+
+func get_spot_market_limits() map[string]model.SpotMarketLimits {
+	return map[string]model.SpotMarketLimits{
+		"BTCUSDT": get_spot_market_limit(),
+		"ETHUSDT": get_spot_market_limit(),
+		"DOTUSDT": get_spot_market_limit()}
+}
+
+func get_spot_market_limit() model.SpotMarketLimits {
+	return model.SpotMarketLimits{
+		MinBase:  utils.DecimalFromString("0.00000001"),
+		MaxBase:  utils.DecimalFromString("99999999"),
+		StepBase: utils.DecimalFromString("0.00000001"),
+		MinQuote: utils.DecimalFromString("0.00000001")}
 }
