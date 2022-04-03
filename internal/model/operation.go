@@ -1,10 +1,11 @@
 package model
 
 import (
-	"log"
 	"reflect"
 
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 )
 
 // Order type
@@ -28,10 +29,9 @@ func (s OpSide) Invert() OpSide {
 		return SELL
 	} else if s == SELL {
 		return BUY
-	} else {
-		log.Fatalf("unknown side value %s", s)
-		return OpSide("")
 	}
+	logrus.Panicf(logger.MODEL_ERR_UNKNOWN_OP_SIDE, s)
+	return ""
 }
 
 // Order result status
@@ -57,10 +57,9 @@ func (s AmountSide) Invert() AmountSide {
 		return QUOTE_AMOUNT
 	} else if s == QUOTE_AMOUNT {
 		return BASE_AMOUNT
-	} else {
-		log.Fatalf("unknown amount side value %s", s)
-		return AmountSide("")
 	}
+	logrus.Panicf(logger.MODEL_ERR_UNKNOWN_AMOUNT_SIDE, s)
+	return ""
 }
 
 type OpResults struct {

@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -12,6 +12,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/operations"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
 type trading_context struct {
@@ -77,12 +78,9 @@ var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
 	for _, mms := range miniMarketsStats {
 		// Getting target operation
 		operation, err := tcontext.laccount.GetOperation(mms)
-		if err != nil && err.(model.CtbError).IsRecoverable() {
-			logrus.Errorf(logger.HANDL_ERR_RECOVERABLE, err.Error())
-			continue
-		}
 		if err != nil {
-			logrus.Panicf(logger.HANDL_ERR_UNRECOVERABLE, err.Error())
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			continue
 		}
 
 		// NOOP
@@ -90,38 +88,49 @@ var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
 			continue
 		}
 
+		// Price equals to zero
+		if operation.Amount.Equals(decimal.Zero) {
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			continue
+		}
+		if operation.Price.Equals(decimal.Zero) {
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			continue
+		}
+
 		// Getting remote account before operation
 		raccount1, err := binance.GetAccout()
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_RECOVERABLE, err.Error())
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
 			continue
 		}
 
 		// Sending market order
 		operation, err = binance.SendSpotMarketOrder(operation)
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_RECOVERABLE, err.Error())
-			continue
-		}
-		if operation.Status == model.FAILED {
-			logrus.Errorf(logger.HANDL_ERR_MKT_ODR_FAILED, operation.OpId)
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
 			continue
 		}
 
 		// Getting remote account after operation
 		raccount2, err := binance.GetAccout()
 		if err != nil {
-			logrus.Panicf(logger.HANDL_ERR_UNRECOVERABLE, err.Error())
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
 			continue
 		}
 
 		// Computing operation results
-		operation = compute_op_results(raccount1, raccount2, operation)
+		operation, err = compute_op_results(raccount1, raccount2, operation)
+		if err != nil {
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			continue
+		}
 
 		// Updating local account
 		tcontext.laccount, err = tcontext.laccount.RegisterTrading(operation)
 		if err != nil {
-			log.Fatalf(err.Error())
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			continue
 		}
 
 		// Inserting operation and updating laccount in DB
@@ -130,7 +139,7 @@ var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
 	}
 }
 
-func compute_op_results(old, new model.RemoteAccount, op model.Operation) model.Operation {
+func compute_op_results(old, new model.RemoteAccount, op model.Operation) (model.Operation, error) {
 	var oldBaseBalance, newBaseBalance decimal.Decimal
 	var oldQuoteBalance, newQuoteBalance decimal.Decimal
 
@@ -154,10 +163,24 @@ func compute_op_results(old, new model.RemoteAccount, op model.Operation) model.
 		}
 	}
 
-	// Setting operation results
+	// Checking base diff and quote diff
 	baseDiff := (newBaseBalance.Sub(oldBaseBalance)).Abs().Round(8)
 	quoteDiff := (newQuoteBalance.Sub(oldQuoteBalance)).Abs().Round(8)
-	if op.AmountSide == model.BASE_AMOUNT && baseDiff.Equals(op.Amount) {
+	if baseDiff.Equals(decimal.Zero) && quoteDiff.Equals(decimal.Zero) {
+		err := fmt.Errorf(logger.HANDL_ERR_MKT_ODR_FAILED, op.OpId)
+		logrus.Error(err.Error())
+		op.Status = model.FAILED
+		return op, err
+	} else if baseDiff.Equals(decimal.Zero) {
+		logrus.Warnf(logger.HANDL_ZERO_BASE_DIFF, op.OpId)
+	} else if quoteDiff.Equals(decimal.Zero) {
+		logrus.Warnf(logger.HANDL_ZERO_QUOTE_DIFF, op.OpId)
+	}
+
+	// Computing status
+	if baseDiff.Equals(decimal.Zero) || quoteDiff.Equals(decimal.Zero) {
+		op.Status = model.PARTIALLY_FILLED
+	} else if op.AmountSide == model.BASE_AMOUNT && baseDiff.Equals(op.Amount) {
 		op.Status = model.FILLED
 	} else if op.AmountSide == model.QUOTE_AMOUNT && quoteDiff.Equals(op.Amount) {
 		op.Status = model.FILLED
@@ -165,25 +188,47 @@ func compute_op_results(old, new model.RemoteAccount, op model.Operation) model.
 		op.Status = model.PARTIALLY_FILLED
 	}
 
-	// Building results
-	actualPrice := quoteDiff.Div(baseDiff).Round(8)
+	// Computing actual price and spread
+	var actualPrice decimal.Decimal
+	var spread decimal.Decimal
+	if baseDiff.Equals(decimal.Zero) && op.Side == model.BUY {
+		actualPrice = utils.MaxDecimal()
+		spread = utils.MaxDecimal()
+	} else if baseDiff.Equals(decimal.Zero) && op.Side == model.SELL {
+		actualPrice = decimal.Zero
+		spread = utils.DecimalFromString("-100")
+	} else if quoteDiff.Equals(decimal.Zero) && op.Side == model.BUY {
+		actualPrice = decimal.Zero
+		spread = utils.DecimalFromString("-100")
+	} else if quoteDiff.Equals(decimal.Zero) && op.Side == model.SELL {
+		actualPrice = utils.MaxDecimal()
+		spread = utils.MaxDecimal()
+	} else {
+		actualPrice = quoteDiff.Div(baseDiff).Round(8)
+		spread = ((actualPrice.Sub(op.Price)).
+			Div(op.Price)).
+			Mul(decimal.NewFromInt(100)).
+			Round(8)
+	}
+
+	// Setting results
 	results := model.OpResults{
 		ActualPrice: actualPrice,
 		BaseDiff:    baseDiff,
 		QuoteDiff:   quoteDiff,
-		Spread:      ((actualPrice.Sub(op.Price)).Div(op.Price)).Mul(decimal.NewFromInt(100)).Round(8)}
+		Spread:      spread}
 	op.Results = results
 
 	logrus.Infof(logger.HANDL_OPERATION_RESULTS,
 		op.Results.BaseDiff, op.Results.QuoteDiff, op.Results.ActualPrice, op.Results.Spread, op.Status)
-	return op
+	return op, nil
 }
 
 func trading_context_init() {
 	if tcontext.execution.IsEmpty() {
 		execution, err := executions.GetCurrentlyActive()
 		if err != nil {
-			logrus.Panicf(logger.HANDL_ERR_UNRECOVERABLE, err.Error())
+			logrus.Panicf(err.Error())
 		}
 		tcontext.execution = execution
 	}
@@ -191,7 +236,7 @@ func trading_context_init() {
 	if tcontext.laccount == nil {
 		laccount, err := laccount.GetLatestByExeId(tcontext.execution.ExeId)
 		if err != nil {
-			logrus.Panicf(logger.HANDL_ERR_UNRECOVERABLE, err.Error())
+			logrus.Panicf(err.Error())
 		}
 		tcontext.laccount = laccount
 	}

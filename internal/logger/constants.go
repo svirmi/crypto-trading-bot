@@ -2,10 +2,14 @@ package logger
 
 const (
 	// Logger
-	LOGGER_CONFIG = "logger config | noColors=%t, level=%s"
+	LOGGER_CONFIG = "logger config | colors=%t, level=%s"
 
 	// Config
 	CONFIG_PARSING = "parsing config file %s"
+
+	// Model error
+	MODEL_ERR_UNKNOWN_OP_SIDE     = "unknown operation side %s"
+	MODEL_ERR_UNKNOWN_AMOUNT_SIDE = "unknown amount side %s"
 
 	// Mongo client
 	MONGO_CONNECTING        = "connecting to mongo at %s"
@@ -19,12 +23,16 @@ const (
 	BINANCE_MKT_ORDER_RESULT    = "market order executed | symbol=%s, original_qty=%s, actual_qty=%s, status=%s, side=%s"
 	BINANCE_BELOW_LIMIT         = "amount below %s"
 	BINANCE_ABOVE_LIMIT         = "amount above %s"
+	BINANACE_ZERO_AMOUNT_ASSET  = "skipping asset %s | amount=0"
+	BINANACE_CLOSING_MMS        = "closing mini market stats"
 
 	// Binance error
-	BINANCE_ERR_SYMBOL_NOT_FOUND = "exchange symbol %s not found"
-	BINANCE_ERR_FILTER_NOT_FOUND = "filter %s not found for %s"
-	BINANCE_ERR_INVALID_SYMBOL   = "neither %s%s nor %s%s is a valid exchange symbol"
-	BINANCE_ERR_UNKNOWN_SIDE     = "unknown operation side %s"
+	BINANCE_ERR_SYMBOL_NOT_FOUND     = "exchange symbol %s not found"
+	BINANCE_ERR_FILTER_NOT_FOUND     = "filter %s not found for %s"
+	BINANCE_ERR_INVALID_SYMBOL       = "neither %s%s nor %s%s is a valid exchange symbol"
+	BINANCE_ERR_UNKNOWN_SIDE         = "unknown operation side %s"
+	BINANCE_ERR_NIL_MMS_CH           = "uninitialized mms channel"
+	BINANCE_ERR_FAILED_TO_HANLDE_MMS = "failed to handle mms update | err=%s"
 
 	// Execution
 	EXE_RESTORE = "restoring execution | exe_id=%s, status=%s, assets=%v"
@@ -54,6 +62,8 @@ const (
 	FTS_BELOW_QUOTE_LIMIT      = "market order below quote limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_quote=%s"
 	FTS_BELOW_BASE_LIMIT       = "market order below base limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_base=%s"
 	FTS_OPERATION              = "operation | base=%s, quote=%s, amount=%s, amount_side=%s, side=%s"
+	FTS_ZERO_AMOUNT_ASSET      = "skipping asset %s | amount=0"
+	FTS_ASSET_TRADING_DISABLED = "%s trading is disabled by the exchange"
 
 	// FTS error
 	FTS_ERR_MISMATCHING_STRATEGY       = "mismatching strategy type | exp=%s, got=%s"
@@ -66,13 +76,17 @@ const (
 	FTS_ERR_UNKNWON_OP_TYPE            = "unknown opweration type %s"
 	FTS_ERR_NEGATIVE_BALANCE           = "negative balance detected | asset=%s, balance=%s"
 	FTS_ERR_SPOT_MARKET_SIZE_NOT_FOUND = "spot market size not found | symbol=%s"
+	FTS_ERR_ZERO_EXP_PRICE             = "expected price cannot be zero | asset=%s"
 
 	// Handler
 	HANDL_SKIP_MMS_UPDATE   = "trading ongoing, skipping mini market stats"
 	HANDL_OPERATION_RESULTS = "operation results | base_diff=%s, quote_diff=%s, actual_price=%s, price_spread=%s, status=%s"
+	HANDL_ZERO_BASE_DIFF    = "base amount unchanged | op_id=%s, base_diff = 0"
+	HANDL_ZERO_QUOTE_DIFF   = "quote amount unchanged | op_id=%s, quote_diff = 0"
 
 	// Hanlder error
-	HANDL_ERR_RECOVERABLE    = "recoverable error | msg=%s"
-	HANDL_ERR_UNRECOVERABLE  = "unrecoverable error | msg=%s"
-	HANDL_ERR_MKT_ODR_FAILED = "failed to place market order | op_id=%s"
+	HANDL_ERR_SKIP_MMS_UPDATE       = "error detected, skipping mini market stats | err=%s, asset=%s"
+	HANDL_ERR_MKT_ODR_FAILED        = "failed to place market order | op_id=%s"
+	HANDL_ERR_ZERO_EXP_PRICE        = "expected price cannot be zero | op_id=%s"
+	HANDL_ERR_ZERO_REQUESTED_AMOUNT = "requested amount cannot be zero | op_id=%s"
 )

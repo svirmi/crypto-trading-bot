@@ -24,12 +24,11 @@ func (a strategy_config_fts) is_empty() bool {
 	return reflect.DeepEqual(a, strategy_config_fts{})
 }
 
-func get_fts_config(strategyConfig config.StrategyConfig) (s strategy_config_fts, err error) {
+func get_fts_config(strategyConfig config.StrategyConfig) (s strategy_config_fts) {
 	if strategyConfig.Type != string(model.FIXED_THRESHOLD_STRATEGY) {
 		msg := fmt.Sprintf(logger.FTS_ERR_MISMATCHING_STRATEGY,
 			model.FIXED_THRESHOLD_STRATEGY, strategyConfig.Type)
-		logrus.Error(msg)
-		return strategy_config_fts{}, model.NewCtbError(msg, false)
+		logrus.WithField("comp", "fts").Panic(msg)
 	}
 
 	// Mapping interface{} to strategy_config_fts
@@ -47,18 +46,15 @@ func get_fts_config(strategyConfig config.StrategyConfig) (s strategy_config_fts
 
 	// Checking config validity
 	if s.is_empty() {
-		msg := fmt.Sprintf(logger.FTS_ERR_FAILED_TO_PARSE_CONFIG, strategyConfig.Config)
-		logrus.Error(msg)
-		return strategy_config_fts{}, model.NewCtbError(msg, true)
+		logrus.WithField("comp", "fts").Panicf(logger.FTS_ERR_FAILED_TO_PARSE_CONFIG, strategyConfig.Config)
 	}
 	if s.BuyThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.SellThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.MissProfitThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.StopLossThreshold.LessThanOrEqual(decimal.Zero) {
-		msg := fmt.Sprintf(logger.FTS_ERR_NEGATIVE_THRESHOLDS)
-		logrus.Error(msg)
-		return strategy_config_fts{}, model.NewCtbError(msg, true)
+
+		logrus.WithField("comp", "fts").Panic(logger.FTS_ERR_NEGATIVE_THRESHOLDS)
 	}
 
-	return s, nil
+	return s
 }

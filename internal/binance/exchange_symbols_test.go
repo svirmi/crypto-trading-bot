@@ -1,9 +1,9 @@
 package binance
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
@@ -106,10 +106,10 @@ func TestGetSpotMarketLimits_InvalidValues(t *testing.T) {
 	symbols["BTCUSDT"] = btcusdt
 
 	exp = model.SpotMarketLimits{
-		MinBase:  utils.DecimalFromString(fmt.Sprintf("%f", _MIN_NUM)),
-		MaxBase:  utils.DecimalFromString(fmt.Sprintf("%f", _MAX_NUM)),
-		StepBase: utils.DecimalFromString(fmt.Sprintf("%f", _MIN_NUM)),
-		MinQuote: utils.DecimalFromString(fmt.Sprintf("%f", _MIN_NUM))}
+		MinBase:  decimal.Zero,
+		MaxBase:  utils.MaxDecimal(),
+		StepBase: decimal.Zero,
+		MinQuote: decimal.Zero}
 	got, err = GetSpotMarketLimits("BTCUSDT")
 
 	testutils.AssertNil(t, err, "err")

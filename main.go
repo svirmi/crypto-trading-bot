@@ -24,17 +24,17 @@ func main() {
 
 	// Parsing command line
 	testnet := flag.Bool("testnet", false, "if present, application runs on testnet")
-	noColors := flag.Bool("nocolors", false, "if present, logs are not colored")
+	colors := flag.Bool("colors", false, "if present, logs are colored")
 	v := flag.Bool("v", false, "if present, debug logs are shown")
 	vv := flag.Bool("vv", false, "if present, trace logs are shown")
 	flag.Parse()
 
 	if *vv {
-		logger.Initialize(*noColors, logrus.TraceLevel)
+		logger.Initialize(*colors, logrus.TraceLevel)
 	} else if *v {
-		logger.Initialize(*noColors, logrus.DebugLevel)
+		logger.Initialize(*colors, logrus.DebugLevel)
 	} else {
-		logger.Initialize(*noColors, logrus.InfoLevel)
+		logger.Initialize(*colors, logrus.InfoLevel)
 	}
 
 	config.Initialize(*testnet)

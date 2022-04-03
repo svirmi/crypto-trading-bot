@@ -65,6 +65,11 @@ func TestGetAccount(t *testing.T) {
 	}()
 
 	binance_get_account = func(*binanceapi.GetAccountService) (*binanceapi.Account, error) {
+		raccount := get_remote_binance_account()
+		raccount.Balances = append(raccount.Balances, binanceapi.Balance{
+			Asset:  "SHIBA",
+			Free:   "0",
+			Locked: "100"})
 		return get_remote_binance_account(), nil
 	}
 

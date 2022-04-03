@@ -1,10 +1,11 @@
 package binance
 
 import (
-	"log"
+	"fmt"
 
 	binanceapi "github.com/adshao/go-binance/v2"
 	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
@@ -22,7 +23,9 @@ func InitMmsChannel(mmsChannel chan []model.MiniMarketStats) {
 
 func MiniMarketsStatsServe(assets []string) error {
 	if mms_ctl.mms == nil {
-		log.Fatalf("uninitialised mms channel")
+		err := fmt.Errorf(logger.BINANCE_ERR_NIL_MMS_CH)
+		logrus.WithField("comp", "binance").Error(err.Error())
+		return err
 	}
 
 	symbolsMap := make(map[string]bool)
@@ -31,7 +34,8 @@ func MiniMarketsStatsServe(assets []string) error {
 	}
 
 	errorHandler := func(err error) {
-		log.Print(err.Error())
+		logrus.WithField("comp", "binance").
+			Errorf(logger.BINANCE_ERR_FAILED_TO_HANLDE_MMS, err.Error())
 	}
 
 	callback := func(rMiniMarketsStats binanceapi.WsAllMiniMarketsStatEvent) {
@@ -42,12 +46,7 @@ func MiniMarketsStatsServe(assets []string) error {
 				continue
 			}
 			// Filter out symbols whose numeric fields could not be parsed from string
-			miniMarketStats, err := to_mini_market_stats(*rMiniMarketStats)
-			if err != nil {
-				log.Println(err.Error())
-				log.Printf("skipping update for symbol %s", rMiniMarketStats.Symbol)
-				continue
-			}
+			miniMarketStats := to_mini_market_stats(*rMiniMarketStats)
 			miniMarketsStats = append(miniMarketsStats, miniMarketStats)
 		}
 
@@ -60,7 +59,7 @@ func MiniMarketsStatsServe(assets []string) error {
 	// Opening web socket and intialising control structure
 	done, stop, err := binanceapi.WsAllMiniMarketsStatServe(callback, errorHandler)
 	if err != nil {
-		log.Fatalf("%s", err.Error())
+		logrus.WithField("comp", "binance").Error(err.Error())
 		return err
 	} else {
 		mms_ctl.mms_done = done
@@ -74,8 +73,7 @@ func MiniMarketsStatsStop() {
 		return
 	}
 
-	logrus.WithField("comp", "binance").
-		WithField("comp", "binance").Info("closing mini markets stats ws")
+	logrus.WithField("comp", "binance").Info(logger.BINANACE_CLOSING_MMS)
 	mms_ctl.mms_stop <- struct{}{}
 	<-mms_ctl.mms_done
 
@@ -86,7 +84,7 @@ func MiniMarketsStatsStop() {
 
 /********************** Mapping to local representation **********************/
 
-func to_mini_market_stats(rMiniMarketStat binanceapi.WsMiniMarketsStatEvent) (model.MiniMarketStats, error) {
+func to_mini_market_stats(rMiniMarketStat binanceapi.WsMiniMarketsStatEvent) model.MiniMarketStats {
 	lastPrice := utils.DecimalFromString(rMiniMarketStat.LastPrice)
 	openPrice := utils.DecimalFromString(rMiniMarketStat.OpenPrice)
 	lowPrice := utils.DecimalFromString(rMiniMarketStat.LowPrice)
@@ -103,5 +101,5 @@ func to_mini_market_stats(rMiniMarketStat binanceapi.WsMiniMarketsStatEvent) (mo
 		LowPrice:    lowPrice,
 		HighPrice:   highPrice,
 		BaseVolume:  baseVolume,
-		QuoteVolume: quoteVolume}, nil
+		QuoteVolume: quoteVolume}
 }

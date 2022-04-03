@@ -1,15 +1,24 @@
 package handler
 
 import (
+	"os"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
+
+func TestMain(m *testing.M) {
+	logger.Initialize(true, logrus.TraceLevel)
+	code := m.Run()
+	os.Exit(code)
+}
 
 func TestReadingMarketStatsCh(t *testing.T) {
 	// Saving and restoring status
@@ -67,7 +76,9 @@ func TestComputeOpResults_Filled_NoSpread_Buy_BaseAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("6934.384")}}
 	r2 := get_remote_account(b2)
 
-	got := compute_op_results(r1, r2, op)
+	got, err := compute_op_results(r1, r2, op)
+	testutils.AssertNil(t, err, "err")
+
 	exp := op
 	exp.Status = model.FILLED
 	exp.Results = model.OpResults{
@@ -95,7 +106,9 @@ func TestComputeOpResults_Filled_NoSpread_Sell_QuoteAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("10473.1")}}
 	r2 := get_remote_account(b2)
 
-	got := compute_op_results(r1, r2, op)
+	got, err := compute_op_results(r1, r2, op)
+	testutils.AssertNil(t, err, "err")
+
 	exp := op
 	exp.Status = model.FILLED
 	exp.Results = model.OpResults{
@@ -123,7 +136,9 @@ func TestComputeOpResults_Filled_PositiveSpread_Buy_BaseAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("6923.1")}}
 	r2 := get_remote_account(b2)
 
-	got := compute_op_results(r1, r2, op)
+	got, err := compute_op_results(r1, r2, op)
+	testutils.AssertNil(t, err, "err")
+
 	exp := op
 	exp.Status = model.FILLED
 	exp.Results = model.OpResults{
@@ -151,7 +166,9 @@ func TestComputeOpResults_Filled_NegativeSpread_Buy_BaseAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("7023.1")}}
 	r2 := get_remote_account(b2)
 
-	got := compute_op_results(r1, r2, op)
+	got, err := compute_op_results(r1, r2, op)
+	testutils.AssertNil(t, err, "err")
+
 	exp := op
 	exp.Status = model.FILLED
 	exp.Results = model.OpResults{
@@ -163,7 +180,7 @@ func TestComputeOpResults_Filled_NegativeSpread_Buy_BaseAmt(t *testing.T) {
 	testutils.AssertEq(t, exp, got, "operation_results")
 }
 
-func TestComputeOpResults_Filled_Spread_Sell_QuoteAmt(t *testing.T) {
+func TestComputeOpResults_Filled_PositiveSpread_Sell_QuoteAmt(t *testing.T) {
 	amt := utils.DecimalFromString("250.00")
 	price := utils.DecimalFromString("32500.00")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
@@ -179,7 +196,9 @@ func TestComputeOpResults_Filled_Spread_Sell_QuoteAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("10473.1")}}
 	r2 := get_remote_account(b2)
 
-	got := compute_op_results(r1, r2, op)
+	got, err := compute_op_results(r1, r2, op)
+	testutils.AssertNil(t, err, "err")
+
 	exp := op
 	exp.Status = model.FILLED
 	exp.Results = model.OpResults{
@@ -187,6 +206,36 @@ func TestComputeOpResults_Filled_Spread_Sell_QuoteAmt(t *testing.T) {
 		BaseDiff:    utils.DecimalFromString("0.00757576"),
 		QuoteDiff:   utils.DecimalFromString("250"),
 		Spread:      utils.DecimalFromString("1.53842905")}
+
+	testutils.AssertEq(t, exp, got, "operation_results")
+}
+
+func TestComputeOpResults_Filled_Negative_Spread_Sell_QuoteAmt(t *testing.T) {
+	amt := utils.DecimalFromString("250.00")
+	price := utils.DecimalFromString("32500.00")
+	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
+
+	b1 := []model.RemoteBalance{
+		{Asset: "BTC", Amount: utils.DecimalFromString("8.92")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("18.92")},
+		{Asset: "USDT", Amount: utils.DecimalFromString("10223.1")}}
+	r1 := get_remote_account(b1)
+	b2 := []model.RemoteBalance{
+		{Asset: "BTC", Amount: utils.DecimalFromString("9")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("18.92")},
+		{Asset: "USDT", Amount: utils.DecimalFromString("10473.1")}}
+	r2 := get_remote_account(b2)
+
+	got, err := compute_op_results(r1, r2, op)
+	testutils.AssertNil(t, err, "err")
+
+	exp := op
+	exp.Status = model.FILLED
+	exp.Results = model.OpResults{
+		ActualPrice: utils.DecimalFromString("3125"),
+		BaseDiff:    utils.DecimalFromString("0.08"),
+		QuoteDiff:   utils.DecimalFromString("250"),
+		Spread:      utils.DecimalFromString("-90.38461538")}
 
 	testutils.AssertEq(t, exp, got, "operation_results")
 }
@@ -207,7 +256,9 @@ func TestComputeOpResults_PartiallyFilled_Spread_Buy_BaseAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("6923.1")}}
 	r2 := get_remote_account(b2)
 
-	got := compute_op_results(r1, r2, op)
+	got, err := compute_op_results(r1, r2, op)
+	testutils.AssertNil(t, err, "err")
+
 	exp := op
 	exp.Status = model.PARTIALLY_FILLED
 	exp.Results = model.OpResults{
@@ -235,7 +286,9 @@ func TestComputeOpResults_PartiallyFilled_Spread_Sell_QuoteAmt(t *testing.T) {
 		{Asset: "USDT", Amount: utils.DecimalFromString("10472.9")}}
 	r2 := get_remote_account(b2)
 
-	got := compute_op_results(r1, r2, op)
+	got, err := compute_op_results(r1, r2, op)
+	testutils.AssertNil(t, err, "err")
+
 	exp := op
 	exp.Status = model.PARTIALLY_FILLED
 	exp.Results = model.OpResults{
@@ -243,6 +296,162 @@ func TestComputeOpResults_PartiallyFilled_Spread_Sell_QuoteAmt(t *testing.T) {
 		BaseDiff:    utils.DecimalFromString("0.008"),
 		QuoteDiff:   utils.DecimalFromString("249.8"),
 		Spread:      utils.DecimalFromString("-3.92307692")}
+
+	testutils.AssertEq(t, exp, got, "operation_results")
+}
+
+func TestComputeOpResults_NonExecuted_Buy_BaseAmt(t *testing.T) {
+	amt := utils.DecimalFromString("1")
+	price := utils.DecimalFromString("32500.00")
+	exp := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
+
+	b := []model.RemoteBalance{
+		{Asset: "BTC", Amount: utils.DecimalFromString("8.92")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("18.92")},
+		{Asset: "USDT", Amount: utils.DecimalFromString("100223.1")}}
+	r := get_remote_account(b)
+
+	exp.Status = model.FAILED
+	got, err := compute_op_results(r, r, exp)
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "operation_results")
+}
+
+func TestComputeOpResults_NonExecuted_Sell_QuoteAmt(t *testing.T) {
+	amt := utils.DecimalFromString("10000.5")
+	price := utils.DecimalFromString("32500.00")
+	exp := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
+
+	b := []model.RemoteBalance{
+		{Asset: "BTC", Amount: utils.DecimalFromString("8.92")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("18.92")},
+		{Asset: "USDT", Amount: utils.DecimalFromString("100223.1")}}
+	r := get_remote_account(b)
+
+	exp.Status = model.FAILED
+	got, err := compute_op_results(r, r, exp)
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertEq(t, exp, got, "operation_results")
+}
+
+func TestComputeOpResults_ZeroBaseDiff_Buy(t *testing.T) {
+	amt := utils.DecimalFromString("0.75")
+	price := utils.DecimalFromString("32500.00")
+	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
+
+	b1 := []model.RemoteBalance{
+		{Asset: "BTC", Amount: utils.DecimalFromString("8.92")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("18.92")},
+		{Asset: "USDT", Amount: utils.DecimalFromString("100223.1")}}
+	r1 := get_remote_account(b1)
+	b2 := []model.RemoteBalance{
+		{Asset: "BTC", Amount: utils.DecimalFromString("8.92")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("18.92")},
+		{Asset: "USDT", Amount: utils.DecimalFromString("75848.1")}}
+	r2 := get_remote_account(b2)
+
+	got, err := compute_op_results(r1, r2, op)
+	testutils.AssertNil(t, err, "err")
+
+	exp := op
+	exp.Status = model.PARTIALLY_FILLED
+	exp.Results = model.OpResults{
+		ActualPrice: utils.MaxDecimal(),
+		BaseDiff:    decimal.Zero,
+		QuoteDiff:   utils.DecimalFromString("24375"),
+		Spread:      utils.MaxDecimal()}
+
+	testutils.AssertEq(t, exp, got, "operation_results")
+}
+
+func TestComputeOpResults_ZeroBaseDiff_Sell(t *testing.T) {
+	amt := utils.DecimalFromString("0.75")
+	price := utils.DecimalFromString("32500.00")
+	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.SELL, price)
+
+	b1 := []model.RemoteBalance{
+		{Asset: "BTC", Amount: utils.DecimalFromString("8.92")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("18.92")},
+		{Asset: "USDT", Amount: utils.DecimalFromString("100223.1")}}
+	r1 := get_remote_account(b1)
+	b2 := []model.RemoteBalance{
+		{Asset: "BTC", Amount: utils.DecimalFromString("8.92")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("18.92")},
+		{Asset: "USDT", Amount: utils.DecimalFromString("124598.1")}}
+	r2 := get_remote_account(b2)
+
+	got, err := compute_op_results(r1, r2, op)
+	testutils.AssertNil(t, err, "err")
+
+	exp := op
+	exp.Status = model.PARTIALLY_FILLED
+	exp.Results = model.OpResults{
+		ActualPrice: decimal.Zero,
+		BaseDiff:    decimal.Zero,
+		QuoteDiff:   utils.DecimalFromString("24375"),
+		Spread:      utils.DecimalFromString("-100")}
+
+	testutils.AssertEq(t, exp, got, "operation_results")
+}
+
+func TestComputeOpResults_ZeroQuoteDiff_Sell(t *testing.T) {
+	amt := utils.DecimalFromString("100")
+	price := utils.DecimalFromString("32500.00")
+	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
+
+	b1 := []model.RemoteBalance{
+		{Asset: "BTC", Amount: utils.DecimalFromString("8.92")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("18.92")},
+		{Asset: "USDT", Amount: utils.DecimalFromString("100223.1")}}
+	r1 := get_remote_account(b1)
+	b2 := []model.RemoteBalance{
+		{Asset: "BTC", Amount: utils.DecimalFromString("8.91692308")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("18.92")},
+		{Asset: "USDT", Amount: utils.DecimalFromString("100223.1")}}
+	r2 := get_remote_account(b2)
+
+	got, err := compute_op_results(r1, r2, op)
+	testutils.AssertNil(t, err, "err")
+
+	exp := op
+	exp.Status = model.PARTIALLY_FILLED
+	exp.Results = model.OpResults{
+		ActualPrice: utils.MaxDecimal(),
+		BaseDiff:    utils.DecimalFromString("0.00307692"),
+		QuoteDiff:   decimal.Zero,
+		Spread:      utils.MaxDecimal()}
+
+	testutils.AssertEq(t, exp, got, "operation_results")
+}
+
+func TestComputeOpResults_ZeroQuoteDiff_Buy(t *testing.T) {
+	amt := utils.DecimalFromString("100")
+	price := utils.DecimalFromString("32500.00")
+	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.BUY, price)
+
+	b1 := []model.RemoteBalance{
+		{Asset: "BTC", Amount: utils.DecimalFromString("8.92")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("18.92")},
+		{Asset: "USDT", Amount: utils.DecimalFromString("100223.1")}}
+	r1 := get_remote_account(b1)
+	b2 := []model.RemoteBalance{
+		{Asset: "BTC", Amount: utils.DecimalFromString("8.92307692")},
+		{Asset: "ETH", Amount: utils.DecimalFromString("18.92")},
+		{Asset: "USDT", Amount: utils.DecimalFromString("100223.1")}}
+	r2 := get_remote_account(b2)
+
+	got, err := compute_op_results(r1, r2, op)
+	testutils.AssertNil(t, err, "err")
+
+	exp := op
+	exp.Status = model.PARTIALLY_FILLED
+	exp.Results = model.OpResults{
+		ActualPrice: decimal.Zero,
+		BaseDiff:    utils.DecimalFromString("0.00307692"),
+		QuoteDiff:   decimal.Zero,
+		Spread:      utils.DecimalFromString("-100")}
 
 	testutils.AssertEq(t, exp, got, "operation_results")
 }

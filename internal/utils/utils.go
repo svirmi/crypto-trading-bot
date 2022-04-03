@@ -8,6 +8,11 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 )
 
+const (
+	_MAX_NUM = "1000000000000"  // 10^12
+	_MIN_NUM = "-1000000000000" // -10^12
+)
+
 func GetSymbolFromAsset(base string) string {
 	return base + "USDT"
 }
@@ -30,4 +35,12 @@ func DecimalFromFloat64(num float64) decimal.Decimal {
 
 func SignChangeDecimal(d decimal.Decimal) decimal.Decimal {
 	return decimal.NewFromInt(-1).Mul(d).Round(8)
+}
+
+func MaxDecimal() decimal.Decimal {
+	return DecimalFromString(_MAX_NUM)
+}
+
+func MinDecimal() decimal.Decimal {
+	return DecimalFromString(_MIN_NUM)
 }

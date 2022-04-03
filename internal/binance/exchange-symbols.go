@@ -11,11 +11,6 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
-const (
-	_MIN_NUM float64 = 0
-	_MAX_NUM float64 = 1 << 15
-)
-
 var CanSpotTrade = func(symbol string) bool {
 	status, found := symbols[symbol]
 
@@ -55,18 +50,18 @@ func get_min_notional(symbol string) (decimal.Decimal, error) {
 
 	if !found {
 		err := fmt.Errorf("exchange symbol %s not found", symbol)
-		logrus.Error(err.Error())
+		logrus.WithField("comp", "binance").Error(err.Error())
 		return decimal.Zero, err
 	}
 
 	iNotional := extract_filter(status.Filters, "MIN_NOTIONAL")
 	if iNotional == nil {
 		err := fmt.Errorf("MIN_NOTIONAL filter not found for %s", symbol)
-		logrus.Error(err.Error())
+		logrus.WithField("comp", "binance").Error(err.Error())
 		return decimal.Zero, err
 	}
 
-	return parse_number(iNotional["minNotional"], decimal.NewFromFloat(_MIN_NUM)), nil
+	return parse_number(iNotional["minNotional"], decimal.Zero), nil
 }
 
 func get_spot_market_sizes(symbol string) (model.SpotMarketLimits, error) {
@@ -74,21 +69,21 @@ func get_spot_market_sizes(symbol string) (model.SpotMarketLimits, error) {
 
 	if !found {
 		err := fmt.Errorf(logger.BINANCE_ERR_SYMBOL_NOT_FOUND, symbol)
-		logrus.Error(err.Error())
+		logrus.WithField("comp", "binance").Error(err.Error())
 		return model.SpotMarketLimits{}, err
 	}
 
 	iMarketLotSize := extract_filter(status.Filters, "MARKET_LOT_SIZE")
 	if iMarketLotSize == nil {
 		err := fmt.Errorf(logger.BINANCE_ERR_FILTER_NOT_FOUND, "MARKET_LOT_SIZE", symbol)
-		logrus.Error(err.Error())
+		logrus.WithField("comp", "binance").Error(err.Error())
 		return model.SpotMarketLimits{}, err
 	}
 
 	return model.SpotMarketLimits{
-		MinBase:  parse_number(iMarketLotSize["minQty"], utils.DecimalFromFloat64(_MIN_NUM)),
-		MaxBase:  parse_number(iMarketLotSize["maxQty"], utils.DecimalFromFloat64(_MAX_NUM)),
-		StepBase: parse_number(iMarketLotSize["stepSize"], utils.DecimalFromFloat64(_MIN_NUM))}, nil
+		MinBase:  parse_number(iMarketLotSize["minQty"], decimal.Zero),
+		MaxBase:  parse_number(iMarketLotSize["maxQty"], utils.MaxDecimal()),
+		StepBase: parse_number(iMarketLotSize["stepSize"], decimal.Zero)}, nil
 }
 
 func get_spot_limit_sizes(symbol string) (model.SpotMarketLimits, error) {
@@ -96,21 +91,21 @@ func get_spot_limit_sizes(symbol string) (model.SpotMarketLimits, error) {
 
 	if !found {
 		err := fmt.Errorf(logger.BINANCE_ERR_SYMBOL_NOT_FOUND, symbol)
-		logrus.Error(err.Error())
+		logrus.WithField("comp", "binance").Error(err.Error())
 		return model.SpotMarketLimits{}, err
 	}
 
 	iLotSize := extract_filter(status.Filters, "LOT_SIZE")
 	if iLotSize == nil {
 		err := fmt.Errorf(logger.BINANCE_ERR_FILTER_NOT_FOUND, "LOT_SIZE", symbol)
-		logrus.Error(err.Error())
+		logrus.WithField("comp", "binance").Error(err.Error())
 		return model.SpotMarketLimits{}, err
 	}
 
 	return model.SpotMarketLimits{
-		MinBase:  parse_number(iLotSize["minQty"], utils.DecimalFromFloat64(_MIN_NUM)),
-		MaxBase:  parse_number(iLotSize["maxQty"], utils.DecimalFromFloat64(_MAX_NUM)),
-		StepBase: parse_number(iLotSize["stepSize"], utils.DecimalFromFloat64(_MIN_NUM))}, nil
+		MinBase:  parse_number(iLotSize["minQty"], decimal.Zero),
+		MaxBase:  parse_number(iLotSize["maxQty"], utils.MaxDecimal()),
+		StepBase: parse_number(iLotSize["stepSize"], decimal.Zero)}, nil
 }
 
 func extract_filter(filters []map[string]interface{}, filterType string) map[string]interface{} {

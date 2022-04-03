@@ -12,6 +12,16 @@ var (
 	MONGODB_DATABASE_TEST string = "ctb-unit-tests"
 )
 
+func AssertPanic(t *testing.T, f func()) {
+	t.Helper()
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected a panic but none occurred")
+		}
+	}()
+	f()
+}
+
 func AssertTrue(t *testing.T, value bool, comp string) {
 	t.Helper()
 	if !value {

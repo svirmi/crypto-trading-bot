@@ -25,6 +25,10 @@ func TestInitialize(t *testing.T) {
 		return true
 	}
 
+	laccountInit := get_laccount_init_test()
+	laccountInit.RAccount.Balances = append(laccountInit.RAccount.Balances, model.RemoteBalance{
+		Asset:  "SHIBA",
+		Amount: decimal.Zero})
 	got, err := LocalAccountFTS{}.Initialize(get_laccount_init_test())
 	testutils.AssertNil(t, err, "err")
 
@@ -39,33 +43,6 @@ func TestInitialize(t *testing.T) {
 /********************** Testing RegisterTrading() *************************/
 
 func TestRegisterTrading_BaseAmt_BuySide(t *testing.T) {
-	laccount := get_laccount_last_buy_test()
-	assetStatus := laccount.Assets["BTC"]
-	assetStatus.Usdt = utils.DecimalFromString("50")
-	laccount.Assets["BTC"] = assetStatus
-
-	amt := utils.DecimalFromString("0.1")
-	price := utils.DecimalFromString("500")
-	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
-	op.ExeId = laccount.ExeId
-
-	got, err := laccount.RegisterTrading(op)
-	testutils.AssertNil(t, err, "err")
-
-	exp := get_laccount_last_buy_test()
-	exp.ExeId = got.GetExeId()
-	exp.AccountId = got.GetAccountId()
-	exp.Timestamp = got.GetTimestamp()
-	assetStatus = exp.Assets["BTC"]
-	assetStatus.Amount = utils.DecimalFromString("11.44")
-	assetStatus.Usdt = decimal.Zero
-	assetStatus.LastOperationPrice = price
-	exp.Assets["BTC"] = assetStatus
-
-	testutils.AssertEq(t, exp, got, "fts_laccount")
-}
-
-func TestRegisterTrading_WrongExeId(t *testing.T) {
 	laccount := get_laccount_last_buy_test()
 	assetStatus := laccount.Assets["BTC"]
 	assetStatus.Usdt = utils.DecimalFromString("50")
@@ -148,16 +125,43 @@ func TestRegisterTrading_QuoteAmt_BuySide(t *testing.T) {
 }
 
 func TestRegisterTrading_QuoteAmt_SellSide(t *testing.T) {
-	exp := get_laccount_last_buy_test()
+	laccount := get_laccount_last_sell_test()
+	assetStatus := laccount.Assets["BTC"]
+	assetStatus.Amount = utils.DecimalFromString("1.18")
+	laccount.Assets["BTC"] = assetStatus
 
+	amt := utils.DecimalFromString("10000")
+	price := utils.DecimalFromString("43125.2")
+	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
+	op.ExeId = laccount.ExeId
+
+	got, err := laccount.RegisterTrading(op)
+	testutils.AssertNil(t, err, "err")
+
+	exp := get_laccount_last_sell_test()
+	exp.ExeId = got.GetExeId()
+	exp.AccountId = got.GetAccountId()
+	exp.Timestamp = got.GetTimestamp()
+	assetStatus = exp.Assets["BTC"]
+	assetStatus.Amount = utils.DecimalFromString("0.94811702")
+	assetStatus.Usdt = utils.DecimalFromString("34519.999")
+	assetStatus.LastOperationType = OP_SELL_FTS
+	assetStatus.LastOperationPrice = price
+	exp.Assets["BTC"] = assetStatus
+	exp.Ignored["USDT"] = utils.DecimalFromString("155.67")
+
+	testutils.AssertEq(t, exp, got, "fts_laccount")
+}
+
+func TestRegisterTrading_WrongExeId(t *testing.T) {
+	exp := get_laccount_last_buy_test()
 	amt := utils.DecimalFromString("105.67")
 	price := utils.DecimalFromString("500")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
 
-	got, err := exp.RegisterTrading(op)
-
-	testutils.AssertNotNil(t, err, "err")
-	testutils.AssertEq(t, exp, got, "fts_laccount")
+	testutils.AssertPanic(t, func() {
+		exp.RegisterTrading(op)
+	})
 }
 
 func TestRegisterTrading_OpFailed(t *testing.T) {
@@ -213,10 +217,9 @@ func TestRegisterTrading_NegativeBalanceBase(t *testing.T) {
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
 	op.ExeId = exp.ExeId
 
-	got, err := exp.RegisterTrading(op)
-
-	testutils.AssertNotNil(t, err, "err")
-	testutils.AssertEq(t, exp, got, "fts_laccount")
+	testutils.AssertPanic(t, func() {
+		exp.RegisterTrading(op)
+	})
 }
 
 func TestRegisterTrading_NegativeBalanceQuote(t *testing.T) {
@@ -227,10 +230,9 @@ func TestRegisterTrading_NegativeBalanceQuote(t *testing.T) {
 	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
 	op.ExeId = exp.ExeId
 
-	got, err := exp.RegisterTrading(op)
-
-	testutils.AssertNotNil(t, err, "err")
-	testutils.AssertEq(t, exp, got, "fts_laccount")
+	testutils.AssertPanic(t, func() {
+		exp.RegisterTrading(op)
+	})
 }
 
 /********************** Testing GetOperation() *************************/
@@ -390,6 +392,20 @@ func TestGetOperation_MissProfit(t *testing.T) {
 	exp.Type = model.AUTO
 
 	testutils.AssertEq(t, exp, got, "operation")
+}
+
+func TestGetOperation_ZeroPrice(t *testing.T) {
+	old := mock_strategy_config("13.45", "13.45", "20", "20")
+	defer restore_strategy_config(old)
+
+	laccount := get_laccount_last_buy_test()
+	price := decimal.Zero
+	mms := get_mms("BTC", price)
+
+	got, err := laccount.GetOperation(mms)
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertTrue(t, got.IsEmpty(), "operation")
 }
 
 /********************** Helpers *************************/

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	binanceapi "github.com/adshao/go-binance/v2"
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
@@ -65,7 +66,7 @@ func SendSpotMarketOrder(op model.Operation) (model.Operation, error) {
 	_, ifound := symbols[op.Quote+op.Base]
 	if !dfound && !ifound {
 		err := fmt.Errorf(logger.BINANCE_ERR_INVALID_SYMBOL, op.Base, op.Quote, op.Quote, op.Base)
-		logrus.Error(err.Error())
+		logrus.WithField("comp", "binance").Error(err.Error())
 		return model.Operation{}, err
 	}
 
@@ -83,7 +84,7 @@ func SendSpotMarketOrder(op model.Operation) (model.Operation, error) {
 	// Checking if symbol can be traded
 	if !CanSpotTrade(op.Base + op.Quote) {
 		err := fmt.Errorf(logger.BINANCE_TRADING_DISABLED, op.Base+op.Quote)
-		logrus.Error(err.Error())
+		logrus.WithField("comp", "binance").Error(err.Error())
 		return op, err
 	}
 
@@ -110,12 +111,12 @@ func check_spot_market_order(op model.Operation) error {
 	} else {
 		if op.Amount.LessThan(limit.MinBase) {
 			err := fmt.Errorf(logger.BINANCE_BELOW_LIMIT, "min base")
-			logrus.Error(err.Error())
+			logrus.WithField("comp", "binance").Error(err.Error())
 			return err
 		}
 		if op.Amount.GreaterThan(limit.MaxBase) {
 			err := fmt.Errorf(logger.BINANCE_ABOVE_LIMIT, "max base")
-			logrus.Error(err.Error())
+			logrus.WithField("comp", "binance").Error(err.Error())
 			return err
 		}
 	}
@@ -133,7 +134,7 @@ func send_spot_market_order(op model.Operation) error {
 		ordersvc.Side(binanceapi.SideTypeSell)
 	} else {
 		err := fmt.Errorf(logger.BINANCE_ERR_UNKNOWN_SIDE, op.Side)
-		logrus.Error(err.Error())
+		logrus.WithField("comp", "binance").Error(err.Error())
 		return err
 	}
 
@@ -171,6 +172,12 @@ func to_CCTB_remote_account(account *binanceapi.Account) (model.RemoteAccount, e
 	balances := make([]model.RemoteBalance, 0, len(account.Balances))
 	for _, rbalance := range account.Balances {
 		amount := utils.DecimalFromString(rbalance.Free)
+		if amount.Equals(decimal.Zero) {
+			logrus.WithField("comp", "binance").
+				Warnf(logger.BINANACE_ZERO_AMOUNT_ASSET, rbalance.Asset)
+			continue
+		}
+
 		balances = append(balances, model.RemoteBalance{
 			Asset:  rbalance.Asset,
 			Amount: amount})

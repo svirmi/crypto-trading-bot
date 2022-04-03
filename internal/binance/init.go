@@ -31,8 +31,7 @@ func Initialize() error {
 		return err
 	}
 
-	logrus.WithField("comp", "binance").
-		Info(logger.BINANCE_REGISTERING_SYMBOLS)
+	logrus.WithField("comp", "binance").Info(logger.BINANCE_REGISTERING_SYMBOLS)
 	symbols = make(map[string]binanceapi.Symbol)
 	for _, symbol := range res.Symbols {
 		symbols[symbol.Symbol] = symbol

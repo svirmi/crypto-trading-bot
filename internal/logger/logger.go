@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Initialize(noColors bool, level logrus.Level) {
+func Initialize(colors bool, level logrus.Level) {
 	formatter := new(log_formatter)
 	formatter.CustomCallerFormatter = func(f *runtime.Frame) string {
 		return fmt.Sprintf("%s:%d", path.Base(f.File), f.Line)
@@ -24,14 +24,14 @@ func Initialize(noColors bool, level logrus.Level) {
 	formatter.NoTimestampColor = false
 	formatter.NoCallerColor = false
 	formatter.NoFieldsColors = false
-	formatter.NoColors = noColors
+	formatter.NoColors = !colors
 	formatter.HideKeys = true
 
 	logrus.SetFormatter(formatter)
 	logrus.SetLevel(level)
 	logrus.SetReportCaller(true)
 
-	logrus.Infof(LOGGER_CONFIG, noColors, level)
+	logrus.Infof(LOGGER_CONFIG, colors, level)
 }
 
 // log_formatter - logrus formatter, implements logrus.log_formatter
@@ -97,9 +97,7 @@ func (f *log_formatter) Format(entry *logrus.Entry) ([]byte, error) {
 		level = strings.ToUpper(entry.Level.String())
 	}
 
-	if f.NoColors {
-		reset_color(b)
-	} else {
+	if !f.NoColors {
 		set_color(b, get_level_color(entry.Level))
 	}
 
@@ -116,10 +114,6 @@ func (f *log_formatter) Format(entry *logrus.Entry) ([]byte, error) {
 	}
 
 	// Write fields
-	if !f.NoColors && f.NoFieldsColors {
-		reset_color(b)
-	}
-
 	if f.FieldsOrder == nil {
 		f.writeFields(b, entry)
 	} else {
@@ -130,20 +124,12 @@ func (f *log_formatter) Format(entry *logrus.Entry) ([]byte, error) {
 		b.WriteString(" ")
 	}
 
-	if !f.NoColors && !f.NoFieldsColors {
-		reset_color(b)
-	}
-
 	// Write caller information
 	if !f.NoColors && !f.NoCallerColor {
 		set_color(b, get_caller_color())
 	}
 
 	f.writeCaller(b, entry)
-
-	if !f.NoColors && !f.NoCallerColor {
-		reset_color(b)
-	}
 
 	// write message
 	if !f.NoColors {
@@ -154,10 +140,6 @@ func (f *log_formatter) Format(entry *logrus.Entry) ([]byte, error) {
 		b.WriteString(entry.Message)
 	} else {
 		b.WriteString(f.MessageSeparator + " " + entry.Message)
-	}
-
-	if !f.NoColors {
-		reset_color(b)
 	}
 
 	b.WriteByte('\n')
@@ -273,8 +255,4 @@ func get_message_color() int {
 
 func set_color(b *bytes.Buffer, color int) {
 	fmt.Fprintf(b, "\x1b[%dm", color)
-}
-
-func reset_color(b *bytes.Buffer) {
-	b.WriteString("\x1b[0m")
 }
