@@ -79,7 +79,7 @@ var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
 		// Getting target operation
 		operation, err := tcontext.laccount.GetOperation(mms)
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
 			continue
 		}
 
@@ -90,52 +90,61 @@ var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
 
 		// Price equals to zero
 		if operation.Amount.Equals(decimal.Zero) {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			logrus.Errorf(logger.HANDL_ERR_ZERO_REQUESTED_AMOUNT)
 			continue
 		}
 		if operation.Price.Equals(decimal.Zero) {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			logrus.Errorf(logger.HANDL_ERR_ZERO_EXP_PRICE)
 			continue
 		}
 
 		// Getting remote account before operation
 		raccount1, err := binance.GetAccout()
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
 			continue
 		}
 
 		// Sending market order
 		operation, err = binance.SendSpotMarketOrder(operation)
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
 			continue
 		}
 
 		// Getting remote account after operation
 		raccount2, err := binance.GetAccout()
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
 			continue
 		}
 
 		// Computing operation results
+		operation.FromId = tcontext.laccount.GetAccountId()
 		operation, err = compute_op_results(raccount1, raccount2, operation)
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
 			continue
 		}
 
 		// Updating local account
 		tcontext.laccount, err = tcontext.laccount.RegisterTrading(operation)
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, err.Error(), mms.Asset)
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
 			continue
 		}
 
 		// Inserting operation and updating laccount in DB
-		operations.Create(operation)
-		laccount.Create(tcontext.laccount)
+		operation.ToId = tcontext.laccount.GetAccountId()
+		err = operations.Create(operation)
+		if err != nil {
+			logrus.Panicf(err.Error())
+		}
+
+		err = laccount.Create(tcontext.laccount)
+		if err != nil {
+			logrus.Panicf(err.Error())
+		}
 	}
 }
 
@@ -167,7 +176,7 @@ func compute_op_results(old, new model.RemoteAccount, op model.Operation) (model
 	baseDiff := (newBaseBalance.Sub(oldBaseBalance)).Abs().Round(8)
 	quoteDiff := (newQuoteBalance.Sub(oldQuoteBalance)).Abs().Round(8)
 	if baseDiff.Equals(decimal.Zero) && quoteDiff.Equals(decimal.Zero) {
-		err := fmt.Errorf(logger.HANDL_ERR_MKT_ODR_FAILED, op.OpId)
+		err := fmt.Errorf(logger.HANDL_ERR_ZERO_BASE_QUOTE_DIFF)
 		logrus.Error(err.Error())
 		op.Status = model.FAILED
 		return op, err

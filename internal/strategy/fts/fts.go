@@ -48,6 +48,7 @@ type operation_init struct {
 	asset       string
 	amount      decimal.Decimal
 	targetPrice decimal.Decimal
+	cause       string
 }
 
 func (a LocalAccountFTS) Initialize(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
@@ -179,28 +180,28 @@ func (a LocalAccountFTS) GetOperation(mms model.MiniMarketStats) (model.Operatio
 
 	if lastOpType == OP_BUY_FTS && currentPrice.GreaterThanOrEqual(sellPrice) {
 		// sell command
-		operationInit := build_operation_init(asset, currentAmnt, currentPrice)
+		operationInit := build_operation_init(asset, currentAmnt, currentPrice, "fts sell")
 		logrus.WithField("comp", "fts").
 			Infof(logger.FTS_TRADE, "SELL", asset, lastOpType, lastOpPrice, currentPrice)
 		return build_sell_op(a, operationInit)
 
 	} else if lastOpType == OP_BUY_FTS && currentPrice.LessThanOrEqual(stopLossPrice) {
 		// stop loss command
-		operationInit := build_operation_init(asset, currentAmnt, currentPrice)
+		operationInit := build_operation_init(asset, currentAmnt, currentPrice, "fts stop loss")
 		logrus.WithField("comp", "fts").
-			Infof(logger.FTS_TRADE, "STOP_LOSS", asset, lastOpType, lastOpPrice, currentPrice)
+			Infof(logger.FTS_TRADE, "fts stop loss", asset, lastOpType, lastOpPrice, currentPrice)
 		return build_sell_op(a, operationInit)
 
 	} else if lastOpType == OP_SELL_FTS && currentPrice.LessThanOrEqual(buyPrice) {
 		// buy command
-		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice)
+		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice, "fts buy")
 		logrus.WithField("comp", "fts").
 			Infof(logger.FTS_TRADE, "BUY", asset, lastOpType, lastOpPrice, currentPrice)
 		return build_buy_op(a, operationInit)
 
 	} else if lastOpType == OP_SELL_FTS && currentPrice.GreaterThanOrEqual(missProfitPrice) {
 		// miss profit command
-		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice)
+		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice, "fts miss profit")
 		logrus.WithField("comp", "fts").
 			Infof(logger.FTS_TRADE, "MISS_PROFIT", asset, lastOpType, lastOpPrice, currentPrice)
 		return build_buy_op(a, operationInit)
@@ -210,11 +211,12 @@ func (a LocalAccountFTS) GetOperation(mms model.MiniMarketStats) (model.Operatio
 	return model.Operation{}, nil
 }
 
-func build_operation_init(asset string, amount, price decimal.Decimal) operation_init {
+func build_operation_init(asset string, amount, price decimal.Decimal, cause string) operation_init {
 	return operation_init{
 		asset:       asset,
 		amount:      amount,
-		targetPrice: price}
+		targetPrice: price,
+		cause:       cause}
 }
 
 func build_buy_op(laccount LocalAccountFTS, operationInit operation_init) (model.Operation, error) {
@@ -242,6 +244,7 @@ func build_buy_op(laccount LocalAccountFTS, operationInit operation_init) (model
 		Amount:     operationInit.amount,
 		AmountSide: model.QUOTE_AMOUNT,
 		Price:      operationInit.targetPrice,
+		Cause:      operationInit.cause,
 		Status:     model.PENDING}
 
 	logrus.WithField("comp", "fts").
@@ -274,6 +277,7 @@ func build_sell_op(laccount LocalAccountFTS, operationInit operation_init) (mode
 		Amount:     operationInit.amount,
 		AmountSide: model.BASE_AMOUNT,
 		Price:      operationInit.targetPrice,
+		Cause:      operationInit.cause,
 		Status:     model.PENDING}
 
 	logrus.WithField("comp", "fts").

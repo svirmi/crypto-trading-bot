@@ -83,6 +83,9 @@ type Operation struct {
 	Amount     decimal.Decimal `bson:"amount"`     // Amount to be bought or sold
 	AmountSide AmountSide      `bson:"amountSide"` // What amount refers to, base or quote
 	Price      decimal.Decimal `bson:"price"`      // How much of "quote" to get one unit of "base"
+	FromId     string          `bson:"fromId"`     // Id of the old laccount
+	ToId       string          `bson:"toId"`       // Id of the new laccount
+	Cause      string          `bson:"cause"`      // Free text for reporting what triggered this operation
 	Results    OpResults       `bson:"results"`    // Results
 	Status     OpStatus        `bson:"status"`     // Status
 	Timestamp  int64           `bson:"timestamp"`  // Operation timestamp

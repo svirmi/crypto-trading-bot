@@ -279,6 +279,7 @@ func TestGetOperation_Sell(t *testing.T) {
 	exp.Status = model.PENDING
 	exp.Results = model.OpResults{}
 	exp.Type = model.AUTO
+	exp.Cause = "fts sell"
 
 	testutils.AssertEq(t, exp, got, "operation")
 }
@@ -323,6 +324,7 @@ func TestGetOperation_StopLoss(t *testing.T) {
 	exp.Status = model.PENDING
 	exp.Results = model.OpResults{}
 	exp.Type = model.AUTO
+	exp.Cause = "fts stop loss"
 
 	testutils.AssertEq(t, exp, got, "operation")
 }
@@ -346,6 +348,7 @@ func TestGetOperation_Buy(t *testing.T) {
 	exp.Status = model.PENDING
 	exp.Results = model.OpResults{}
 	exp.Type = model.AUTO
+	exp.Cause = "fts buy"
 
 	testutils.AssertEq(t, exp, got, "operation")
 }
@@ -390,6 +393,7 @@ func TestGetOperation_MissProfit(t *testing.T) {
 	exp.Status = model.PENDING
 	exp.Results = model.OpResults{}
 	exp.Type = model.AUTO
+	exp.Cause = "fts miss profit"
 
 	testutils.AssertEq(t, exp, got, "operation")
 }

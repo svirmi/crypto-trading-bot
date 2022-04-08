@@ -21,8 +21,8 @@ const (
 	BINANCE_STABLECOIN_ASSET    = "%s is a stable coin"
 	BINANCE_TRADING_DISABLED    = "%s trading disabled by binance"
 	BINANCE_MKT_ORDER_RESULT    = "market order executed | symbol=%s, original_qty=%s, actual_qty=%s, status=%s, side=%s"
-	BINANCE_BELOW_LIMIT         = "amount below %s"
-	BINANCE_ABOVE_LIMIT         = "amount above %s"
+	BINANCE_BELOW_LIMIT         = "amount below market order limit %s"
+	BINANCE_ABOVE_LIMIT         = "amount above market order limit %s"
 	BINANACE_ZERO_AMOUNT_ASSET  = "skipping asset %s | amount=0"
 	BINANACE_CLOSING_MMS        = "closing mini market stats"
 
@@ -79,14 +79,14 @@ const (
 	FTS_ERR_ZERO_EXP_PRICE             = "expected price cannot be zero | asset=%s"
 
 	// Handler
-	HANDL_SKIP_MMS_UPDATE   = "trading ongoing, skipping mini market stats"
+	HANDL_SKIP_MMS_UPDATE   = "trading ongoing, skipping mms"
 	HANDL_OPERATION_RESULTS = "operation results | base_diff=%s, quote_diff=%s, actual_price=%s, price_spread=%s, status=%s"
 	HANDL_ZERO_BASE_DIFF    = "base amount unchanged | op_id=%s, base_diff = 0"
 	HANDL_ZERO_QUOTE_DIFF   = "quote amount unchanged | op_id=%s, quote_diff = 0"
 
 	// Hanlder error
-	HANDL_ERR_SKIP_MMS_UPDATE       = "error detected, skipping mini market stats | err=%s, asset=%s"
-	HANDL_ERR_MKT_ODR_FAILED        = "failed to place market order | op_id=%s"
-	HANDL_ERR_ZERO_EXP_PRICE        = "expected price cannot be zero | op_id=%s"
-	HANDL_ERR_ZERO_REQUESTED_AMOUNT = "requested amount cannot be zero | op_id=%s"
+	HANDL_ERR_SKIP_MMS_UPDATE       = "error detected, skipping mms | asset=%s, err=%s"
+	HANDL_ERR_ZERO_EXP_PRICE        = "expected price cannot be zero, skipping mms"
+	HANDL_ERR_ZERO_REQUESTED_AMOUNT = "requested amount cannot be zero, skipping mms"
+	HANDL_ERR_ZERO_BASE_QUOTE_DIFF  = "market order not executed | base_diff=0, quote_diff=0"
 )
