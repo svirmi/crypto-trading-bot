@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"github.com/sirupsen/logrus"
@@ -29,13 +30,8 @@ func main() {
 	vv := flag.Bool("vv", false, "if present, trace logs are shown")
 	flag.Parse()
 
-	if *vv {
-		logger.Initialize(*colors, logrus.TraceLevel)
-	} else if *v {
-		logger.Initialize(*colors, logrus.DebugLevel)
-	} else {
-		logger.Initialize(*colors, logrus.InfoLevel)
-	}
+	logger.Initialize(*colors, get_log_level(*v, *vv))
+	logrus.Infof(logger.MAIN_LOGICAL_CORES, runtime.NumCPU())
 
 	config.Initialize(*testnet)
 
@@ -97,7 +93,7 @@ func main() {
 	binance.MiniMarketsStatsServe(tradableAssets)
 
 	// Terminate when the application is stopped
-	<-make(chan struct{})
+	select {}
 }
 
 func register_interrupt_handler() chan os.Signal {
@@ -116,4 +112,14 @@ func register_interrupt_handler() chan os.Signal {
 		os.Exit(0)
 	}()
 	return sigc
+}
+
+func get_log_level(v, vv bool) logrus.Level {
+	if vv {
+		return logrus.TraceLevel
+	} else if v {
+		return logrus.DebugLevel
+	} else {
+		return logrus.InfoLevel
+	}
 }

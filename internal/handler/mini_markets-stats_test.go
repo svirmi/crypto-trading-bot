@@ -20,29 +20,36 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestReadingMarketStatsCh(t *testing.T) {
+func TestHandleMiniMarketsStats(t *testing.T) {
 	// Saving and restoring status
-	old_hanlde := handle_mini_markets_stats
+	old_hanlde := handle_operations
 	old_skip := skip_mini_markets_stats
+	old_get_ops := get_operations
 	defer func() {
-		handle_mini_markets_stats = old_hanlde
+		handle_operations = old_hanlde
 		skip_mini_markets_stats = old_skip
+		get_operations = old_get_ops
 	}()
 
 	// Mocking dependencies
-	handled := 0
-	handle_mini_markets_stats = func([]model.MiniMarketStats) {
-		handled++
+	tcontext.execution.Status = model.EXE_ACTIVE
+	handled_counter := 0
+	handle_operations = func([]model.Operation) {
+		handled_counter++
 		time.Sleep(time.Millisecond * 500)
 	}
-	skipped := 0
+	skipped_counter := 0
 	skip_mini_markets_stats = func([]model.MiniMarketStats) {
-		skipped++
+		skipped_counter++
+	}
+	get_operations = func(miniMarketsStats []model.MiniMarketStats) []model.Operation {
+		op := model.Operation{}
+		op.OpId = uuid.NewString()
+		return []model.Operation{op}
 	}
 
-	end := make(chan struct{})
-
 	// Producer
+	end := make(chan struct{})
 	scontext.mms = make(chan []model.MiniMarketStats)
 	go func() {
 		for i := 0; i < 6; i++ {
@@ -54,10 +61,88 @@ func TestReadingMarketStatsCh(t *testing.T) {
 	}()
 
 	// Consumer
-	read_mini_markets_stats_ch()
+	handle_mini_markets_stats()
 	<-end
 
-	testutils.AssertEq(t, 6, handled+skipped, "mini_market_stats_read_ch")
+	testutils.AssertEq(t, 6, handled_counter+skipped_counter, "mini_market_stats_count")
+}
+
+func TestHandleMiniMarketsStats_NonActiveExe(t *testing.T) {
+	// Saving and restoring status
+	old_get_ops := get_operations
+	defer func() {
+		get_operations = old_get_ops
+	}()
+
+	// Mocking dependencies
+	tcontext.execution.Status = model.EXE_TERMINATED
+	get_op_counter := 0
+	get_operations = func(miniMarketsStats []model.MiniMarketStats) []model.Operation {
+		get_op_counter++
+		return []model.Operation{}
+	}
+
+	// Producer
+	end := make(chan struct{})
+	scontext.mms = make(chan []model.MiniMarketStats)
+	go func() {
+		for i := 0; i < 6; i++ {
+			scontext.mms <- []model.MiniMarketStats{}
+			time.Sleep(time.Millisecond * 50)
+		}
+		close(scontext.mms)
+		end <- struct{}{}
+	}()
+
+	// Consumer
+	handle_mini_markets_stats()
+	<-end
+
+	testutils.AssertEq(t, 0, get_op_counter, "mini_markets_stats_count")
+}
+
+func TestHandleMiniMarketsStats_Noop(t *testing.T) {
+	// Saving and restoring status
+	old_hanlde := handle_operations
+	old_skip := skip_mini_markets_stats
+	old_get_ops := get_operations
+	defer func() {
+		handle_operations = old_hanlde
+		skip_mini_markets_stats = old_skip
+		get_operations = old_get_ops
+	}()
+
+	// Mocking dependencies
+	tcontext.execution.Status = model.EXE_ACTIVE
+	handled_counter := 0
+	handle_operations = func([]model.Operation) {
+		handled_counter++
+	}
+	skipped_counter := 0
+	skip_mini_markets_stats = func([]model.MiniMarketStats) {
+		skipped_counter++
+	}
+	get_operations = func(miniMarketsStats []model.MiniMarketStats) []model.Operation {
+		return []model.Operation{}
+	}
+
+	// Producer
+	end := make(chan struct{})
+	scontext.mms = make(chan []model.MiniMarketStats)
+	go func() {
+		for i := 0; i < 6; i++ {
+			scontext.mms <- []model.MiniMarketStats{}
+			time.Sleep(time.Millisecond * 50)
+		}
+		close(scontext.mms)
+		end <- struct{}{}
+	}()
+
+	// Consumer
+	handle_mini_markets_stats()
+	<-end
+
+	testutils.AssertEq(t, 0, handled_counter+skipped_counter, "mini_market_stats_count")
 }
 
 func TestComputeOpResults_Filled_NoSpread_Buy_BaseAmt(t *testing.T) {

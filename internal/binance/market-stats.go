@@ -50,10 +50,19 @@ func MiniMarketsStatsServe(assets []string) error {
 			miniMarketsStats = append(miniMarketsStats, miniMarketStats)
 		}
 
-		// Send mini markets stats to channel
-		if len(miniMarketsStats) != 0 {
-			mms_ctl.mms <- miniMarketsStats
+		// Return if no mini markets stats left after filtering
+		if len(miniMarketsStats) == 0 {
+			return
 		}
+
+		// Send a mini markets stats through the channel
+		select {
+		case mms_ctl.mms <- miniMarketsStats:
+		default:
+			logrus.WithField("comp", "binance").
+				Warnf(logger.BINANCE_DROP_MMS_UPDATE, len(miniMarketsStats))
+		}
+
 	}
 
 	// Opening web socket and intialising control structure

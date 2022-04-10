@@ -1,6 +1,9 @@
 package logger
 
 const (
+	// Main
+	MAIN_LOGICAL_CORES = "running on %d logical cores"
+
 	// Logger
 	LOGGER_CONFIG = "logger config | colors=%t, level=%s"
 
@@ -25,6 +28,7 @@ const (
 	BINANCE_ABOVE_LIMIT         = "amount above market order limit %s"
 	BINANACE_ZERO_AMOUNT_ASSET  = "skipping asset %s | amount=0"
 	BINANACE_CLOSING_MMS        = "closing mini market stats"
+	BINANCE_DROP_MMS_UPDATE     = "mini markets stats rate too high, dropping update | size=%d"
 
 	// Binance error
 	BINANCE_ERR_SYMBOL_NOT_FOUND     = "exchange symbol %s not found"

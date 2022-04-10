@@ -43,43 +43,46 @@ func InitMmsChannel(mms chan []model.MiniMarketStats) {
 }
 
 func HandleMiniMarketsStats() {
-	go read_mini_markets_stats_ch()
+	trading_context_init()
+	go handle_mini_markets_stats()
 }
 
-func read_mini_markets_stats_ch() {
+var handle_mini_markets_stats = func() {
 	sentinel := abool.New()
-
 	for miniMarketsStats := range scontext.mms {
+		// If the execution is not ACTIVE, no action should be applied
+		if tcontext.execution.Status != model.EXE_ACTIVE {
+			continue
+		}
+
+		// Get operations from mini markets stats
+		operations := get_operations(miniMarketsStats)
+		if len(operations) == 0 {
+			continue
+		}
+
+		// Set sentinel
 		ok := sentinel.SetToIf(false, true)
 		if !ok {
 			skip_mini_markets_stats(miniMarketsStats)
 			continue
 		}
 
-		go func(miniMarketsStats []model.MiniMarketStats) {
+		// Handle operations and defer sentinel reset
+		go func(operations []model.Operation) {
 			defer sentinel.UnSet()
-			handle_mini_markets_stats(miniMarketsStats)
-		}(miniMarketsStats)
+			handle_operations(operations)
+		}(operations)
 	}
 }
 
-var skip_mini_markets_stats = func([]model.MiniMarketStats) {
-	logrus.Info(logger.HANDL_SKIP_MMS_UPDATE)
-}
-
-var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
-	trading_context_init()
-
-	// If the execution is PAUSED, no action should be applied
-	if tcontext.execution.Status != model.EXE_ACTIVE {
-		return
-	}
-
-	for _, mms := range miniMarketsStats {
-		// Getting target operation
-		operation, err := tcontext.laccount.GetOperation(mms)
+var get_operations = func(miniMarketsStats []model.MiniMarketStats) []model.Operation {
+	operations := make([]model.Operation, 0)
+	for _, miniMarketStats := range miniMarketsStats {
+		// Getting operation from mini market stats
+		operation, err := tcontext.laccount.GetOperation(miniMarketStats)
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, miniMarketStats.Asset, err.Error())
 			continue
 		}
 
@@ -87,13 +90,23 @@ var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
 		if operation.IsEmpty() {
 			continue
 		}
+		operations = append(operations, operation)
+	}
+	return operations
+}
 
+var skip_mini_markets_stats = func([]model.MiniMarketStats) {
+	logrus.Info(logger.HANDL_SKIP_MMS_UPDATE)
+}
+
+var handle_operations = func(ops []model.Operation) {
+	for _, op := range ops {
 		// Price equals to zero
-		if operation.Amount.Equals(decimal.Zero) {
+		if op.Amount.Equals(decimal.Zero) {
 			logrus.Errorf(logger.HANDL_ERR_ZERO_REQUESTED_AMOUNT)
 			continue
 		}
-		if operation.Price.Equals(decimal.Zero) {
+		if op.Price.Equals(decimal.Zero) {
 			logrus.Errorf(logger.HANDL_ERR_ZERO_EXP_PRICE)
 			continue
 		}
@@ -101,42 +114,42 @@ var handle_mini_markets_stats = func(miniMarketsStats []model.MiniMarketStats) {
 		// Getting remote account before operation
 		raccount1, err := binance.GetAccout()
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
 			continue
 		}
 
 		// Sending market order
-		operation, err = binance.SendSpotMarketOrder(operation)
+		op, err = binance.SendSpotMarketOrder(op)
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
 			continue
 		}
 
 		// Getting remote account after operation
 		raccount2, err := binance.GetAccout()
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
 			continue
 		}
 
 		// Computing operation results
-		operation.FromId = tcontext.laccount.GetAccountId()
-		operation, err = compute_op_results(raccount1, raccount2, operation)
+		op.FromId = tcontext.laccount.GetAccountId()
+		op, err = compute_op_results(raccount1, raccount2, op)
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
 			continue
 		}
 
 		// Updating local account
-		tcontext.laccount, err = tcontext.laccount.RegisterTrading(operation)
+		tcontext.laccount, err = tcontext.laccount.RegisterTrading(op)
 		if err != nil {
-			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
 			continue
 		}
 
 		// Inserting operation and updating laccount in DB
-		operation.ToId = tcontext.laccount.GetAccountId()
-		err = operations.Create(operation)
+		op.ToId = tcontext.laccount.GetAccountId()
+		err = operations.Create(op)
 		if err != nil {
 			logrus.Panicf(err.Error())
 		}
