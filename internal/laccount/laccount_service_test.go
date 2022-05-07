@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/valerioferretti92/crypto-trading-bot/internal/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
@@ -14,13 +13,8 @@ import (
 func TestCreateOrRestore_Create_FTS(t *testing.T) {
 	// Setting up test
 	old_mongo_conf := mock_mongo_config()
-	old_can_spot_trade := binance.CanSpotTrade
 	mongodb.Initialize()
 	var exeIds = []string{}
-
-	binance.CanSpotTrade = func(symbol string) bool {
-		return symbol != "LUNAUSDT"
-	}
 
 	// Restoring status after test execution
 	defer func() {
@@ -29,7 +23,6 @@ func TestCreateOrRestore_Create_FTS(t *testing.T) {
 
 		restore_mongo_config(old_mongo_conf)
 		mongodb.Disconnect()
-		binance.CanSpotTrade = old_can_spot_trade
 	}()
 
 	local_account_init := get_laccount_init_test(model.FIXED_THRESHOLD_STRATEGY)

@@ -4,6 +4,9 @@ const (
 	// Main
 	MAIN_LOGICAL_CORES = "running on %d logical cores"
 
+	// Main error
+	MAIN_ERR_INVALID_ENV = "provided env is invalid | provided_env=%s, existing_envs=%s"
+
 	// Logger
 	LOGGER_CONFIG = "logger config | colors=%t, level=%s"
 
@@ -24,8 +27,9 @@ const (
 	BINANCE_STABLECOIN_ASSET    = "%s is a stable coin"
 	BINANCE_TRADING_DISABLED    = "%s trading disabled by binance"
 	BINANCE_MKT_ORDER_RESULT    = "market order executed | symbol=%s, original_qty=%s, actual_qty=%s, status=%s, side=%s"
-	BINANCE_BELOW_LIMIT         = "amount below market order limit %s"
-	BINANCE_ABOVE_LIMIT         = "amount above market order limit %s"
+	BINANCE_BELOW_QUOTE_LIMIT   = "market order below quote limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_quote=%s"
+	BINANCE_BELOW_BASE_LIMIT    = "market order below base limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_base=%s"
+	BINANCE_ABOVE_BASE_LIMIT    = "market order above base limit | symbol=%s, side=%s, amt=%s, amt_side=%s, max_base=%s"
 	BINANACE_ZERO_AMOUNT_ASSET  = "skipping asset %s | amount=0"
 	BINANACE_CLOSING_MMS        = "closing mini market stats"
 	BINANCE_DROP_MMS_UPDATE     = "mini markets stats rate too high, dropping update | size=%d"
@@ -63,11 +67,9 @@ const (
 	FTS_IGNORED_ASSET          = "%s will be ignored"
 	FTS_STRATEGY_CONFIG_PARSED = "config succesfully parsed | buy=%s, sell=%s, miss_profit=%s, stop_loss=%s"
 	FTS_TRADE                  = "%s condition verified | asset=%s, last_op=%s, last_price=%s, curr_price=%s"
-	FTS_BELOW_QUOTE_LIMIT      = "market order below quote limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_quote=%s"
-	FTS_BELOW_BASE_LIMIT       = "market order below base limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_base=%s"
-	FTS_OPERATION              = "operation | base=%s, quote=%s, amount=%s, amount_side=%s, side=%s"
+	FTS_BELOW_QUOTE_LIMIT      = "amount below quote limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_quote=%s"
+	FTS_BELOW_BASE_LIMIT       = "amount below base limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_base=%s"
 	FTS_ZERO_AMOUNT_ASSET      = "skipping asset %s | amount=0"
-	FTS_ASSET_TRADING_DISABLED = "%s trading is disabled by the exchange"
 
 	// FTS error
 	FTS_ERR_MISMATCHING_STRATEGY       = "mismatching strategy type | exp=%s, got=%s"
@@ -87,6 +89,7 @@ const (
 	HANDL_OPERATION_RESULTS = "operation results | base_diff=%s, quote_diff=%s, actual_price=%s, price_spread=%s, status=%s"
 	HANDL_ZERO_BASE_DIFF    = "base amount unchanged | op_id=%s, base_diff = 0"
 	HANDL_ZERO_QUOTE_DIFF   = "quote amount unchanged | op_id=%s, quote_diff = 0"
+	HANDL_TRADING_DISABLED  = "%s trading disabled, skipping mms"
 
 	// Hanlder error
 	HANDL_ERR_SKIP_MMS_UPDATE       = "error detected, skipping mms | asset=%s, err=%s"

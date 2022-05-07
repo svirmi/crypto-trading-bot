@@ -7,6 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -49,15 +50,16 @@ func (c Config) IsEmpty() bool {
 }
 
 var (
-	appConfig           Config
-	testnet_config_file = "config-testnet.yaml"
-	mainnet_config_file = "config.yaml"
-	resource_folder     = "resources"
+	appConfig              Config
+	simulation_config_file = "config-simulation.yaml"
+	testnet_config_file    = "config-testnet.yaml"
+	mainnet_config_file    = "config.yaml"
+	resource_folder        = "resources"
 )
 
-func Initialize(testnet bool) error {
+func Initialize(env model.Env) error {
 	// Parsing config
-	config, err := parse_config(testnet)
+	config, err := parse_config(env)
 	if err != nil {
 		return err
 	}
@@ -78,8 +80,8 @@ var GetStrategyConfig = func() StrategyConfig {
 	return appConfig.Strategy
 }
 
-func parse_config(testnet bool) (config Config, err error) {
-	configPath := get_config_filepath(testnet)
+func parse_config(env model.Env) (config Config, err error) {
+	configPath := get_config_filepath(env)
 	f, err := os.Open(configPath)
 	if err != nil {
 		return Config{}, err
@@ -95,8 +97,10 @@ func parse_config(testnet bool) (config Config, err error) {
 	return config, nil
 }
 
-func get_config_filepath(testnet bool) string {
-	if testnet {
+func get_config_filepath(env model.Env) string {
+	if env == model.SIMULATION {
+		return filepath.Join(resource_folder, simulation_config_file)
+	} else if env == model.TESTNET {
 		return filepath.Join(resource_folder, testnet_config_file)
 	} else {
 		return filepath.Join(resource_folder, mainnet_config_file)

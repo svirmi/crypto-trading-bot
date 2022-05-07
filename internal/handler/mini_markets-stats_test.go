@@ -22,41 +22,56 @@ func TestMain(m *testing.M) {
 
 func TestHandleMiniMarketsStats(t *testing.T) {
 	// Saving and restoring status
-	old_hanlde := handle_operations
-	old_skip := skip_mini_markets_stats
-	old_get_ops := get_operations
+	old_hanlde := handle_operation
+	old_skip := skip_mini_market_stats
+	old_get_op := get_operation
+	old_can_spot_trade := can_spot_trade
+	old_get_spot_market_limits := get_spot_market_limits
 	defer func() {
-		handle_operations = old_hanlde
-		skip_mini_markets_stats = old_skip
-		get_operations = old_get_ops
+		handle_operation = old_hanlde
+		skip_mini_market_stats = old_skip
+		get_operation = old_get_op
+		can_spot_trade = old_can_spot_trade
+		get_spot_market_limits = old_get_spot_market_limits
 	}()
 
 	// Mocking dependencies
 	tcontext.execution.Status = model.EXE_ACTIVE
+
 	handled_counter := 0
-	handle_operations = func([]model.Operation) {
+	handle_operation = func(model.Operation) {
 		handled_counter++
 		time.Sleep(time.Millisecond * 500)
 	}
+
 	skipped_counter := 0
-	skip_mini_markets_stats = func([]model.MiniMarketStats) {
+	skip_mini_market_stats = func([]model.MiniMarketStats) {
 		skipped_counter++
 	}
-	get_operations = func(miniMarketsStats []model.MiniMarketStats) []model.Operation {
+
+	get_operation = func(model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
 		op := model.Operation{}
 		op.OpId = uuid.NewString()
-		return []model.Operation{op}
+		return op, nil
+	}
+
+	can_spot_trade = func(symbol string) bool {
+		return true
+	}
+
+	get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+		return model.SpotMarketLimits{}, nil
 	}
 
 	// Producer
 	end := make(chan struct{})
-	scontext.mms = make(chan []model.MiniMarketStats)
+	tcontext.mms = make(chan []model.MiniMarketStats)
 	go func() {
 		for i := 0; i < 6; i++ {
-			scontext.mms <- []model.MiniMarketStats{}
+			tcontext.mms <- []model.MiniMarketStats{get_mini_market_stats()}
 			time.Sleep(time.Millisecond * 250)
 		}
-		close(scontext.mms)
+		close(tcontext.mms)
 		end <- struct{}{}
 	}()
 
@@ -69,28 +84,28 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 
 func TestHandleMiniMarketsStats_NonActiveExe(t *testing.T) {
 	// Saving and restoring status
-	old_get_ops := get_operations
+	old_get_op := get_operation
 	defer func() {
-		get_operations = old_get_ops
+		get_operation = old_get_op
 	}()
 
 	// Mocking dependencies
 	tcontext.execution.Status = model.EXE_TERMINATED
 	get_op_counter := 0
-	get_operations = func(miniMarketsStats []model.MiniMarketStats) []model.Operation {
+	get_operation = func(model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
 		get_op_counter++
-		return []model.Operation{}
+		return model.Operation{}, nil
 	}
 
 	// Producer
 	end := make(chan struct{})
-	scontext.mms = make(chan []model.MiniMarketStats)
+	tcontext.mms = make(chan []model.MiniMarketStats)
 	go func() {
 		for i := 0; i < 6; i++ {
-			scontext.mms <- []model.MiniMarketStats{}
+			tcontext.mms <- []model.MiniMarketStats{}
 			time.Sleep(time.Millisecond * 50)
 		}
-		close(scontext.mms)
+		close(tcontext.mms)
 		end <- struct{}{}
 	}()
 
@@ -103,38 +118,53 @@ func TestHandleMiniMarketsStats_NonActiveExe(t *testing.T) {
 
 func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 	// Saving and restoring status
-	old_hanlde := handle_operations
-	old_skip := skip_mini_markets_stats
-	old_get_ops := get_operations
+	old_hanlde := handle_operation
+	old_skip := skip_mini_market_stats
+	old_get_op := get_operation
+	old_can_spot_trade := can_spot_trade
+	old_get_spot_market_limits := get_spot_market_limits
 	defer func() {
-		handle_operations = old_hanlde
-		skip_mini_markets_stats = old_skip
-		get_operations = old_get_ops
+		handle_operation = old_hanlde
+		skip_mini_market_stats = old_skip
+		get_operation = old_get_op
+		can_spot_trade = old_can_spot_trade
+		get_spot_market_limits = old_get_spot_market_limits
 	}()
 
 	// Mocking dependencies
 	tcontext.execution.Status = model.EXE_ACTIVE
+
 	handled_counter := 0
-	handle_operations = func([]model.Operation) {
+	handle_operation = func(model.Operation) {
 		handled_counter++
 	}
+
 	skipped_counter := 0
-	skip_mini_markets_stats = func([]model.MiniMarketStats) {
+	skip_mini_market_stats = func([]model.MiniMarketStats) {
 		skipped_counter++
 	}
-	get_operations = func(miniMarketsStats []model.MiniMarketStats) []model.Operation {
-		return []model.Operation{}
+
+	get_operation = func(model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
+		return model.Operation{}, nil
+	}
+
+	can_spot_trade = func(symbol string) bool {
+		return true
+	}
+
+	get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+		return model.SpotMarketLimits{}, nil
 	}
 
 	// Producer
 	end := make(chan struct{})
-	scontext.mms = make(chan []model.MiniMarketStats)
+	tcontext.mms = make(chan []model.MiniMarketStats)
 	go func() {
 		for i := 0; i < 6; i++ {
-			scontext.mms <- []model.MiniMarketStats{}
+			tcontext.mms <- []model.MiniMarketStats{get_mini_market_stats()}
 			time.Sleep(time.Millisecond * 50)
 		}
-		close(scontext.mms)
+		close(tcontext.mms)
 		end <- struct{}{}
 	}()
 
@@ -539,6 +569,12 @@ func TestComputeOpResults_ZeroQuoteDiff_Buy(t *testing.T) {
 		Spread:      utils.DecimalFromString("-100")}
 
 	testutils.AssertEq(t, exp, got, "operation_results")
+}
+
+func get_mini_market_stats() model.MiniMarketStats {
+	return model.MiniMarketStats{
+		Asset:     "BTC",
+		LastPrice: utils.DecimalFromString("36781.12")}
 }
 
 func get_operation_test(amt decimal.Decimal, amtSide model.AmountSide, base, quote string,

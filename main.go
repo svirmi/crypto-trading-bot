@@ -4,99 +4,98 @@ import (
 	"flag"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 
 	"github.com/sirupsen/logrus"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/handler"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
+type cmdline_args struct {
+	env      string
+	colors   bool
+	logLevel logrus.Level
+}
+
+// TODO: hanlde big orders in the exchange package
+// TODO: check assets with 0 balance
 func main() {
-	// Register interrupt handler
-	register_interrupt_handler()
-
 	// Parsing command line
-	testnet := flag.Bool("testnet", false, "if present, application runs on testnet")
-	colors := flag.Bool("colors", false, "if present, logs are colored")
-	v := flag.Bool("v", false, "if present, debug logs are shown")
-	vv := flag.Bool("vv", false, "if present, trace logs are shown")
-	flag.Parse()
+	args := parse_cmdline()
 
-	logger.Initialize(*colors, get_log_level(*v, *vv))
-	logrus.Infof(logger.MAIN_LOGICAL_CORES, runtime.NumCPU())
+	// Register interrupt handler
+	exchange := binance.GetExchange()
+	register_interrupt_handler(exchange)
 
-	config.Initialize(*testnet)
+	// Initializing logger
+	logger.Initialize(args.colors, args.logLevel)
 
+	// Parsing config
+	config.Initialize(model.ParseEnv(args.env))
+
+	// Initializing mongodb
 	err := mongodb.Initialize()
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
 
-	err = binance.Initialize()
+	// Initializing exchange
+	mms := make(chan []model.MiniMarketStats)
+	err = exchange.Initialize(mms)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
 
-	raccount, err := binance.GetAccout()
+	// Retrieving remote account
+	raccount, err := exchange.GetAccout()
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
 
+	// Creating or restoring execution
 	exe, err := executions.CreateOrRestore(raccount)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
 
-	tradableAssets := binance.FilterTradableAssets(exe.Assets)
-	prices, err := binance.GetAssetsValue(tradableAssets)
+	// Getting tradable assets
+	tradableAssets := exchange.FilterTradableAssets(exe.Assets)
+	prices, err := exchange.GetAssetsValue(tradableAssets)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
 
-	spotMarketLimits := make(map[string]model.SpotMarketLimits)
-	for _, asset := range tradableAssets {
-		symbol := utils.GetSymbolFromAsset(asset)
-		spotLimit, err := binance.GetSpotMarketLimits(symbol)
-		if err != nil {
-			logrus.Panic(err.Error())
-		}
-		spotMarketLimits[symbol] = spotLimit
-	}
-
+	// Creating or restoring local account
 	strategyConfig := config.GetStrategyConfig()
 	strategyType := model.StrategyType(strategyConfig.Type)
-	laCreationRequest := model.LocalAccountInit{
+	req := model.LocalAccountInit{
 		ExeId:               exe.ExeId,
 		RAccount:            raccount,
 		StrategyType:        strategyType,
-		TradableAssetsPrice: prices,
-		SpotMarketLimits:    spotMarketLimits}
-	laccount, err := laccount.CreateOrRestore(laCreationRequest)
+		TradableAssetsPrice: prices}
+	lacc, err := laccount.CreateOrRestore(req)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
 
-	mms := make(chan []model.MiniMarketStats)
-	handler.InitTradingContext(laccount, exe)
-	handler.InitMmsChannel(mms)
-	binance.InitMmsChannel(mms)
+	// Initializing handler
+	handler.Initialize(lacc, exe, mms, exchange)
 
+	// Handling price updates
 	handler.HandleMiniMarketsStats()
-	binance.MiniMarketsStatsServe(tradableAssets)
+	exchange.MiniMarketsStatsServe(tradableAssets)
 
-	// Terminate when the application is stopped
+	// Wait until the application is stopped
 	select {}
 }
 
-func register_interrupt_handler() chan os.Signal {
+func register_interrupt_handler(exchange model.IExchange) chan os.Signal {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc,
 		syscall.SIGHUP,
@@ -106,7 +105,7 @@ func register_interrupt_handler() chan os.Signal {
 
 	go func() {
 		<-sigc
-		binance.MiniMarketsStatsStop()
+		exchange.MiniMarketsStatsStop()
 		mongodb.Disconnect()
 		logrus.Info("bye, bye")
 		os.Exit(0)
@@ -114,12 +113,23 @@ func register_interrupt_handler() chan os.Signal {
 	return sigc
 }
 
-func get_log_level(v, vv bool) logrus.Level {
-	if vv {
-		return logrus.TraceLevel
-	} else if v {
-		return logrus.DebugLevel
-	} else {
-		return logrus.InfoLevel
+func parse_cmdline() cmdline_args {
+	env := flag.String("env", string(model.MAINNET), "if present, application runs on testnet")
+	v := flag.Bool("v", false, "if present, debug logs are shown")
+	vv := flag.Bool("vv", false, "if present, trace logs are shown")
+	colors := flag.Bool("colors", false, "if present, logs are colored")
+	flag.Parse()
+
+	var level logrus.Level = logrus.InfoLevel
+	if *vv {
+		level = logrus.TraceLevel
+	} else if *v {
+		level = logrus.DebugLevel
+	}
+
+	return cmdline_args{
+		env:      *env,
+		colors:   *colors,
+		logLevel: level,
 	}
 }

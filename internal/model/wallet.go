@@ -48,11 +48,10 @@ type ILocalAccount interface {
 	GetAccountId() string
 	GetExeId() string
 	GetStrategyType() StrategyType
-	GetSpotMarketLimits() map[string]SpotMarketLimits
 	GetTimestamp() int64
 	Initialize(LocalAccountInit) (ILocalAccount, error)
 	RegisterTrading(Operation) (ILocalAccount, error)
-	GetOperation(MiniMarketStats) (Operation, error)
+	GetOperation(MiniMarketStats, SpotMarketLimits) (Operation, error)
 }
 
 // Abstract local account representation
@@ -60,11 +59,10 @@ type ILocalAccount interface {
 // local wallet representations. To be composed with those
 // strategy dependant types
 type LocalAccountMetadata struct {
-	AccountId        string                      `bson:"accountId"`        // Local account object id
-	ExeId            string                      `bson:"exeId"`            // Execution id this local wallet is bound to
-	StrategyType     StrategyType                `bson:"strategyType"`     // Strategy type
-	SpotMarketLimits map[string]SpotMarketLimits `bson:"spotMarketLimits"` // Spot market limits
-	Timestamp        int64                       `bson:"timestamp"`        // Timestamp
+	AccountId    string       `bson:"accountId"`    // Local account object id
+	ExeId        string       `bson:"exeId"`        // Execution id this local wallet is bound to
+	StrategyType StrategyType `bson:"strategyType"` // Strategy type
+	Timestamp    int64        `bson:"timestamp"`    // Timestamp
 }
 
 func (a LocalAccountMetadata) GetAccountId() string {
@@ -77,10 +75,6 @@ func (a LocalAccountMetadata) GetExeId() string {
 
 func (a LocalAccountMetadata) GetStrategyType() StrategyType {
 	return a.StrategyType
-}
-
-func (a LocalAccountMetadata) GetSpotMarketLimits() map[string]SpotMarketLimits {
-	return a.SpotMarketLimits
 }
 
 func (a LocalAccountMetadata) GetTimestamp() int64 {
@@ -96,7 +90,6 @@ type LocalAccountInit struct {
 	RAccount            RemoteAccount
 	TradableAssetsPrice map[string]AssetPrice
 	StrategyType        StrategyType
-	SpotMarketLimits    map[string]SpotMarketLimits
 }
 
 func (acr LocalAccountInit) IsEmpty() bool {

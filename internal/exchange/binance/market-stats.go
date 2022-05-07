@@ -10,19 +10,8 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
-type mini_markets_stats_ctl struct {
-	mms_done, mms_stop chan struct{}
-	mms                chan []model.MiniMarketStats
-}
-
-var mms_ctl mini_markets_stats_ctl = mini_markets_stats_ctl{}
-
-func InitMmsChannel(mmsChannel chan []model.MiniMarketStats) {
-	mms_ctl.mms = mmsChannel
-}
-
-func MiniMarketsStatsServe(assets []string) error {
-	if mms_ctl.mms == nil {
+var mini_markets_stats_serve = func(assets []string) error {
+	if mms == nil {
 		err := fmt.Errorf(logger.BINANCE_ERR_NIL_MMS_CH)
 		logrus.WithField("comp", "binance").Error(err.Error())
 		return err
@@ -45,7 +34,6 @@ func MiniMarketsStatsServe(assets []string) error {
 			if !symbolsMap[rMiniMarketStats.Symbol] {
 				continue
 			}
-			// Filter out symbols whose numeric fields could not be parsed from string
 			miniMarketStats := to_mini_market_stats(*rMiniMarketStats)
 			miniMarketsStats = append(miniMarketsStats, miniMarketStats)
 		}
@@ -57,7 +45,7 @@ func MiniMarketsStatsServe(assets []string) error {
 
 		// Send a mini markets stats through the channel
 		select {
-		case mms_ctl.mms <- miniMarketsStats:
+		case mms <- miniMarketsStats:
 		default:
 			logrus.WithField("comp", "binance").
 				Warnf(logger.BINANCE_DROP_MMS_UPDATE, len(miniMarketsStats))
@@ -71,23 +59,23 @@ func MiniMarketsStatsServe(assets []string) error {
 		logrus.WithField("comp", "binance").Error(err.Error())
 		return err
 	} else {
-		mms_ctl.mms_done = done
-		mms_ctl.mms_stop = stop
+		mms_done = done
+		mms_stop = stop
 	}
 	return nil
 }
 
-func MiniMarketsStatsStop() {
-	if mms_ctl.mms_stop == nil || mms_ctl.mms_done == nil {
+var mini_markets_stats_stop = func() {
+	if mms_stop == nil || mms_done == nil {
 		return
 	}
 
 	logrus.WithField("comp", "binance").Info(logger.BINANACE_CLOSING_MMS)
-	mms_ctl.mms_stop <- struct{}{}
-	<-mms_ctl.mms_done
+	mms_stop <- struct{}{}
+	<-mms_done
 
-	if mms_ctl.mms != nil {
-		close(mms_ctl.mms)
+	if mms != nil {
+		close(mms)
 	}
 }
 

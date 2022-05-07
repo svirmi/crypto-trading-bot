@@ -32,6 +32,7 @@ func Initialize(colors bool, level logrus.Level) {
 	logrus.SetReportCaller(true)
 
 	logrus.Infof(LOGGER_CONFIG, colors, level)
+	logrus.Infof(MAIN_LOGICAL_CORES, runtime.NumCPU())
 }
 
 // log_formatter - logrus formatter, implements logrus.log_formatter
@@ -150,7 +151,7 @@ func (f *log_formatter) Format(entry *logrus.Entry) ([]byte, error) {
 func (f *log_formatter) writeCaller(b *bytes.Buffer, entry *logrus.Entry) {
 	if entry.HasCaller() {
 		if f.CustomCallerFormatter != nil {
-			fmt.Fprintf(b, f.CustomCallerFormatter(entry.Caller))
+			fmt.Fprint(b, f.CustomCallerFormatter(entry.Caller))
 		} else {
 			fmt.Fprintf(
 				b,
@@ -193,7 +194,7 @@ func (f *log_formatter) writeOrderedFields(b *bytes.Buffer, entry *logrus.Entry)
 	if length > 0 {
 		notFoundFields := make([]string, 0, length)
 		for field := range entry.Data {
-			if foundFieldsMap[field] == false {
+			if !foundFieldsMap[field] {
 				notFoundFields = append(notFoundFields, field)
 			}
 		}

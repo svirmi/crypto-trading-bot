@@ -15,7 +15,7 @@
 			"request": "launch",
 			"mode": "auto",
 			"program": "${workspaceFolder}/main.go",
-			"args": ["-testnet", "-colors", "-vv"]
+			"args": ["-env=testnet", "-colors", "-vv"]
 		}
 	]
 }

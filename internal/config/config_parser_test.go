@@ -8,6 +8,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 )
 
@@ -22,7 +23,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestInitialize(t *testing.T) {
-	test_parse_config(t, false, fts_test_resource_folder)
+	test_parse_config(t, model.MAINNET, fts_test_resource_folder)
 
 	got := appConfig
 	got_sconfig := make(map[string]string)
@@ -33,7 +34,7 @@ func TestInitialize(t *testing.T) {
 }
 
 func TestInitialize_Testnet(t *testing.T) {
-	test_parse_config(t, true, fts_test_resource_folder)
+	test_parse_config(t, model.TESTNET, fts_test_resource_folder)
 
 	got := appConfig
 	got_sconfig := make(map[string]string)
@@ -43,7 +44,7 @@ func TestInitialize_Testnet(t *testing.T) {
 	testutils.AssertEq(t, get_testnet_config(), got, "config")
 }
 
-func test_parse_config(t *testing.T, testnet bool, test_resource_folder string) {
+func test_parse_config(t *testing.T, env model.Env, test_resource_folder string) {
 	// Restoring interanl status after test execution
 	resource_folder_org := resource_folder
 	resource_folder = test_resource_folder
@@ -53,7 +54,7 @@ func test_parse_config(t *testing.T, testnet bool, test_resource_folder string) 
 
 	// Testing testnet config parsing
 	resource_folder = filepath.Join("..", "..", resource_folder)
-	config, _ := parse_config(testnet)
+	config, _ := parse_config(env)
 	appConfig = config
 }
 

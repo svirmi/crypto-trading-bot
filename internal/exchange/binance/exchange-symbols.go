@@ -11,7 +11,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
-var CanSpotTrade = func(symbol string) bool {
+var can_spot_trade = func(symbol string) bool {
 	status, found := symbols[symbol]
 
 	if !found {
@@ -20,7 +20,7 @@ var CanSpotTrade = func(symbol string) bool {
 	return status.Status == string(binanceapi.SymbolStatusTypeTrading) && status.IsSpotTradingAllowed
 }
 
-var GetSpotMarketLimits = func(symbol string) (model.SpotMarketLimits, error) {
+var get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
 	iLotSize, err := get_spot_limit_sizes(symbol)
 	if err != nil {
 		return model.SpotMarketLimits{}, err

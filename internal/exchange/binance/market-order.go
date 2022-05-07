@@ -13,7 +13,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
-func FilterTradableAssets(bases []string) []string {
+var filter_tradable_assets = func(bases []string) []string {
 	// An asset is considered to be tradable, if it can be
 	// exchanged for USDT directly
 	tradables := make([]string, 0)
@@ -29,9 +29,9 @@ func FilterTradableAssets(bases []string) []string {
 	return tradables
 }
 
-func GetAssetsValue(bases []string) (map[string]model.AssetPrice, error) {
+var get_assets_value = func(bases []string) (map[string]model.AssetPrice, error) {
 	lprices := make(map[string]model.AssetPrice)
-	bases = FilterTradableAssets(bases)
+	bases = filter_tradable_assets(bases)
 
 	pricesService := httpClient.NewListPricesService()
 	for _, base := range bases {
@@ -52,7 +52,7 @@ func GetAssetsValue(bases []string) (map[string]model.AssetPrice, error) {
 }
 
 // GetAccount returns account inforamtion
-func GetAccout() (model.RemoteAccount, error) {
+var get_account = func() (model.RemoteAccount, error) {
 	account, err := binance_get_account(httpClient.NewGetAccountService())
 	if err != nil {
 		return model.RemoteAccount{}, err
@@ -60,7 +60,7 @@ func GetAccout() (model.RemoteAccount, error) {
 	return to_CCTB_remote_account(account)
 }
 
-func SendSpotMarketOrder(op model.Operation) (model.Operation, error) {
+var send_spot_market_order = func(op model.Operation) (model.Operation, error) {
 	// Check if symbol or its inverse exists
 	_, dfound := symbols[op.Base+op.Quote]
 	_, ifound := symbols[op.Quote+op.Base]
@@ -82,7 +82,7 @@ func SendSpotMarketOrder(op model.Operation) (model.Operation, error) {
 	}
 
 	// Checking if symbol can be traded
-	if !CanSpotTrade(op.Base + op.Quote) {
+	if !can_spot_trade(op.Base + op.Quote) {
 		err := fmt.Errorf(logger.BINANCE_TRADING_DISABLED, op.Base+op.Quote)
 		logrus.WithField("comp", "binance").Error(err.Error())
 		return op, err
@@ -90,7 +90,7 @@ func SendSpotMarketOrder(op model.Operation) (model.Operation, error) {
 
 	// Execute operation
 	op.Timestamp = time.Now().UnixMicro()
-	err = send_spot_market_order(op)
+	err = do_send_spot_market_order(op)
 	if err != nil {
 		op.Status = model.FAILED
 		return op, err
@@ -99,31 +99,33 @@ func SendSpotMarketOrder(op model.Operation) (model.Operation, error) {
 }
 
 func check_spot_market_order(op model.Operation) error {
-	limit, err := GetSpotMarketLimits(op.Base + op.Quote)
+	limit, err := get_spot_market_limits(op.Base + op.Quote)
 	if err != nil {
 		return err
 	}
 
-	if op.AmountSide == model.QUOTE_AMOUNT {
-		if op.Amount.LessThan(limit.MinQuote) {
-			return fmt.Errorf(logger.BINANCE_BELOW_LIMIT, "min quote")
-		}
-	} else {
-		if op.Amount.LessThan(limit.MinBase) {
-			err := fmt.Errorf(logger.BINANCE_BELOW_LIMIT, "min base")
-			logrus.WithField("comp", "binance").Error(err.Error())
-			return err
-		}
-		if op.Amount.GreaterThan(limit.MaxBase) {
-			err := fmt.Errorf(logger.BINANCE_ABOVE_LIMIT, "max base")
-			logrus.WithField("comp", "binance").Error(err.Error())
-			return err
-		}
+	if op.AmountSide == model.QUOTE_AMOUNT && op.Amount.LessThan(limit.MinQuote) {
+		err = fmt.Errorf(logger.BINANCE_BELOW_QUOTE_LIMIT,
+			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, limit.MinQuote.String())
+		logrus.WithField("comp", "binance").Error(err.Error())
+		return err
+	}
+	if op.AmountSide == model.BASE_AMOUNT && op.Amount.LessThan(limit.MinBase) {
+		err := fmt.Errorf(logger.BINANCE_BELOW_BASE_LIMIT,
+			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, limit.MinBase.String())
+		logrus.WithField("comp", "binance").Error(err.Error())
+		return err
+	}
+	if op.AmountSide == model.BASE_AMOUNT && op.Amount.GreaterThan(limit.MaxBase) {
+		err := fmt.Errorf(logger.BINANCE_ABOVE_BASE_LIMIT,
+			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, limit.MaxBase.String())
+		logrus.WithField("comp", "binance").Error(err.Error())
+		return err
 	}
 	return nil
 }
 
-func send_spot_market_order(op model.Operation) error {
+func do_send_spot_market_order(op model.Operation) error {
 	ordersvc := httpClient.NewCreateOrderService().
 		Symbol(op.Base + op.Quote).
 		Type(binanceapi.OrderTypeMarket)
