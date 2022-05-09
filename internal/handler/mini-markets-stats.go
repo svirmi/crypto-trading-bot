@@ -5,7 +5,7 @@ import (
 
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
-	abool "github.com/tevino/abool/v2"
+	"github.com/tevino/abool/v2"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
@@ -39,11 +39,13 @@ func InvalidateTradingContext() {
 
 func HandleMiniMarketsStats() {
 	trading_context_init()
+
 	go handle_mini_markets_stats()
 }
 
 var handle_mini_markets_stats = func() {
 	sentinel := abool.New()
+
 	for miniMarketsStats := range tcontext.mms {
 		// If the execution is not ACTIVE, no action should be applied
 		if tcontext.execution.Status != model.EXE_ACTIVE {
@@ -51,12 +53,6 @@ var handle_mini_markets_stats = func() {
 		}
 
 		for _, miniMarketStats := range miniMarketsStats {
-			// Trading ongoing, skip market stats update
-			if sentinel.IsSet() {
-				skip_mini_market_stats(miniMarketsStats)
-				continue
-			}
-
 			// Check that trading is enabled for given asset
 			symbol := utils.GetSymbolFromAsset(miniMarketStats.Asset)
 			if !can_spot_trade(symbol) {
@@ -71,18 +67,26 @@ var handle_mini_markets_stats = func() {
 				continue
 			}
 
+			// Trading ongoing, skip market stats update
+			ok := sentinel.SetToIf(false, true)
+			if !ok {
+				skip_mini_market_stats(miniMarketsStats)
+				continue
+			}
+
 			// Getting operation
 			op, err := get_operation(miniMarketStats, slimits)
 			if err != nil {
 				logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, miniMarketStats.Asset, err.Error())
+				sentinel.UnSet()
 				continue
 			}
 			if op.IsEmpty() {
+				sentinel.UnSet()
 				continue
 			}
 
 			// Set sentinel, handle operation and defer sentinel reset
-			sentinel.Set()
 			go func(op model.Operation) {
 				defer sentinel.UnSet()
 				handle_operation(op)
@@ -142,7 +146,8 @@ var handle_operation = func(op model.Operation) {
 	op.FromId = tcontext.laccount.GetAccountId()
 	op, err = compute_op_results(raccount1, raccount2, op)
 	if err != nil {
-		logrus.Panicf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
+		logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
+		return
 	}
 
 	// Updating local account
