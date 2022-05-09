@@ -18,7 +18,7 @@ const (
 func ParseEnv(s string) Env {
 	if s != string(SIMULATION) && s != string(TESTNET) && s != string(MAINNET) {
 		envs := fmt.Sprintf("[%s,%s,%s]", SIMULATION, TESTNET, MAINNET)
-		err := fmt.Errorf(logger.MAIN_ERR_INVALID_ENV, s, envs)
+		err := fmt.Errorf(logger.MODEL_ERR_UNKNOWN_ENV, s, envs)
 		logrus.Panic(err.Error())
 	}
 	return Env(s)

@@ -5,7 +5,7 @@ const (
 	MAIN_LOGICAL_CORES = "running on %d logical cores"
 
 	// Main error
-	MAIN_ERR_INVALID_ENV = "provided env is invalid | provided_env=%s, existing_envs=%s"
+	MAIN_ERR_UNSUPPORTED_ENV = "env not currently supported | env=%s"
 
 	// Logger
 	LOGGER_CONFIG = "logger config | colors=%t, level=%s"
@@ -16,6 +16,7 @@ const (
 	// Model error
 	MODEL_ERR_UNKNOWN_OP_SIDE     = "unknown operation side %s"
 	MODEL_ERR_UNKNOWN_AMOUNT_SIDE = "unknown amount side %s"
+	MODEL_ERR_UNKNOWN_ENV         = "provided env is invalid | provided_env=%s, existing_envs=%s"
 
 	// Mongo client
 	MONGO_CONNECTING        = "connecting to mongo at %s"

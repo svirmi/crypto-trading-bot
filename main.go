@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/binance"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/local"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/handler"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
@@ -17,27 +18,39 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 )
 
-type cmdline_args struct {
-	env      string
-	colors   bool
-	logLevel logrus.Level
-}
-
 // TODO: hanlde big orders in the exchange package
 // TODO: check assets with 0 balance
 func main() {
 	// Parsing command line
-	args := parse_cmdline()
+	envstr := flag.String("env", string(model.MAINNET), "if present, application runs on testnet")
+	v := flag.Bool("v", false, "if present, debug logs are shown")
+	vv := flag.Bool("vv", false, "if present, trace logs are shown")
+	colors := flag.Bool("colors", false, "if present, logs are colored")
+	flag.Parse()
+
+	// Initalizing logger
+	var level logrus.Level = logrus.InfoLevel
+	if *vv {
+		level = logrus.TraceLevel
+	} else if *v {
+		level = logrus.DebugLevel
+	}
+	logger.Initialize(*colors, level)
 
 	// Register interrupt handler
-	exchange := binance.GetExchange()
+	env := model.ParseEnv(*envstr)
+	var exchange model.IExchange = nil
+	if model.SIMULATION == env {
+		exchange = local.GetExchange()
+	} else if model.TESTNET == env || model.MAINNET == env {
+		exchange = binance.GetExchange()
+	} else {
+		logrus.Panicf(logger.MAIN_ERR_UNSUPPORTED_ENV, env)
+	}
 	register_interrupt_handler(exchange)
 
-	// Initializing logger
-	logger.Initialize(args.colors, args.logLevel)
-
 	// Parsing config
-	config.Initialize(model.ParseEnv(args.env))
+	config.Initialize(env)
 
 	// Initializing mongodb
 	err := mongodb.Initialize()
@@ -111,25 +124,4 @@ func register_interrupt_handler(exchange model.IExchange) chan os.Signal {
 		os.Exit(0)
 	}()
 	return sigc
-}
-
-func parse_cmdline() cmdline_args {
-	env := flag.String("env", string(model.MAINNET), "if present, application runs on testnet")
-	v := flag.Bool("v", false, "if present, debug logs are shown")
-	vv := flag.Bool("vv", false, "if present, trace logs are shown")
-	colors := flag.Bool("colors", false, "if present, logs are colored")
-	flag.Parse()
-
-	var level logrus.Level = logrus.InfoLevel
-	if *vv {
-		level = logrus.TraceLevel
-	} else if *v {
-		level = logrus.DebugLevel
-	}
-
-	return cmdline_args{
-		env:      *env,
-		colors:   *colors,
-		logLevel: level,
-	}
 }
