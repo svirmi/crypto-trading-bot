@@ -63,8 +63,6 @@ func (a LocalAccountFTS) Initialize(req model.LocalAccountInit) (model.ILocalAcc
 			continue
 		}
 		if decimal.Zero.Equals(rbalance.Amount) {
-			logrus.WithField("comp", "fts").
-				Warnf(logger.FTS_ZERO_AMOUNT_ASSET, rbalance.Asset)
 			continue
 		}
 		assetStatus := init_asset_status_fts(rbalance, price)

@@ -18,8 +18,6 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 )
 
-// TODO: hanlde big orders in the exchange package
-// TODO: check assets with 0 balance
 func main() {
 	// Parsing command line
 	envstr := flag.String("env", string(model.MAINNET), "if present, application runs on testnet")

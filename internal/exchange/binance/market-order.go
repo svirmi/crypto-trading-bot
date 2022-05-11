@@ -65,15 +65,10 @@ var send_spot_market_order = func(op model.Operation) (model.Operation, error) {
 	_, dfound := symbols[op.Base+op.Quote]
 	_, ifound := symbols[op.Quote+op.Base]
 	if !dfound && !ifound {
-		err := fmt.Errorf(logger.BINANCE_ERR_INVALID_SYMBOL, op.Base, op.Quote, op.Quote, op.Base)
+		err := fmt.Errorf(logger.BINANCE_ERR_INVALID_SYMBOL,
+			op.Base, op.Quote, op.Quote, op.Base)
 		logrus.WithField("comp", "binance").Error(err.Error())
 		return model.Operation{}, err
-	}
-
-	// Check spot market order limits
-	err := check_spot_market_order(op)
-	if err != nil {
-		return op, err
 	}
 
 	// If direct symbol does not exist, invert operation
@@ -90,7 +85,7 @@ var send_spot_market_order = func(op model.Operation) (model.Operation, error) {
 
 	// Execute operation
 	op.Timestamp = time.Now().UnixMicro()
-	err = do_send_spot_market_order(op)
+	err := do_send_spot_market_order(op)
 	if err != nil {
 		op.Status = model.FAILED
 		return op, err
@@ -98,34 +93,87 @@ var send_spot_market_order = func(op model.Operation) (model.Operation, error) {
 	return op, nil
 }
 
-func check_spot_market_order(op model.Operation) error {
-	limit, err := get_spot_market_limits(op.Base + op.Quote)
+func do_send_spot_market_order(op model.Operation) error {
+	// Get spot market limits
+	limits, err := get_spot_market_limits(op.Base + op.Quote)
 	if err != nil {
 		return err
 	}
 
-	if op.AmountSide == model.QUOTE_AMOUNT && op.Amount.LessThan(limit.MinQuote) {
+	// Check market order lower bounds
+	if op.AmountSide == model.QUOTE_AMOUNT && op.Amount.LessThan(limits.MinQuote) {
 		err = fmt.Errorf(logger.BINANCE_BELOW_QUOTE_LIMIT,
-			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, limit.MinQuote.String())
+			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, limits.MinQuote.String())
 		logrus.WithField("comp", "binance").Error(err.Error())
 		return err
 	}
-	if op.AmountSide == model.BASE_AMOUNT && op.Amount.LessThan(limit.MinBase) {
+	if op.AmountSide == model.BASE_AMOUNT && op.Amount.LessThan(limits.MinBase) {
 		err := fmt.Errorf(logger.BINANCE_BELOW_BASE_LIMIT,
-			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, limit.MinBase.String())
+			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, limits.MinBase.String())
 		logrus.WithField("comp", "binance").Error(err.Error())
 		return err
 	}
-	if op.AmountSide == model.BASE_AMOUNT && op.Amount.GreaterThan(limit.MaxBase) {
-		err := fmt.Errorf(logger.BINANCE_ABOVE_BASE_LIMIT,
-			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, limit.MaxBase.String())
+
+	// Get market order upper bound
+	var max decimal.Decimal
+	var min decimal.Decimal
+	if op.AmountSide == model.BASE_AMOUNT {
+		max = limits.MaxBase
+		min = limits.MinBase
+	} else {
+		max = limits.MaxBase.Mul(op.Price)
+		min = limits.MinQuote
+	}
+
+	// Regular order
+	if op.Amount.LessThanOrEqual(max) {
+		return do_do_send_spot_market_order(op)
+	}
+
+	// Iceberg order
+	failed := true
+	intdiv := int(op.Amount.Div(max).IntPart())
+	reminder := op.Amount.Sub(decimal.NewFromInt(int64(intdiv)).Mul(max))
+	logrus.WithField("comp", "binance").Infof(logger.BINANCE_ICEBERG_ORDER,
+		op.Base+op.Quote, op.Side, op.AmountSide, intdiv, max, reminder)
+
+	for i := 1; i < intdiv; i++ {
+		op.Amount = max
+		err := do_do_send_spot_market_order(op)
+		failed = failed && err != nil
+	}
+
+	if reminder.Equals(decimal.Zero) {
+		op.Amount = max
+		err := do_do_send_spot_market_order(op)
+		failed = failed && err != nil
+	} else if reminder.GreaterThanOrEqual(min) {
+		op.Amount = max
+		err := do_do_send_spot_market_order(op)
+		failed = failed && err != nil
+		op.Amount = reminder
+		err = do_do_send_spot_market_order(op)
+		failed = failed && err != nil
+	} else {
+		op.Amount = max.Div(utils.DecimalFromString("2"))
+		err := do_do_send_spot_market_order(op)
+		failed = failed && err != nil
+		op.Amount = max.Div(utils.DecimalFromString("2")).Add(reminder)
+		err = do_do_send_spot_market_order(op)
+		failed = failed && err != nil
+	}
+
+	if failed {
+		amount := decimal.NewFromInt(int64(intdiv)).Mul(max).Add(reminder)
+		err := fmt.Errorf(logger.BINANCE_ERR_ICEBERG_ORDER_FAILED,
+			op.Base+op.Quote, op.Side, amount, op.AmountSide)
 		logrus.WithField("comp", "binance").Error(err.Error())
 		return err
 	}
 	return nil
 }
 
-func do_send_spot_market_order(op model.Operation) error {
+var do_do_send_spot_market_order = func(op model.Operation) error {
 	ordersvc := httpClient.NewCreateOrderService().
 		Symbol(op.Base + op.Quote).
 		Type(binanceapi.OrderTypeMarket)
@@ -148,6 +196,7 @@ func do_send_spot_market_order(op model.Operation) error {
 
 	order, err := binance_create_order(ordersvc)
 	if err != nil {
+		logrus.WithField("comp", "binance").Error(err.Error())
 		return err
 	}
 	logrus.WithField("comp", "binance").

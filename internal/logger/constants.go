@@ -30,10 +30,10 @@ const (
 	BINANCE_MKT_ORDER_RESULT    = "market order executed | symbol=%s, original_qty=%s, actual_qty=%s, status=%s, side=%s"
 	BINANCE_BELOW_QUOTE_LIMIT   = "market order below quote limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_quote=%s"
 	BINANCE_BELOW_BASE_LIMIT    = "market order below base limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_base=%s"
-	BINANCE_ABOVE_BASE_LIMIT    = "market order above base limit | symbol=%s, side=%s, amt=%s, amt_side=%s, max_base=%s"
 	BINANACE_ZERO_AMOUNT_ASSET  = "skipping asset %s | amount=0"
 	BINANACE_CLOSING_MMS        = "closing mini market stats"
 	BINANCE_DROP_MMS_UPDATE     = "mini markets stats rate too high, dropping update | size=%d"
+	BINANCE_ICEBERG_ORDER       = "iceberg order detected | symbol=%s, side=%s, amount_side=%s, split=%d*%s+%s"
 
 	// Binance error
 	BINANCE_ERR_SYMBOL_NOT_FOUND     = "exchange symbol %s not found"
@@ -42,6 +42,7 @@ const (
 	BINANCE_ERR_UNKNOWN_SIDE         = "unknown operation side %s"
 	BINANCE_ERR_NIL_MMS_CH           = "uninitialized mms channel"
 	BINANCE_ERR_FAILED_TO_HANLDE_MMS = "failed to handle mms update | err=%s"
+	BINANCE_ERR_ICEBERG_ORDER_FAILED = "iceberg order failed | symbol=%s, side=%s, amount=%s, amount_side=%s"
 
 	// Execution
 	EXE_RESTORE = "restoring execution | exe_id=%s, status=%s, assets=%v"
