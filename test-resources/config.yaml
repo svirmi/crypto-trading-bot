@@ -1,10 +1,9 @@
 
 # testnet configuration
 
-binanceApi:
-  apiKey: HTqza54XTX09uBANVQOvMO78N478MhDxLbEiBfSRR8Yc7MBIlXGxG2cwK4Ok3KvI
-  secretKey: vOZJYqQrYjgwSL5EDUxLYTv7Gh8nQvRqX5IefmnySqSAUdVvgOTfTe6HJsO9tvTY
-  useTestnet: false
+exchange:
+  propA: propA
+  propB: propB
 mongoDb:
   uri: mongodb://localhost:27017
   database: ctb

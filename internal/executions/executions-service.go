@@ -29,7 +29,11 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 	}
 
 	// No active execution found, starting a new one
-	exe = build_execution(raccount)
+	exe, err = build_execution(raccount)
+	if err != nil {
+		return model.Execution{}, err
+	}
+
 	logrus.Infof(logger.EXE_START, exe.ExeId, exe.Status, exe.Assets)
 	if insert_one(exe); err != nil {
 		return model.Execution{}, err
@@ -163,9 +167,15 @@ func Terminate(exeId string) (model.Execution, error) {
 	return exe, nil
 }
 
-func build_execution(account model.RemoteAccount) model.Execution {
-	assets := make([]string, 0, len(account.Balances))
-	for _, balance := range account.Balances {
+func build_execution(raccount model.RemoteAccount) (model.Execution, error) {
+	if len(raccount.Balances) == 0 {
+		err := fmt.Errorf(logger.EXE_ERR_EMPTY_RACC)
+		logrus.Error(err.Error())
+		return model.Execution{}, err
+	}
+
+	assets := make([]string, 0, len(raccount.Balances))
+	for _, balance := range raccount.Balances {
 		assets = append(assets, balance.Asset)
 	}
 
@@ -173,5 +183,5 @@ func build_execution(account model.RemoteAccount) model.Execution {
 		ExeId:     uuid.NewString(),
 		Status:    model.EXE_ACTIVE,
 		Assets:    assets,
-		Timestamp: time.Now().UnixMicro()}
+		Timestamp: time.Now().UnixMicro()}, nil
 }

@@ -224,8 +224,6 @@ func to_CCTB_remote_account(account *binanceapi.Account) (model.RemoteAccount, e
 	for _, rbalance := range account.Balances {
 		amount := utils.DecimalFromString(rbalance.Free)
 		if amount.Equals(decimal.Zero) {
-			logrus.WithField("comp", "binance").
-				Warnf(logger.BINANACE_ZERO_AMOUNT_ASSET, rbalance.Asset)
 			continue
 		}
 

@@ -52,6 +52,27 @@ func TestCreateOrRestore_Create(t *testing.T) {
 	testutils.AssertEq(t, exp, got, "execution")
 }
 
+func TestCreateOrRestore_Create_EmptyRacc(t *testing.T) {
+	// Setting up test
+	old := mock_mongo_config()
+	mongodb.Initialize()
+
+	// Restoring status after test execution
+	defer func() {
+		restore_mongo_config(old)
+		mongodb.Disconnect()
+	}()
+
+	raccount := model.RemoteAccount{
+		MakerCommission:  0,
+		TakerCommission:  1,
+		BuyerCommission:  2,
+		SellerCommission: 1,
+		Balances:         []model.RemoteBalance{}}
+
+	_, err := CreateOrRestore(raccount)
+	testutils.AssertNotNil(t, err, "err")
+}
 func TestCreateOrRestore_Restore(t *testing.T) {
 	// Setting up test
 	old := mock_mongo_config()

@@ -11,15 +11,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-type BinanceApiConfig struct {
-	ApiKey     string `yaml:"apiKey"`
-	SecretKey  string `yaml:"secretKey"`
-	UseTestnet bool   `yaml:"useTestnet"`
-}
-
-func (b BinanceApiConfig) IsEmpty() bool {
-	return reflect.DeepEqual(b, BinanceApiConfig{})
-}
+type ExchangeConfig interface{}
 
 type MongoDbConfig struct {
 	Uri      string `yaml:"uri"`
@@ -40,9 +32,9 @@ func (s StrategyConfig) IsEmpty() bool {
 }
 
 type Config struct {
-	BinanceApi BinanceApiConfig `yaml:"binanceApi"`
-	MongoDb    MongoDbConfig    `yaml:"mongoDb"`
-	Strategy   StrategyConfig   `yaml:"strategy"`
+	Exchange ExchangeConfig `yaml:"exchange"`
+	MongoDb  MongoDbConfig  `yaml:"mongoDb"`
+	Strategy StrategyConfig `yaml:"strategy"`
 }
 
 func (c Config) IsEmpty() bool {
@@ -68,8 +60,8 @@ func Initialize(env model.Env) error {
 	return nil
 }
 
-var GetBinanceApiConfig = func() BinanceApiConfig {
-	return appConfig.BinanceApi
+var GetExchangeConfig = func() ExchangeConfig {
+	return appConfig.Exchange
 }
 
 var GetMongoDbConfig = func() MongoDbConfig {

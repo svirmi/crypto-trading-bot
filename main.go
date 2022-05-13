@@ -48,10 +48,13 @@ func main() {
 	register_interrupt_handler(exchange)
 
 	// Parsing config
-	config.Initialize(env)
+	err := config.Initialize(env)
+	if err != nil {
+		logrus.Panic(err.Error())
+	}
 
 	// Initializing mongodb
-	err := mongodb.Initialize()
+	err = mongodb.Initialize()
 	if err != nil {
 		logrus.Panic(err.Error())
 	}

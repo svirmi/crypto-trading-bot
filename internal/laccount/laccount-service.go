@@ -62,17 +62,22 @@ func GetLatestByExeId(exeId string) (model.ILocalAccount, error) {
 	return find_latest_by_exeId(exeId)
 }
 
-func initialise_local_account(creationRequest model.LocalAccountInit) (model.ILocalAccount, error) {
-	var laccount model.ILocalAccount = nil
-
-	if creationRequest.StrategyType == model.FIXED_THRESHOLD_STRATEGY {
-		laccount = fts.LocalAccountFTS{}
-	} else {
-		err := fmt.Errorf(logger.LACC_ERR_UNKNOWN_STRATEGY, creationRequest.StrategyType)
+func initialise_local_account(req model.LocalAccountInit) (model.ILocalAccount, error) {
+	if len(req.RAccount.Balances) == 0 {
+		err := fmt.Errorf(logger.LACC_ERR_EMPTY_RACC)
 		logrus.Error(err.Error())
 		return nil, err
 	}
-	laccount, err := laccount.Initialize(creationRequest)
+
+	var laccount model.ILocalAccount = nil
+	if req.StrategyType == model.FIXED_THRESHOLD_STRATEGY {
+		laccount = fts.LocalAccountFTS{}
+	} else {
+		err := fmt.Errorf(logger.LACC_ERR_UNKNOWN_STRATEGY, req.StrategyType)
+		logrus.Error(err.Error())
+		return nil, err
+	}
+	laccount, err := laccount.Initialize(req)
 	if err != nil {
 		return nil, err
 	}

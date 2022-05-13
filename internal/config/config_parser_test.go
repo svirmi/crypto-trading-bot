@@ -22,12 +22,15 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestInitialize(t *testing.T) {
+func TestInitialize_Mainnet(t *testing.T) {
 	test_parse_config(t, model.MAINNET, fts_test_resource_folder)
 
 	got := appConfig
+	got_econfig := make(map[string]string)
 	got_sconfig := make(map[string]string)
+	mapstructure.Decode(got.Exchange, &got_econfig)
 	mapstructure.Decode(got.Strategy.Config, &got_sconfig)
+	got.Exchange = got_econfig
 	got.Strategy.Config = got_sconfig
 
 	testutils.AssertEq(t, get_config(), got, "config")
@@ -37,8 +40,11 @@ func TestInitialize_Testnet(t *testing.T) {
 	test_parse_config(t, model.TESTNET, fts_test_resource_folder)
 
 	got := appConfig
+	got_econfig := make(map[string]string)
 	got_sconfig := make(map[string]string)
+	mapstructure.Decode(got.Exchange, &got_econfig)
 	mapstructure.Decode(got.Strategy.Config, &got_sconfig)
+	got.Exchange = got_econfig
 	got.Strategy.Config = got_sconfig
 
 	testutils.AssertEq(t, get_testnet_config(), got, "config")
@@ -60,10 +66,9 @@ func test_parse_config(t *testing.T, env model.Env, test_resource_folder string)
 
 func get_config() Config {
 	return Config{
-		BinanceApi: BinanceApiConfig{
-			ApiKey:     "HTqza54XTX09uBANVQOvMO78N478MhDxLbEiBfSRR8Yc7MBIlXGxG2cwK4Ok3KvI",
-			SecretKey:  "vOZJYqQrYjgwSL5EDUxLYTv7Gh8nQvRqX5IefmnySqSAUdVvgOTfTe6HJsO9tvTY",
-			UseTestnet: false},
+		Exchange: map[string]string{
+			"propA": "propA",
+			"propB": "propB"},
 		MongoDb: MongoDbConfig{
 			Uri:      "mongodb://localhost:27017",
 			Database: "ctb"},
@@ -76,10 +81,9 @@ func get_config() Config {
 
 func get_testnet_config() Config {
 	return Config{
-		BinanceApi: BinanceApiConfig{
-			ApiKey:     "fkAHgTpxMVBWXueZfAyYK2NnR4SZdTNPR45mlJivVg4dNEnoWSbODTUQHDkiNjN6",
-			SecretKey:  "4yFKwURuMG7onlVoqFeV4Fz3I7ZNcNFMmDTRrlUk45IbbudFEWJtXAQGhqJEJtPg",
-			UseTestnet: true},
+		Exchange: map[string]string{
+			"propA": "propA",
+			"propB": "propB"},
 		MongoDb: MongoDbConfig{
 			Uri:      "mongodb://localhost:27017",
 			Database: "ctb-testnet"},

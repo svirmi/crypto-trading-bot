@@ -39,6 +39,24 @@ func TestCreateOrRestore_Create_FTS(t *testing.T) {
 	testutils.AssertEq(t, exp, got, "laccount")
 }
 
+func TestCreateOrRestore_Create_FTS_EmptyRAcc(t *testing.T) {
+	// Setting up test
+	old_mongo_conf := mock_mongo_config()
+	mongodb.Initialize()
+
+	// Restoring status after test execution
+	defer func() {
+		restore_mongo_config(old_mongo_conf)
+		mongodb.Disconnect()
+	}()
+
+	local_account_init := get_laccount_init_test(model.FIXED_THRESHOLD_STRATEGY)
+	local_account_init.RAccount.Balances = make([]model.RemoteBalance, 0)
+
+	_, err := CreateOrRestore(local_account_init)
+	testutils.AssertNotNil(t, err, "err")
+}
+
 func TestCreateOrRestore_Restore_FTS(t *testing.T) {
 	// Setting up test
 	old := mock_mongo_config()

@@ -38,7 +38,11 @@ func get_fts_config(strategyConfig config.StrategyConfig) (s strategy_config_fts
 		StopLossThreshold   string
 		MissProfitThreshold string
 	}{}
-	mapstructure.Decode(strategyConfig.Config, &tmp)
+	err := mapstructure.Decode(strategyConfig.Config, &tmp)
+	if err != nil {
+		logrus.Panic(err.Error())
+	}
+
 	s.BuyThreshold = utils.DecimalFromString(tmp.BuyThreshold).Round(2)
 	s.SellThreshold = utils.DecimalFromString(tmp.SellThreshold).Round(2)
 	s.StopLossThreshold = utils.DecimalFromString(tmp.StopLossThreshold).Round(2)

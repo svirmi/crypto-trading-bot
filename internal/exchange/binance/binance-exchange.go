@@ -5,6 +5,7 @@ import (
 	"time"
 
 	binanceapi "github.com/adshao/go-binance/v2"
+	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
@@ -25,13 +26,23 @@ func GetExchange() model.IExchange {
 }
 
 func (be binance_exchange) Initialize(mmsChannel chan []model.MiniMarketStats) error {
+	// Parsing config
+	binanceConfig := struct {
+		ApiKey     string
+		SecretKey  string
+		UseTestnet bool
+	}{}
+	err := mapstructure.Decode(config.GetExchangeConfig(), &binanceConfig)
+	if err != nil {
+		return err
+	}
+
 	// Web socket keep alive set up
 	binanceapi.WebsocketKeepalive = true
 	binanceapi.WebsocketTimeout = time.Second * 60
 	mms = mmsChannel
 
 	// Building binance http client
-	binanceConfig := config.GetBinanceApiConfig()
 	binanceapi.UseTestnet = binanceConfig.UseTestnet
 	httpClient = binanceapi.NewClient(binanceConfig.ApiKey, binanceConfig.SecretKey)
 
