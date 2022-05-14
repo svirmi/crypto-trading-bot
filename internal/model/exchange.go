@@ -25,7 +25,7 @@ func ParseEnv(s string) Env {
 }
 
 type IExchange interface {
-	Initialize(mmsChannel chan []MiniMarketStats) error
+	Initialize(mmsch chan []MiniMarketStats) error
 	CanSpotTrade(symbol string) bool
 	GetSpotMarketLimits(symbol string) (SpotMarketLimits, error)
 	FilterTradableAssets(bases []string) []string

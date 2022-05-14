@@ -11,9 +11,9 @@ import (
 )
 
 var mini_markets_stats_serve = func(assets []string) error {
-	if mms == nil {
-		err := fmt.Errorf(logger.BINANCE_ERR_NIL_MMS_CH)
-		logrus.WithField("comp", "binance").Error(err.Error())
+	if mmsCh == nil {
+		err := fmt.Errorf(logger.BINEX_ERR_NIL_MMS_CH)
+		logrus.WithField("comp", "binancex").Error(err.Error())
 		return err
 	}
 
@@ -23,8 +23,8 @@ var mini_markets_stats_serve = func(assets []string) error {
 	}
 
 	errorHandler := func(err error) {
-		logrus.WithField("comp", "binance").
-			Errorf(logger.BINANCE_ERR_FAILED_TO_HANLDE_MMS, err.Error())
+		logrus.WithField("comp", "binancex").
+			Errorf(logger.BINEX_ERR_FAILED_TO_HANLDE_MMS, err.Error())
 	}
 
 	callback := func(rMiniMarketsStats binanceapi.WsAllMiniMarketsStatEvent) {
@@ -45,10 +45,10 @@ var mini_markets_stats_serve = func(assets []string) error {
 
 		// Send a mini markets stats through the channel
 		select {
-		case mms <- miniMarketsStats:
+		case mmsCh <- miniMarketsStats:
 		default:
-			logrus.WithField("comp", "binance").
-				Warnf(logger.BINANCE_DROP_MMS_UPDATE, len(miniMarketsStats))
+			logrus.WithField("comp", "binancex").
+				Warnf(logger.BINEX_DROP_MMS_UPDATE, len(miniMarketsStats))
 		}
 
 	}
@@ -56,26 +56,26 @@ var mini_markets_stats_serve = func(assets []string) error {
 	// Opening web socket and intialising control structure
 	done, stop, err := binanceapi.WsAllMiniMarketsStatServe(callback, errorHandler)
 	if err != nil {
-		logrus.WithField("comp", "binance").Error(err.Error())
+		logrus.WithField("comp", "binancex").Error(err.Error())
 		return err
 	} else {
-		mms_done = done
-		mms_stop = stop
+		mmsDoneCh = done
+		mmsStopCh = stop
 	}
 	return nil
 }
 
 var mini_markets_stats_stop = func() {
-	if mms_stop == nil || mms_done == nil {
+	if mmsStopCh == nil || mmsDoneCh == nil {
 		return
 	}
 
-	logrus.WithField("comp", "binance").Info(logger.BINANACE_CLOSING_MMS)
-	mms_stop <- struct{}{}
-	<-mms_done
+	logrus.WithField("comp", "binancex").Info(logger.BINEX_CLOSING_MMS)
+	mmsStopCh <- struct{}{}
+	<-mmsDoneCh
 
-	if mms != nil {
-		close(mms)
+	if mmsCh != nil {
+		close(mmsCh)
 	}
 }
 

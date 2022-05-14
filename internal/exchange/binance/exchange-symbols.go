@@ -50,14 +50,14 @@ func get_min_notional(symbol string) (decimal.Decimal, error) {
 
 	if !found {
 		err := fmt.Errorf("exchange symbol %s not found", symbol)
-		logrus.WithField("comp", "binance").Error(err.Error())
+		logrus.WithField("comp", "binancex").Error(err.Error())
 		return decimal.Zero, err
 	}
 
 	iNotional := extract_filter(status.Filters, "MIN_NOTIONAL")
 	if iNotional == nil {
 		err := fmt.Errorf("MIN_NOTIONAL filter not found for %s", symbol)
-		logrus.WithField("comp", "binance").Error(err.Error())
+		logrus.WithField("comp", "binancex").Error(err.Error())
 		return decimal.Zero, err
 	}
 
@@ -68,15 +68,15 @@ func get_spot_market_sizes(symbol string) (model.SpotMarketLimits, error) {
 	status, found := symbols[symbol]
 
 	if !found {
-		err := fmt.Errorf(logger.BINANCE_ERR_SYMBOL_NOT_FOUND, symbol)
-		logrus.WithField("comp", "binance").Error(err.Error())
+		err := fmt.Errorf(logger.BINEX_ERR_SYMBOL_NOT_FOUND, symbol)
+		logrus.WithField("comp", "binancex").Error(err.Error())
 		return model.SpotMarketLimits{}, err
 	}
 
 	iMarketLotSize := extract_filter(status.Filters, "MARKET_LOT_SIZE")
 	if iMarketLotSize == nil {
-		err := fmt.Errorf(logger.BINANCE_ERR_FILTER_NOT_FOUND, "MARKET_LOT_SIZE", symbol)
-		logrus.WithField("comp", "binance").Error(err.Error())
+		err := fmt.Errorf(logger.BINEX_ERR_FILTER_NOT_FOUND, "MARKET_LOT_SIZE", symbol)
+		logrus.WithField("comp", "binancex").Error(err.Error())
 		return model.SpotMarketLimits{}, err
 	}
 
@@ -90,15 +90,15 @@ func get_spot_limit_sizes(symbol string) (model.SpotMarketLimits, error) {
 	status, found := symbols[symbol]
 
 	if !found {
-		err := fmt.Errorf(logger.BINANCE_ERR_SYMBOL_NOT_FOUND, symbol)
-		logrus.WithField("comp", "binance").Error(err.Error())
+		err := fmt.Errorf(logger.BINEX_ERR_SYMBOL_NOT_FOUND, symbol)
+		logrus.WithField("comp", "binancex").Error(err.Error())
 		return model.SpotMarketLimits{}, err
 	}
 
 	iLotSize := extract_filter(status.Filters, "LOT_SIZE")
 	if iLotSize == nil {
-		err := fmt.Errorf(logger.BINANCE_ERR_FILTER_NOT_FOUND, "LOT_SIZE", symbol)
-		logrus.WithField("comp", "binance").Error(err.Error())
+		err := fmt.Errorf(logger.BINEX_ERR_FILTER_NOT_FOUND, "LOT_SIZE", symbol)
+		logrus.WithField("comp", "binancex").Error(err.Error())
 		return model.SpotMarketLimits{}, err
 	}
 

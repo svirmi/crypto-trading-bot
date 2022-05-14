@@ -18,6 +18,12 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 )
 
+var (
+	exchange model.IExchange
+	exe      model.Execution
+	lacc     model.ILocalAccount
+)
+
 func main() {
 	// Parsing command line
 	envstr := flag.String("env", string(model.MAINNET), "if present, application runs on testnet")
@@ -37,7 +43,9 @@ func main() {
 
 	// Register interrupt handler
 	env := model.ParseEnv(*envstr)
-	var exchange model.IExchange = nil
+	register_interrupt_handler(env)
+
+	// Getting exchange instance
 	if model.SIMULATION == env {
 		exchange = local.GetExchange()
 	} else if model.TESTNET == env || model.MAINNET == env {
@@ -45,7 +53,6 @@ func main() {
 	} else {
 		logrus.Panicf(logger.MAIN_ERR_UNSUPPORTED_ENV, env)
 	}
-	register_interrupt_handler(exchange)
 
 	// Parsing config
 	err := config.Initialize(env)
@@ -60,8 +67,8 @@ func main() {
 	}
 
 	// Initializing exchange
-	mms := make(chan []model.MiniMarketStats)
-	err = exchange.Initialize(mms)
+	mmsch := make(chan []model.MiniMarketStats)
+	err = exchange.Initialize(mmsch)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
@@ -73,7 +80,7 @@ func main() {
 	}
 
 	// Creating or restoring execution
-	exe, err := executions.CreateOrRestore(raccount)
+	exe, err = executions.CreateOrRestore(raccount)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
@@ -93,13 +100,13 @@ func main() {
 		RAccount:            raccount,
 		StrategyType:        strategyType,
 		TradableAssetsPrice: prices}
-	lacc, err := laccount.CreateOrRestore(req)
+	lacc, err = laccount.CreateOrRestore(req)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
 
 	// Initializing handler
-	handler.Initialize(lacc, exe, mms, exchange)
+	handler.Initialize(lacc, exe, mmsch, exchange)
 
 	// Handling price updates
 	handler.HandleMiniMarketsStats()
@@ -109,7 +116,7 @@ func main() {
 	select {}
 }
 
-func register_interrupt_handler(exchange model.IExchange) chan os.Signal {
+func register_interrupt_handler(env model.Env) chan os.Signal {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc,
 		syscall.SIGHUP,
@@ -119,8 +126,15 @@ func register_interrupt_handler(exchange model.IExchange) chan os.Signal {
 
 	go func() {
 		<-sigc
-		exchange.MiniMarketsStatsStop()
+
+		if exchange != nil {
+			exchange.MiniMarketsStatsStop()
+		}
+		if env == model.SIMULATION {
+			executions.Terminate(exe.ExeId)
+		}
 		mongodb.Disconnect()
+
 		logrus.Info("bye, bye")
 		os.Exit(0)
 	}()

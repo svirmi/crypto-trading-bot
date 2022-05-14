@@ -1,0 +1,13 @@
+# simulation configuration
+
+exchange:
+  propA: propA
+  propB: propB
+mongoDb:
+  uri: mongodb://localhost:27017
+  database: ctb-simulation
+strategy:
+  type: TEST_STRATEGY_TYPE
+  config:
+    prop1: prop1
+    prop2: prop2

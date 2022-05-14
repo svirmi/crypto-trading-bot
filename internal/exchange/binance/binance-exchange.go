@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	httpClient         *binanceapi.Client
-	symbols            map[string]binanceapi.Symbol
-	mms_done, mms_stop chan struct{}
-	mms                chan []model.MiniMarketStats
+	httpClient           *binanceapi.Client
+	symbols              map[string]binanceapi.Symbol
+	mmsDoneCh, mmsStopCh chan struct{}
+	mmsCh                chan []model.MiniMarketStats
 )
 
 type binance_exchange struct{}
@@ -26,7 +26,7 @@ func GetExchange() model.IExchange {
 }
 
 func (be binance_exchange) Initialize(mmsChannel chan []model.MiniMarketStats) error {
-	// Parsing config
+	// Decoding config
 	binanceConfig := struct {
 		ApiKey     string
 		SecretKey  string
@@ -40,7 +40,7 @@ func (be binance_exchange) Initialize(mmsChannel chan []model.MiniMarketStats) e
 	// Web socket keep alive set up
 	binanceapi.WebsocketKeepalive = true
 	binanceapi.WebsocketTimeout = time.Second * 60
-	mms = mmsChannel
+	mmsCh = mmsChannel
 
 	// Building binance http client
 	binanceapi.UseTestnet = binanceConfig.UseTestnet
@@ -52,7 +52,7 @@ func (be binance_exchange) Initialize(mmsChannel chan []model.MiniMarketStats) e
 		return err
 	}
 
-	logrus.WithField("comp", "binance").Info(logger.BINANCE_REGISTERING_SYMBOLS)
+	logrus.WithField("comp", "binancex").Info(logger.BINEX_REGISTERING_SYMBOLS)
 	symbols = make(map[string]binanceapi.Symbol)
 	for _, symbol := range res.Symbols {
 		symbols[symbol.Symbol] = symbol

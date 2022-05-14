@@ -33,7 +33,7 @@ func TestInitialize_Mainnet(t *testing.T) {
 	got.Exchange = got_econfig
 	got.Strategy.Config = got_sconfig
 
-	testutils.AssertEq(t, get_config(), got, "config")
+	testutils.AssertEq(t, get_mainnet_config(), got, "config")
 }
 
 func TestInitialize_Testnet(t *testing.T) {
@@ -50,6 +50,20 @@ func TestInitialize_Testnet(t *testing.T) {
 	testutils.AssertEq(t, get_testnet_config(), got, "config")
 }
 
+func TestInitialize_Simulation(t *testing.T) {
+	test_parse_config(t, model.SIMULATION, fts_test_resource_folder)
+
+	got := appConfig
+	got_econfig := make(map[string]string)
+	got_sconfig := make(map[string]string)
+	mapstructure.Decode(got.Exchange, &got_econfig)
+	mapstructure.Decode(got.Strategy.Config, &got_sconfig)
+	got.Exchange = got_econfig
+	got.Strategy.Config = got_sconfig
+
+	testutils.AssertEq(t, get_simulation_config(), got, "config")
+}
+
 func test_parse_config(t *testing.T, env model.Env, test_resource_folder string) {
 	// Restoring interanl status after test execution
 	resource_folder_org := resource_folder
@@ -64,7 +78,7 @@ func test_parse_config(t *testing.T, env model.Env, test_resource_folder string)
 	appConfig = config
 }
 
-func get_config() Config {
+func get_mainnet_config() Config {
 	return Config{
 		Exchange: map[string]string{
 			"propA": "propA",
@@ -87,6 +101,21 @@ func get_testnet_config() Config {
 		MongoDb: MongoDbConfig{
 			Uri:      "mongodb://localhost:27017",
 			Database: "ctb-testnet"},
+		Strategy: StrategyConfig{
+			Type: "TEST_STRATEGY_TYPE",
+			Config: map[string]string{
+				"prop1": "prop1",
+				"prop2": "prop2"}}}
+}
+
+func get_simulation_config() Config {
+	return Config{
+		Exchange: map[string]string{
+			"propA": "propA",
+			"propB": "propB"},
+		MongoDb: MongoDbConfig{
+			Uri:      "mongodb://localhost:27017",
+			Database: "ctb-simulation"},
 		Strategy: StrategyConfig{
 			Type: "TEST_STRATEGY_TYPE",
 			Config: map[string]string{

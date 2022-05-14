@@ -216,13 +216,13 @@ func check_spot_market_limits(op model.Operation, slimits model.SpotMarketLimits
 	if op.AmountSide == model.QUOTE_AMOUNT && op.Amount.LessThan(slimits.MinQuote) {
 		err := fmt.Errorf(logger.FTS_BELOW_QUOTE_LIMIT,
 			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, slimits.MinQuote)
-		logrus.WithField("comp", "binance").Error(err.Error())
+		logrus.WithField("comp", "fts").Error(err.Error())
 		return err
 	}
 	if op.AmountSide == model.BASE_AMOUNT && op.Amount.LessThan(slimits.MinBase) {
 		err := fmt.Errorf(logger.FTS_BELOW_BASE_LIMIT,
 			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, slimits.MinBase)
-		logrus.WithField("comp", "binance").Error(err.Error())
+		logrus.WithField("comp", "fts").Error(err.Error())
 		return err
 	}
 	// No checks on MaxBase as big orders should be broken down into
