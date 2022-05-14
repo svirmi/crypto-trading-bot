@@ -11,7 +11,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	logger.Initialize(true, logrus.TraceLevel)
+	logger.Initialize(false, logrus.TraceLevel)
 	code := m.Run()
 	os.Exit(code)
 }
