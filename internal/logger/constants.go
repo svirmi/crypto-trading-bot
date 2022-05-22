@@ -91,26 +91,31 @@ const (
 	// Utils error
 	UTILS_ERR_FAILED_TO_DECODE_DECIMAL = "failed to decode \"%v\" to a number"
 
-	// DS
-	DS_IGNORED_ASSET          = "%s will be ignored"
-	DS_STRATEGY_CONFIG_PARSED = "config succesfully parsed | buy=%s, sell=%s, miss_profit=%s, stop_loss=%s"
-	DS_TRADE                  = "%s condition verified | asset=%s, last_op=%s, last_price=%s, curr_price=%s"
-	DS_BELOW_QUOTE_LIMIT      = "amount below quote limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_quote=%s"
-	DS_BELOW_BASE_LIMIT       = "amount below base limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_base=%s"
-	DS_ZERO_AMOUNT_ASSET      = "skipping asset %s | amount=0"
+	// Strategy
+	XXX_ERR_MISMATCHING_STRATEGY   = "mismatching strategy type | exp=%s, got=%s"
+	XXX_ERR_FAILED_TO_PARSE_CONFIG = "failed to parse config %+v"
 
-	// DS error
-	DS_ERR_MISMATCHING_STRATEGY       = "mismatching strategy type | exp=%s, got=%s"
-	DS_ERR_FAILED_TO_PARSE_CONFIG     = "failed to parse config %+v"
-	DS_ERR_NEGATIVE_THRESHOLDS        = "thresholds must be strictly positive"
-	DS_ERR_MISMATCHING_EXE_IDS        = "mismatching execution ids | exe_id_1=%s, exe_id_2=%s"
-	DS_ERR_FAILED_OP                  = "cannot register failed operation | op_id=%s"
-	DS_ERR_BAD_QUOTE_CURRENCY         = "bad quote currency | quote=%s"
-	DS_ERR_ASSET_NOT_FOUND            = "asset %s not found in local wallet"
-	DS_ERR_UNKNWON_OP_TYPE            = "unknown opweration type %s"
-	DS_ERR_NEGATIVE_BALANCE           = "negative balance detected | asset=%s, balance=%s"
-	DS_ERR_SPOT_MARKET_SIZE_NOT_FOUND = "spot market size not found | symbol=%s"
-	DS_ERR_ZERO_EXP_PRICE             = "expected price cannot be zero | asset=%s"
+	// DTS
+	DTS_IGNORED_ASSET          = "%s will be ignored"
+	DTS_STRATEGY_CONFIG_PARSED = "config succesfully parsed | buy=%s, sell=%s, miss_profit=%s, stop_loss=%s"
+	DTS_TRADE                  = "%s condition verified | asset=%s, last_op=%s, last_price=%s, curr_price=%s"
+	DTS_BELOW_QUOTE_LIMIT      = "amount below quote limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_quote=%s"
+	DTS_BELOW_BASE_LIMIT       = "amount below base limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_base=%s"
+	DTS_ZERO_AMOUNT_ASSET      = "skipping asset %s | amount=0"
+
+	// DTS error
+	DTS_ERR_NEGATIVE_THRESHOLDS        = "thresholds must be strictly positive"
+	DTS_ERR_MISMATCHING_EXE_IDTS       = "mismatching execution ids | exe_id_1=%s, exe_id_2=%s"
+	DTS_ERR_FAILED_OP                  = "cannot register failed operation | op_id=%s"
+	DTS_ERR_BAD_QUOTE_CURRENCY         = "bad quote currency | quote=%s"
+	DTS_ERR_ASSET_NOT_FOUND            = "asset %s not found in local wallet"
+	DTS_ERR_UNKNWON_OP_TYPE            = "unknown opweration type %s"
+	DTS_ERR_NEGATIVE_BALANCE           = "negative balance detected | asset=%s, balance=%s"
+	DTS_ERR_SPOT_MARKET_SIZE_NOT_FOUND = "spot market size not found | symbol=%s"
+	DTS_ERR_ZERO_EXP_PRICE             = "expected price cannot be zero | asset=%s"
+
+	// PTS error
+	PTS_ERR_NEGATIVE_PERCENTAGES = "parcentages must be strictly positive"
 
 	// Handler
 	HANDL_SKIP_MMS_UPDATE   = "trading ongoing, skipping mms"

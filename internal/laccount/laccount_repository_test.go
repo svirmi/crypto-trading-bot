@@ -8,13 +8,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/ds"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/dts"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func TestInsert_DS(t *testing.T) {
+func TestInsert_DTS(t *testing.T) {
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -29,7 +29,7 @@ func TestInsert_DS(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	exp := get_laccount_test_DS()
+	exp := get_laccount_test_DTS()
 	exeIds = append(exeIds, exp.ExeId)
 	err := insert(exp)
 	testutils.AssertNil(t, err, "err")
@@ -40,7 +40,7 @@ func TestInsert_DS(t *testing.T) {
 	testutils.AssertEq(t, exp, got, "laccount")
 }
 
-func TestFindLatestByExeId_DS(t *testing.T) {
+func TestFindLatestByExeId_DTS(t *testing.T) {
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -55,16 +55,16 @@ func TestFindLatestByExeId_DS(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	exp := get_laccount_test_DS()
+	exp := get_laccount_test_DTS()
 	exeIds = append(exeIds, exp.ExeId)
 	err := insert(exp)
 	testutils.AssertNil(t, err, "err")
 
-	exp.Assets["DOT"] = ds.AssetStatusDS{
+	exp.Assets["DOT"] = dts.AssetStatusDTS{
 		Asset:              "DOT",
 		Amount:             utils.DecimalFromString("55.56"),
 		Usdt:               decimal.Zero,
-		LastOperationType:  ds.OP_BUY_DS,
+		LastOperationType:  dts.OP_BUY_DTS,
 		LastOperationPrice: utils.DecimalFromString("18.45")}
 	exp.Timestamp = time.Now().UnixMicro()
 	err = insert(exp)
@@ -77,7 +77,7 @@ func TestFindLatestByExeId_DS(t *testing.T) {
 	testutils.AssertEq(t, exp, got, "laccount")
 }
 
-func TestFindLatestByExeId_DS_None(t *testing.T) {
+func TestFindLatestByExeId_DTS_None(t *testing.T) {
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()

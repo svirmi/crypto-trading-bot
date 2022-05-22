@@ -1,4 +1,4 @@
-package ds
+package dts
 
 import (
 	"testing"
@@ -23,15 +23,15 @@ func TestStrategyConfig(t *testing.T) {
 		}
 
 	strategyConfig := config.StrategyConfig{
-		Type:   string(model.DEMO_STRATEGY),
+		Type:   string(model.DTS_STRATEGY),
 		Config: exp,
 	}
-	got := get_ds_config(strategyConfig)
+	got := get_dts_config(strategyConfig)
 
-	testutils.AssertEq(t, exp, got, "ds_config")
+	testutils.AssertEq(t, exp, got, "dts_config")
 }
 
-func TestStrategyConfig_MismatchingStrategyType(t *testing.T) {
+func TestStrategyConfig_HighPrecision(t *testing.T) {
 	exp :=
 		struct {
 			BuyThreshold        string
@@ -39,19 +39,32 @@ func TestStrategyConfig_MismatchingStrategyType(t *testing.T) {
 			StopLossThreshold   string
 			MissProfitThreshold string
 		}{
-			BuyThreshold:        "12.34",
-			SellThreshold:       "23.45",
+			BuyThreshold:        "12.339",
+			SellThreshold:       "23.451",
 			StopLossThreshold:   "34.56",
-			MissProfitThreshold: "45.67",
+			MissProfitThreshold: "45.665",
 		}
 
 	strategyConfig := config.StrategyConfig{
+		Type:   string(model.DTS_STRATEGY),
+		Config: exp}
+	got := get_dts_config(strategyConfig)
+
+	exp.BuyThreshold = "12.34"
+	exp.SellThreshold = "23.45"
+	exp.StopLossThreshold = "34.56"
+	exp.MissProfitThreshold = "45.67"
+	testutils.AssertEq(t, exp, got, "pts_config")
+}
+
+func TestStrategyConfig_MismatchingStrategyType(t *testing.T) {
+	strategyConfig := config.StrategyConfig{
 		Type:   "FAKE_STRATEGY",
-		Config: exp,
+		Config: struct{}{},
 	}
 
 	testutils.AssertPanic(t, func() {
-		get_ds_config(strategyConfig)
+		get_dts_config(strategyConfig)
 	})
 }
 
@@ -70,12 +83,12 @@ func TestStrategyConfig_FailedToParseConfig(t *testing.T) {
 		}
 
 	strategyConfig := config.StrategyConfig{
-		Type:   string(model.DEMO_STRATEGY),
+		Type:   string(model.DTS_STRATEGY),
 		Config: exp,
 	}
 
 	testutils.AssertPanic(t, func() {
-		get_ds_config(strategyConfig)
+		get_dts_config(strategyConfig)
 	})
 }
 
@@ -94,11 +107,11 @@ func TestStrategyConfig_ZeroThresholds(t *testing.T) {
 		}
 
 	strategyConfig := config.StrategyConfig{
-		Type:   string(model.DEMO_STRATEGY),
+		Type:   string(model.DTS_STRATEGY),
 		Config: exp,
 	}
 
 	testutils.AssertPanic(t, func() {
-		get_ds_config(strategyConfig)
+		get_dts_config(strategyConfig)
 	})
 }

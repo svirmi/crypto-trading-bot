@@ -9,7 +9,7 @@ mongoDb:
   uri: mongodb://localhost:27017
   database: ctb
 strategy:
-  type: DEMO_STRATEGY
+  type: DEMO_TRADING_STRATEGY
   config:
     buyThreshold: '5'
     sellThreshold: '5'

@@ -6,7 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/ds"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/dts"
 )
 
 // Creates a local account based on the remote account, or restores
@@ -70,8 +70,8 @@ func initialise_local_account(req model.LocalAccountInit) (model.ILocalAccount, 
 	}
 
 	var laccount model.ILocalAccount = nil
-	if req.StrategyType == model.DEMO_STRATEGY {
-		laccount = ds.LocalAccountDS{}
+	if req.StrategyType == model.DTS_STRATEGY {
+		laccount = dts.LocalAccountDTS{}
 	} else {
 		err := fmt.Errorf(logger.LACC_ERR_UNKNOWN_STRATEGY, req.StrategyType)
 		logrus.Error(err.Error())

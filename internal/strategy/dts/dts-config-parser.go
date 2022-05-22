@@ -1,4 +1,4 @@
-package ds
+package dts
 
 import (
 	"fmt"
@@ -13,25 +13,25 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
-type strategy_config_ds struct {
+type strategy_config_dts struct {
 	BuyThreshold        decimal.Decimal
 	SellThreshold       decimal.Decimal
 	StopLossThreshold   decimal.Decimal
 	MissProfitThreshold decimal.Decimal
 }
 
-func (a strategy_config_ds) is_empty() bool {
-	return reflect.DeepEqual(a, strategy_config_ds{})
+func (a strategy_config_dts) is_empty() bool {
+	return reflect.DeepEqual(a, strategy_config_dts{})
 }
 
-func get_ds_config(strategyConfig config.StrategyConfig) (s strategy_config_ds) {
-	if strategyConfig.Type != string(model.DEMO_STRATEGY) {
-		msg := fmt.Sprintf(logger.DS_ERR_MISMATCHING_STRATEGY,
-			model.DEMO_STRATEGY, strategyConfig.Type)
-		logrus.WithField("comp", "ds").Panic(msg)
+func get_dts_config(strategyConfig config.StrategyConfig) (s strategy_config_dts) {
+	if strategyConfig.Type != string(model.DTS_STRATEGY) {
+		msg := fmt.Sprintf(logger.XXX_ERR_MISMATCHING_STRATEGY,
+			model.DTS_STRATEGY, strategyConfig.Type)
+		logrus.WithField("comp", "dts").Panic(msg)
 	}
 
-	// Mapping interface{} to strategy_config_ds
+	// Mapping interface{} to strategy_config_dts
 	tmp := struct {
 		BuyThreshold        string
 		SellThreshold       string
@@ -40,7 +40,7 @@ func get_ds_config(strategyConfig config.StrategyConfig) (s strategy_config_ds) 
 	}{}
 	err := mapstructure.Decode(strategyConfig.Config, &tmp)
 	if err != nil {
-		logrus.Panic(err.Error())
+		logrus.WithField("comp", "dts").Panic(err.Error())
 	}
 
 	s.BuyThreshold = utils.DecimalFromString(tmp.BuyThreshold).Round(2)
@@ -50,14 +50,14 @@ func get_ds_config(strategyConfig config.StrategyConfig) (s strategy_config_ds) 
 
 	// Checking config validity
 	if s.is_empty() {
-		logrus.WithField("comp", "ds").Panicf(logger.DS_ERR_FAILED_TO_PARSE_CONFIG, strategyConfig.Config)
+		logrus.WithField("comp", "dts").Panicf(logger.XXX_ERR_FAILED_TO_PARSE_CONFIG, strategyConfig.Config)
 	}
 	if s.BuyThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.SellThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.MissProfitThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.StopLossThreshold.LessThanOrEqual(decimal.Zero) {
 
-		logrus.WithField("comp", "ds").Panic(logger.DS_ERR_NEGATIVE_THRESHOLDS)
+		logrus.WithField("comp", "dts").Panic(logger.DTS_ERR_NEGATIVE_THRESHOLDS)
 	}
 
 	return s

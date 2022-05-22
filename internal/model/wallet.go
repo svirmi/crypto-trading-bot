@@ -41,7 +41,8 @@ func (p AssetPrice) IsEmpty() bool {
 type StrategyType string
 
 const (
-	DEMO_STRATEGY StrategyType = "DEMO_STRATEGY"
+	DTS_STRATEGY StrategyType = "DEMO_TRADING_STRATEGY"
+	PTS_STRATEGY StrategyType = "PERCENTAGE_TRADING_STRATEGY"
 )
 
 type ILocalAccount interface {

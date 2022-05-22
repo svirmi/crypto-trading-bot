@@ -1,4 +1,4 @@
-package ds
+package dts
 
 import (
 	"testing"
@@ -19,7 +19,7 @@ func TestInitialize(t *testing.T) {
 	laccountInit.RAccount.Balances = append(laccountInit.RAccount.Balances, model.RemoteBalance{
 		Asset:  "SHIBA",
 		Amount: decimal.Zero})
-	got, err := LocalAccountDS{}.Initialize(get_laccount_init_test())
+	got, err := LocalAccountDTS{}.Initialize(get_laccount_init_test())
 	testutils.AssertNil(t, err, "err")
 
 	exp := get_laccount_last_buy_test()
@@ -27,7 +27,7 @@ func TestInitialize(t *testing.T) {
 	exp.AccountId = got.GetAccountId()
 	exp.Timestamp = got.GetTimestamp()
 
-	testutils.AssertEq(t, exp, got, "ds_laccount")
+	testutils.AssertEq(t, exp, got, "dts_laccount")
 }
 
 /********************** Testing RegisterTrading() *************************/
@@ -56,7 +56,7 @@ func TestRegisterTrading_BaseAmt_BuySide(t *testing.T) {
 	assetStatus.LastOperationPrice = price
 	exp.Assets["BTC"] = assetStatus
 
-	testutils.AssertEq(t, exp, got, "ds_laccount")
+	testutils.AssertEq(t, exp, got, "dts_laccount")
 }
 
 func TestRegisterTrading_BaseAmt_SellSide(t *testing.T) {
@@ -77,12 +77,12 @@ func TestRegisterTrading_BaseAmt_SellSide(t *testing.T) {
 	assetStatus := exp.Assets["BTC"]
 	assetStatus.Amount = decimal.Zero
 	assetStatus.Usdt = utils.DecimalFromString("5670")
-	assetStatus.LastOperationType = OP_SELL_DS
+	assetStatus.LastOperationType = OP_SELL_DTS
 	assetStatus.LastOperationPrice = price
 	exp.Assets["BTC"] = assetStatus
 	exp.Ignored["USDT"] = utils.DecimalFromString("155.67")
 
-	testutils.AssertEq(t, exp, got, "ds_laccount")
+	testutils.AssertEq(t, exp, got, "dts_laccount")
 }
 
 func TestRegisterTrading_QuoteAmt_BuySide(t *testing.T) {
@@ -106,12 +106,12 @@ func TestRegisterTrading_QuoteAmt_BuySide(t *testing.T) {
 	assetStatus = exp.Assets["BTC"]
 	assetStatus.Amount = utils.DecimalFromString("11.55134")
 	assetStatus.Usdt = utils.DecimalFromString("4.51")
-	assetStatus.LastOperationType = OP_BUY_DS
+	assetStatus.LastOperationType = OP_BUY_DTS
 	assetStatus.LastOperationPrice = price
 	exp.Assets["BTC"] = assetStatus
 	exp.Ignored["USDT"] = utils.DecimalFromString("155.67")
 
-	testutils.AssertEq(t, exp, got, "ds_laccount")
+	testutils.AssertEq(t, exp, got, "dts_laccount")
 }
 
 func TestRegisterTrading_QuoteAmt_SellSide(t *testing.T) {
@@ -135,12 +135,12 @@ func TestRegisterTrading_QuoteAmt_SellSide(t *testing.T) {
 	assetStatus = exp.Assets["BTC"]
 	assetStatus.Amount = utils.DecimalFromString("0.94811702")
 	assetStatus.Usdt = utils.DecimalFromString("34519.999")
-	assetStatus.LastOperationType = OP_SELL_DS
+	assetStatus.LastOperationType = OP_SELL_DTS
 	assetStatus.LastOperationPrice = price
 	exp.Assets["BTC"] = assetStatus
 	exp.Ignored["USDT"] = utils.DecimalFromString("155.67")
 
-	testutils.AssertEq(t, exp, got, "ds_laccount")
+	testutils.AssertEq(t, exp, got, "dts_laccount")
 }
 
 func TestRegisterTrading_WrongExeId(t *testing.T) {
@@ -166,7 +166,7 @@ func TestRegisterTrading_OpFailed(t *testing.T) {
 	got, err := exp.RegisterTrading(op)
 
 	testutils.AssertNotNil(t, err, "err")
-	testutils.AssertEq(t, exp, got, "ds_laccount")
+	testutils.AssertEq(t, exp, got, "dts_laccount")
 }
 
 func TestRegisterTrading_BadQuoteCurrency(t *testing.T) {
@@ -181,7 +181,7 @@ func TestRegisterTrading_BadQuoteCurrency(t *testing.T) {
 	got, err := exp.RegisterTrading(op)
 
 	testutils.AssertNotNil(t, err, "err")
-	testutils.AssertEq(t, exp, got, "ds_laccount")
+	testutils.AssertEq(t, exp, got, "dts_laccount")
 }
 
 func TestRegisterTrading_AssetNotFound(t *testing.T) {
@@ -196,7 +196,7 @@ func TestRegisterTrading_AssetNotFound(t *testing.T) {
 	got, err := exp.RegisterTrading(op)
 
 	testutils.AssertNotNil(t, err, "err")
-	testutils.AssertEq(t, exp, got, "ds_laccount")
+	testutils.AssertEq(t, exp, got, "dts_laccount")
 }
 
 func TestRegisterTrading_NegativeBalanceBase(t *testing.T) {
@@ -269,7 +269,7 @@ func TestGetOperation_Sell(t *testing.T) {
 	exp.Status = model.PENDING
 	exp.Results = model.OpResults{}
 	exp.Type = model.AUTO
-	exp.Cause = "ds sell"
+	exp.Cause = "dts sell"
 
 	testutils.AssertEq(t, exp, got, "operation")
 }
@@ -312,7 +312,7 @@ func TestGetOperation_StopLoss(t *testing.T) {
 	exp.Status = model.PENDING
 	exp.Results = model.OpResults{}
 	exp.Type = model.AUTO
-	exp.Cause = "ds stop loss"
+	exp.Cause = "dts stop loss"
 
 	testutils.AssertEq(t, exp, got, "operation")
 }
@@ -336,7 +336,7 @@ func TestGetOperation_Buy(t *testing.T) {
 	exp.Status = model.PENDING
 	exp.Results = model.OpResults{}
 	exp.Type = model.AUTO
-	exp.Cause = "ds buy"
+	exp.Cause = "dts buy"
 
 	testutils.AssertEq(t, exp, got, "operation")
 }
@@ -380,7 +380,7 @@ func TestGetOperation_MissProfit(t *testing.T) {
 	exp.Status = model.PENDING
 	exp.Results = model.OpResults{}
 	exp.Type = model.AUTO
-	exp.Cause = "ds miss profit"
+	exp.Cause = "dts miss profit"
 
 	testutils.AssertEq(t, exp, got, "operation")
 }
@@ -405,7 +405,7 @@ func mock_strategy_config(bt, st, slt, mpt string) func() config.StrategyConfig 
 	old := config.GetStrategyConfig
 	config.GetStrategyConfig = func() config.StrategyConfig {
 		return config.StrategyConfig{
-			Type: string(model.DEMO_STRATEGY),
+			Type: string(model.DTS_STRATEGY),
 			Config: struct {
 				BuyThreshold        string
 				SellThreshold       string
@@ -469,71 +469,71 @@ func get_operation_test(amt decimal.Decimal, amtSide model.AmountSide, base, quo
 		Timestamp: time.Now().UnixMicro()}
 }
 
-func get_laccount_last_sell_test() LocalAccountDS {
-	return LocalAccountDS{
+func get_laccount_last_sell_test() LocalAccountDTS {
+	return LocalAccountDTS{
 		LocalAccountMetadata: model.LocalAccountMetadata{
 			AccountId:    uuid.NewString(),
 			ExeId:        uuid.NewString(),
-			StrategyType: model.DEMO_STRATEGY,
+			StrategyType: model.DTS_STRATEGY,
 			Timestamp:    time.Now().UnixMicro()},
 
 		Ignored: map[string]decimal.Decimal{
 			"USDT": utils.DecimalFromString("155.67"),
 			"BUSD": utils.DecimalFromString("1232.45")},
 
-		Assets: map[string]AssetStatusDS{
+		Assets: map[string]AssetStatusDTS{
 			"BTC": {
 				Asset:              "BTC",
 				Amount:             decimal.Zero,
 				Usdt:               utils.DecimalFromString("24519.999"),
-				LastOperationType:  OP_SELL_DS,
+				LastOperationType:  OP_SELL_DTS,
 				LastOperationPrice: utils.DecimalFromString("39560.45"),
 			},
 			"ETH": {
 				Asset:              "ETH",
 				Amount:             decimal.Zero,
 				Usdt:               utils.DecimalFromString("13443.12"),
-				LastOperationType:  OP_SELL_DS,
+				LastOperationType:  OP_SELL_DTS,
 				LastOperationPrice: utils.DecimalFromString("4500.45")},
 			"DOT": {
 				Asset:              "DOT",
 				Amount:             decimal.Zero,
 				Usdt:               utils.DecimalFromString("999.99"),
-				LastOperationType:  OP_SELL_DS,
+				LastOperationType:  OP_SELL_DTS,
 				LastOperationPrice: utils.DecimalFromString("49.45")}}}
 }
 
-func get_laccount_last_buy_test() LocalAccountDS {
-	return LocalAccountDS{
+func get_laccount_last_buy_test() LocalAccountDTS {
+	return LocalAccountDTS{
 		LocalAccountMetadata: model.LocalAccountMetadata{
 			AccountId:    uuid.NewString(),
 			ExeId:        uuid.NewString(),
-			StrategyType: model.DEMO_STRATEGY,
+			StrategyType: model.DTS_STRATEGY,
 			Timestamp:    time.Now().UnixMicro()},
 
 		Ignored: map[string]decimal.Decimal{
 			"USDT": utils.DecimalFromString("155.67"),
 			"BUSD": utils.DecimalFromString("1232.45")},
 
-		Assets: map[string]AssetStatusDS{
+		Assets: map[string]AssetStatusDTS{
 			"BTC": {
 				Asset:              "BTC",
 				Amount:             utils.DecimalFromString("11.34"),
 				Usdt:               decimal.Zero,
-				LastOperationType:  OP_BUY_DS,
+				LastOperationType:  OP_BUY_DTS,
 				LastOperationPrice: utils.DecimalFromString("39560.45"),
 			},
 			"ETH": {
 				Asset:              "ETH",
 				Amount:             utils.DecimalFromString("29.12"),
 				Usdt:               decimal.Zero,
-				LastOperationType:  OP_BUY_DS,
+				LastOperationType:  OP_BUY_DTS,
 				LastOperationPrice: utils.DecimalFromString("4500.45")},
 			"DOT": {
 				Asset:              "DOT",
 				Amount:             utils.DecimalFromString("13.67"),
 				Usdt:               decimal.Zero,
-				LastOperationType:  OP_BUY_DS,
+				LastOperationType:  OP_BUY_DTS,
 				LastOperationPrice: utils.DecimalFromString("49.45")}}}
 }
 
@@ -563,5 +563,5 @@ func get_laccount_init_test() model.LocalAccountInit {
 			"BTC": {Asset: "BTC", Price: utils.DecimalFromString("39560.45")},
 			"ETH": {Asset: "ETH", Price: utils.DecimalFromString("4500.45")},
 			"DOT": {Asset: "DOT", Price: utils.DecimalFromString("49.45")}},
-		StrategyType: model.DEMO_STRATEGY}
+		StrategyType: model.DTS_STRATEGY}
 }

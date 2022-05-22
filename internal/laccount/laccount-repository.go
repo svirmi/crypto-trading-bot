@@ -8,7 +8,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/ds"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/dts"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -53,10 +53,10 @@ func decode(sr *mongo.SingleResult) (model.ILocalAccount, error) {
 	}
 
 	strategyType := model.StrategyType(payload.GetStrategyType())
-	if strategyType == model.DEMO_STRATEGY {
-		laccount_ds := ds.LocalAccountDS{}
-		err := sr.Decode(&laccount_ds)
-		return laccount_ds, err
+	if strategyType == model.DTS_STRATEGY {
+		laccount_dts := dts.LocalAccountDTS{}
+		err := sr.Decode(&laccount_dts)
+		return laccount_dts, err
 	} else {
 		err := fmt.Errorf(logger.LACC_ERR_UNKNOWN_STRATEGY, strategyType)
 		logrus.Error(err.Error())

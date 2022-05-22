@@ -13,7 +13,7 @@ mongoDb:
   uri: mongodb://localhost:27017
   database: ctb-simulation
 strategy:
-  type: DEMO_STRATEGY
+  type: DEMO_TRADING_STRATEGY
   config:
     buyThreshold: '10'
     sellThreshold: '10'
