@@ -8,7 +8,7 @@ mongoDb:
   uri: mongodb://localhost:27017
   database: ctb-testnet
 strategy:
-  type: FIXED_THRESHOLD_STRATEGY
+  type: DEMO_STRATEGY
   config:
     buyThreshold: '2.5'
     sellThreshold: '2.5'

@@ -11,7 +11,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/fts"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/ds"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
@@ -59,12 +59,12 @@ func get_laccount_init_test(strategyType model.StrategyType) model.LocalAccountI
 		StrategyType: strategyType}
 }
 
-func get_laccount_test_FTS() fts.LocalAccountFTS {
-	return fts.LocalAccountFTS{
+func get_laccount_test_DS() ds.LocalAccountDS {
+	return ds.LocalAccountDS{
 		LocalAccountMetadata: model.LocalAccountMetadata{
 			AccountId:    uuid.NewString(),
 			ExeId:        uuid.NewString(),
-			StrategyType: model.FIXED_THRESHOLD_STRATEGY,
+			StrategyType: model.DEMO_STRATEGY,
 			Timestamp:    time.Now().UnixMicro()},
 
 		Ignored: map[string]decimal.Decimal{
@@ -72,24 +72,24 @@ func get_laccount_test_FTS() fts.LocalAccountFTS {
 			"LUNA": utils.DecimalFromString("90.67"),
 			"BUSD": utils.DecimalFromString("1232.45")},
 
-		Assets: map[string]fts.AssetStatusFTS{
+		Assets: map[string]ds.AssetStatusDS{
 			"BTC": {
 				Asset:              "BTC",
 				Amount:             utils.DecimalFromString("11.34"),
 				Usdt:               decimal.Zero,
-				LastOperationType:  fts.OP_BUY_FTS,
+				LastOperationType:  ds.OP_BUY_DS,
 				LastOperationPrice: utils.DecimalFromString("39560.45"),
 			},
 			"ETH": {
 				Asset:              "ETH",
 				Amount:             utils.DecimalFromString("29.12"),
 				Usdt:               decimal.Zero,
-				LastOperationType:  fts.OP_BUY_FTS,
+				LastOperationType:  ds.OP_BUY_DS,
 				LastOperationPrice: utils.DecimalFromString("4500.45")},
 			"DOT": {
 				Asset:              "DOT",
 				Amount:             utils.DecimalFromString("13.67"),
 				Usdt:               decimal.Zero,
-				LastOperationType:  fts.OP_BUY_FTS,
+				LastOperationType:  ds.OP_BUY_DS,
 				LastOperationPrice: utils.DecimalFromString("49.45")}}}
 }

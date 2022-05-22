@@ -1,4 +1,4 @@
-package fts
+package ds
 
 import (
 	"fmt"
@@ -13,25 +13,25 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
-type strategy_config_fts struct {
+type strategy_config_ds struct {
 	BuyThreshold        decimal.Decimal
 	SellThreshold       decimal.Decimal
 	StopLossThreshold   decimal.Decimal
 	MissProfitThreshold decimal.Decimal
 }
 
-func (a strategy_config_fts) is_empty() bool {
-	return reflect.DeepEqual(a, strategy_config_fts{})
+func (a strategy_config_ds) is_empty() bool {
+	return reflect.DeepEqual(a, strategy_config_ds{})
 }
 
-func get_fts_config(strategyConfig config.StrategyConfig) (s strategy_config_fts) {
-	if strategyConfig.Type != string(model.FIXED_THRESHOLD_STRATEGY) {
-		msg := fmt.Sprintf(logger.FTS_ERR_MISMATCHING_STRATEGY,
-			model.FIXED_THRESHOLD_STRATEGY, strategyConfig.Type)
-		logrus.WithField("comp", "fts").Panic(msg)
+func get_ds_config(strategyConfig config.StrategyConfig) (s strategy_config_ds) {
+	if strategyConfig.Type != string(model.DEMO_STRATEGY) {
+		msg := fmt.Sprintf(logger.DS_ERR_MISMATCHING_STRATEGY,
+			model.DEMO_STRATEGY, strategyConfig.Type)
+		logrus.WithField("comp", "ds").Panic(msg)
 	}
 
-	// Mapping interface{} to strategy_config_fts
+	// Mapping interface{} to strategy_config_ds
 	tmp := struct {
 		BuyThreshold        string
 		SellThreshold       string
@@ -50,14 +50,14 @@ func get_fts_config(strategyConfig config.StrategyConfig) (s strategy_config_fts
 
 	// Checking config validity
 	if s.is_empty() {
-		logrus.WithField("comp", "fts").Panicf(logger.FTS_ERR_FAILED_TO_PARSE_CONFIG, strategyConfig.Config)
+		logrus.WithField("comp", "ds").Panicf(logger.DS_ERR_FAILED_TO_PARSE_CONFIG, strategyConfig.Config)
 	}
 	if s.BuyThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.SellThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.MissProfitThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.StopLossThreshold.LessThanOrEqual(decimal.Zero) {
 
-		logrus.WithField("comp", "fts").Panic(logger.FTS_ERR_NEGATIVE_THRESHOLDS)
+		logrus.WithField("comp", "ds").Panic(logger.DS_ERR_NEGATIVE_THRESHOLDS)
 	}
 
 	return s

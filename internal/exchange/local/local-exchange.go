@@ -432,7 +432,7 @@ func (be local_exchange) MiniMarketsStatsServe(assets []string) error {
 				}
 				if value == nil {
 					logrus.WithField("comp", "localex").
-						Panic(logger.LOCALEX_ERR_FAILT_TO_GET_MMS, symbol)
+						Panicf(logger.LOCALEX_ERR_FAILT_TO_GET_MMS, symbol)
 				}
 
 				mmss = append(mmss, value.(model.MiniMarketStats))

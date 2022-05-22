@@ -1,4 +1,4 @@
-package fts
+package ds
 
 import (
 	"testing"
@@ -23,12 +23,12 @@ func TestStrategyConfig(t *testing.T) {
 		}
 
 	strategyConfig := config.StrategyConfig{
-		Type:   string(model.FIXED_THRESHOLD_STRATEGY),
+		Type:   string(model.DEMO_STRATEGY),
 		Config: exp,
 	}
-	got := get_fts_config(strategyConfig)
+	got := get_ds_config(strategyConfig)
 
-	testutils.AssertEq(t, exp, got, "fts_config")
+	testutils.AssertEq(t, exp, got, "ds_config")
 }
 
 func TestStrategyConfig_MismatchingStrategyType(t *testing.T) {
@@ -51,7 +51,7 @@ func TestStrategyConfig_MismatchingStrategyType(t *testing.T) {
 	}
 
 	testutils.AssertPanic(t, func() {
-		get_fts_config(strategyConfig)
+		get_ds_config(strategyConfig)
 	})
 }
 
@@ -70,12 +70,12 @@ func TestStrategyConfig_FailedToParseConfig(t *testing.T) {
 		}
 
 	strategyConfig := config.StrategyConfig{
-		Type:   string(model.FIXED_THRESHOLD_STRATEGY),
+		Type:   string(model.DEMO_STRATEGY),
 		Config: exp,
 	}
 
 	testutils.AssertPanic(t, func() {
-		get_fts_config(strategyConfig)
+		get_ds_config(strategyConfig)
 	})
 }
 
@@ -94,11 +94,11 @@ func TestStrategyConfig_ZeroThresholds(t *testing.T) {
 		}
 
 	strategyConfig := config.StrategyConfig{
-		Type:   string(model.FIXED_THRESHOLD_STRATEGY),
+		Type:   string(model.DEMO_STRATEGY),
 		Config: exp,
 	}
 
 	testutils.AssertPanic(t, func() {
-		get_fts_config(strategyConfig)
+		get_ds_config(strategyConfig)
 	})
 }

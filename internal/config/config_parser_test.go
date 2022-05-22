@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	fts_test_resource_folder = "test-resources"
+	ds_test_resource_folder = "test-resources"
 )
 
 func TestMain(m *testing.M) {
@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestInitialize_Mainnet(t *testing.T) {
-	test_parse_config(t, model.MAINNET, fts_test_resource_folder)
+	test_parse_config(t, model.MAINNET, ds_test_resource_folder)
 
 	got := appConfig
 	got_econfig := make(map[string]string)
@@ -37,7 +37,7 @@ func TestInitialize_Mainnet(t *testing.T) {
 }
 
 func TestInitialize_Testnet(t *testing.T) {
-	test_parse_config(t, model.TESTNET, fts_test_resource_folder)
+	test_parse_config(t, model.TESTNET, ds_test_resource_folder)
 
 	got := appConfig
 	got_econfig := make(map[string]string)
@@ -51,7 +51,7 @@ func TestInitialize_Testnet(t *testing.T) {
 }
 
 func TestInitialize_Simulation(t *testing.T) {
-	test_parse_config(t, model.SIMULATION, fts_test_resource_folder)
+	test_parse_config(t, model.SIMULATION, ds_test_resource_folder)
 
 	got := appConfig
 	got_econfig := make(map[string]string)

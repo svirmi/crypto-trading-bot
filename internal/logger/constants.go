@@ -91,26 +91,26 @@ const (
 	// Utils error
 	UTILS_ERR_FAILED_TO_DECODE_DECIMAL = "failed to decode \"%v\" to a number"
 
-	// FTS
-	FTS_IGNORED_ASSET          = "%s will be ignored"
-	FTS_STRATEGY_CONFIG_PARSED = "config succesfully parsed | buy=%s, sell=%s, miss_profit=%s, stop_loss=%s"
-	FTS_TRADE                  = "%s condition verified | asset=%s, last_op=%s, last_price=%s, curr_price=%s"
-	FTS_BELOW_QUOTE_LIMIT      = "amount below quote limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_quote=%s"
-	FTS_BELOW_BASE_LIMIT       = "amount below base limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_base=%s"
-	FTS_ZERO_AMOUNT_ASSET      = "skipping asset %s | amount=0"
+	// DS
+	DS_IGNORED_ASSET          = "%s will be ignored"
+	DS_STRATEGY_CONFIG_PARSED = "config succesfully parsed | buy=%s, sell=%s, miss_profit=%s, stop_loss=%s"
+	DS_TRADE                  = "%s condition verified | asset=%s, last_op=%s, last_price=%s, curr_price=%s"
+	DS_BELOW_QUOTE_LIMIT      = "amount below quote limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_quote=%s"
+	DS_BELOW_BASE_LIMIT       = "amount below base limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_base=%s"
+	DS_ZERO_AMOUNT_ASSET      = "skipping asset %s | amount=0"
 
-	// FTS error
-	FTS_ERR_MISMATCHING_STRATEGY       = "mismatching strategy type | exp=%s, got=%s"
-	FTS_ERR_FAILED_TO_PARSE_CONFIG     = "failed to parse config %+v"
-	FTS_ERR_NEGATIVE_THRESHOLDS        = "thresholds must be strictly positive"
-	FTS_ERR_MISMATCHING_EXE_IDS        = "mismatching execution ids | exe_id_1=%s, exe_id_2=%s"
-	FTS_ERR_FAILED_OP                  = "cannot register failed operation | op_id=%s"
-	FTS_ERR_BAD_QUOTE_CURRENCY         = "bad quote currency | quote=%s"
-	FTS_ERR_ASSET_NOT_FOUND            = "asset %s not found in local wallet"
-	FTS_ERR_UNKNWON_OP_TYPE            = "unknown opweration type %s"
-	FTS_ERR_NEGATIVE_BALANCE           = "negative balance detected | asset=%s, balance=%s"
-	FTS_ERR_SPOT_MARKET_SIZE_NOT_FOUND = "spot market size not found | symbol=%s"
-	FTS_ERR_ZERO_EXP_PRICE             = "expected price cannot be zero | asset=%s"
+	// DS error
+	DS_ERR_MISMATCHING_STRATEGY       = "mismatching strategy type | exp=%s, got=%s"
+	DS_ERR_FAILED_TO_PARSE_CONFIG     = "failed to parse config %+v"
+	DS_ERR_NEGATIVE_THRESHOLDS        = "thresholds must be strictly positive"
+	DS_ERR_MISMATCHING_EXE_IDS        = "mismatching execution ids | exe_id_1=%s, exe_id_2=%s"
+	DS_ERR_FAILED_OP                  = "cannot register failed operation | op_id=%s"
+	DS_ERR_BAD_QUOTE_CURRENCY         = "bad quote currency | quote=%s"
+	DS_ERR_ASSET_NOT_FOUND            = "asset %s not found in local wallet"
+	DS_ERR_UNKNWON_OP_TYPE            = "unknown opweration type %s"
+	DS_ERR_NEGATIVE_BALANCE           = "negative balance detected | asset=%s, balance=%s"
+	DS_ERR_SPOT_MARKET_SIZE_NOT_FOUND = "spot market size not found | symbol=%s"
+	DS_ERR_ZERO_EXP_PRICE             = "expected price cannot be zero | asset=%s"
 
 	// Handler
 	HANDL_SKIP_MMS_UPDATE   = "trading ongoing, skipping mms"

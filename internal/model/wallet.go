@@ -41,7 +41,7 @@ func (p AssetPrice) IsEmpty() bool {
 type StrategyType string
 
 const (
-	FIXED_THRESHOLD_STRATEGY StrategyType = "FIXED_THRESHOLD_STRATEGY"
+	DEMO_STRATEGY StrategyType = "DEMO_STRATEGY"
 )
 
 type ILocalAccount interface {

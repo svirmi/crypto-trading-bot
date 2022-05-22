@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func TestCreateOrRestore_Create_FTS(t *testing.T) {
+func TestCreateOrRestore_Create_DS(t *testing.T) {
 	// Setting up test
 	old_mongo_conf := mock_mongo_config()
 	mongodb.Initialize()
@@ -25,13 +25,13 @@ func TestCreateOrRestore_Create_FTS(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	local_account_init := get_laccount_init_test(model.FIXED_THRESHOLD_STRATEGY)
+	local_account_init := get_laccount_init_test(model.DEMO_STRATEGY)
 	exeIds = append(exeIds, local_account_init.ExeId)
 
 	got, err := CreateOrRestore(local_account_init)
 	testutils.AssertNil(t, err, "err")
 
-	exp := get_laccount_test_FTS()
+	exp := get_laccount_test_DS()
 	exp.ExeId = local_account_init.ExeId
 	exp.AccountId = got.GetAccountId()
 	exp.Timestamp = got.GetTimestamp()
@@ -39,7 +39,7 @@ func TestCreateOrRestore_Create_FTS(t *testing.T) {
 	testutils.AssertEq(t, exp, got, "laccount")
 }
 
-func TestCreateOrRestore_Create_FTS_EmptyRAcc(t *testing.T) {
+func TestCreateOrRestore_Create_DS_EmptyRAcc(t *testing.T) {
 	// Setting up test
 	old_mongo_conf := mock_mongo_config()
 	mongodb.Initialize()
@@ -50,14 +50,14 @@ func TestCreateOrRestore_Create_FTS_EmptyRAcc(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	local_account_init := get_laccount_init_test(model.FIXED_THRESHOLD_STRATEGY)
+	local_account_init := get_laccount_init_test(model.DEMO_STRATEGY)
 	local_account_init.RAccount.Balances = make([]model.RemoteBalance, 0)
 
 	_, err := CreateOrRestore(local_account_init)
 	testutils.AssertNotNil(t, err, "err")
 }
 
-func TestCreateOrRestore_Restore_FTS(t *testing.T) {
+func TestCreateOrRestore_Restore_DS(t *testing.T) {
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -72,12 +72,12 @@ func TestCreateOrRestore_Restore_FTS(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	exp := get_laccount_test_FTS()
+	exp := get_laccount_test_DS()
 	exeIds = append(exeIds, exp.ExeId)
 	err := insert(exp)
 	testutils.AssertNil(t, err, "err")
 
-	local_account_init := get_laccount_init_test(model.FIXED_THRESHOLD_STRATEGY)
+	local_account_init := get_laccount_init_test(model.DEMO_STRATEGY)
 	local_account_init.ExeId = exeIds[0]
 	got, err := CreateOrRestore(local_account_init)
 
