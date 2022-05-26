@@ -1,21 +1,41 @@
 # simulation configuration
 
+# Demo Trading Strategy
+#exchange:
+#  initialBalances:
+#    BTC: '1000'
+#    ETH: '2000'
+#    USDT: '10000'
+#  priceFilepaths:
+#    BTCUSDT: /home/stacksmasher/crypto-prices/btcusdt-daily-prices.csv
+#    ETHUSDT: /home/stacksmasher/crypto-prices/ethusdt-daily-prices.csv
+#  priceDelay: '100'
+#mongoDb:
+#  uri: mongodb://localhost:27017
+#  database: ctb-simulation
+#strategy:
+#  type: DEMO_TRADING_STRATEGY
+#  config:
+#    buyThreshold: '10'
+#    sellThreshold: '10'
+#    stopLossThreshold: '25'
+#    missProfitThreshold: '25'
+
+# Perecentage Trading Strategy
 exchange:
   initialBalances:
-    BTC: '1000'
-    ETH: '2000'
-    USDT: '10000'
+    ETH: '10'
+    USDT: '200000'
   priceFilepaths:
-    BTCUSDT: /home/stacksmasher/crypto-prices/btcusdt-daily-prices.csv
     ETHUSDT: /home/stacksmasher/crypto-prices/ethusdt-daily-prices.csv
   priceDelay: '100'
 mongoDb:
   uri: mongodb://localhost:27017
   database: ctb-simulation
 strategy:
-  type: DEMO_TRADING_STRATEGY
+  type: PERCENTAGE_TRADING_STRATEGY
   config:
-    buyThreshold: '10'
-    sellThreshold: '10'
-    stopLossThreshold: '25'
-    missProfitThreshold: '25'
+    buyPercentage: '10'
+    sellPercentage: '10'
+    buyAmountPercentage: '20'
+    sellAmountPercentage: '20'

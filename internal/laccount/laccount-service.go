@@ -7,15 +7,9 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/dts"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/pts"
 )
 
-// Creates a local account based on the remote account, or restores
-// account already in DB linked to a currently active execution
-// identified by exeId.
-// Returns local account object or an empty local account if an
-// error was thrown.
-// Returns an error if computation failed
-// TRUSTS that exeId corresponds to an active execution
 func CreateOrRestore(req model.LocalAccountInit) (model.ILocalAccount, error) {
 	// Get current local account from DB by execution id
 	laccount, err := find_latest_by_exeId(req.ExeId)
@@ -72,6 +66,8 @@ func initialise_local_account(req model.LocalAccountInit) (model.ILocalAccount, 
 	var laccount model.ILocalAccount = nil
 	if req.StrategyType == model.DTS_STRATEGY {
 		laccount = dts.LocalAccountDTS{}
+	} else if req.StrategyType == model.PTS_STRATEGY {
+		laccount = pts.LocalAccountPTS{}
 	} else {
 		err := fmt.Errorf(logger.LACC_ERR_UNKNOWN_STRATEGY, req.StrategyType)
 		logrus.Error(err.Error())

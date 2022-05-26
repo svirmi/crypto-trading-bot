@@ -12,6 +12,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/dts"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/pts"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
@@ -92,4 +93,33 @@ func get_laccount_test_DTS() dts.LocalAccountDTS {
 				Usdt:               decimal.Zero,
 				LastOperationType:  dts.OP_BUY_DTS,
 				LastOperationPrice: utils.DecimalFromString("49.45")}}}
+}
+
+func get_laccount_test_PTS() pts.LocalAccountPTS {
+	return pts.LocalAccountPTS{
+		LocalAccountMetadata: model.LocalAccountMetadata{
+			AccountId:    uuid.NewString(),
+			ExeId:        uuid.NewString(),
+			StrategyType: model.PTS_STRATEGY,
+			Timestamp:    time.Now().UnixMicro()},
+
+		Ignored: map[string]decimal.Decimal{
+			"LUNA": utils.DecimalFromString("90.67"),
+			"BUSD": utils.DecimalFromString("1232.45")},
+
+		Assets: map[string]pts.AssetStatusPTS{
+			"BTC": {
+				Asset:              "BTC",
+				Amount:             utils.DecimalFromString("11.34"),
+				LastOperationPrice: utils.DecimalFromString("39560.45"),
+			},
+			"ETH": {
+				Asset:              "ETH",
+				Amount:             utils.DecimalFromString("29.12"),
+				LastOperationPrice: utils.DecimalFromString("4500.45")},
+			"DOT": {
+				Asset:              "DOT",
+				Amount:             utils.DecimalFromString("13.67"),
+				LastOperationPrice: utils.DecimalFromString("49.45")}},
+		Usdt: utils.DecimalFromString("155.67")}
 }

@@ -9,23 +9,17 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/dts"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/pts"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Inserts a new local account object
-// Returns an error, if computation failed
 func insert(laccout model.ILocalAccount) error {
 	_, err := mongodb.GetLocalAccountsCol().InsertOne(context.TODO(), laccout)
 	return err
 }
 
-// Finds latest version of a local wallet bound to a given
-// execution id.
-// Returns a local wallet or en empty wallet if nothing was
-// found or an error was thrown.
-// Returns an error if computation failed
 func find_latest_by_exeId(exeId string) (model.ILocalAccount, error) {
 	collection := mongodb.GetLocalAccountsCol()
 
@@ -57,6 +51,10 @@ func decode(sr *mongo.SingleResult) (model.ILocalAccount, error) {
 		laccount_dts := dts.LocalAccountDTS{}
 		err := sr.Decode(&laccount_dts)
 		return laccount_dts, err
+	} else if strategyType == model.PTS_STRATEGY {
+		laccount_pts := pts.LocalAccountPTS{}
+		err := sr.Decode(&laccount_pts)
+		return laccount_pts, err
 	} else {
 		err := fmt.Errorf(logger.LACC_ERR_UNKNOWN_STRATEGY, strategyType)
 		logrus.Error(err.Error())

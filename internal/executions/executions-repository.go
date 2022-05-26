@@ -10,18 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Inserts a new execution object.
-// Returns an error if computation failed
 func insert_one(exe model.Execution) error {
 	// Inserting new execution object
 	_, err := mongodb.GetExecutionsCol().InsertOne(context.TODO(), exe)
 	return err
 }
 
-// Finds latest version of an execution object by execution id.
-// Returns the execution object, if found, an empty execution object
-// if nothing was found or an error was thrown.
-// Returns an error if computation failed or no exeuction object was found
 func find_latest_by_exeId(exeId string) (model.Execution, error) {
 	collection := mongodb.GetExecutionsCol()
 

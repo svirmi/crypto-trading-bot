@@ -35,7 +35,7 @@ func (a AssetStatusDTS) IsEmpty() bool {
 
 type LocalAccountDTS struct {
 	model.LocalAccountMetadata `bson:"metadata"`
-	Ignored                    map[string]decimal.Decimal `bson:"ignored"` // Usdt not to be invested
+	Ignored                    map[string]decimal.Decimal `bson:"ignored"` // Ignored assets
 	Assets                     map[string]AssetStatusDTS  `bson:"assets"`  // Value allocation across assets
 }
 
@@ -50,6 +50,14 @@ type operation_init struct {
 	cause       string
 }
 
+const (
+	_NP_OP                = "NO_OP"
+	_DTS_BUY_DESC         = "dts_buy"
+	_DTS_SELL_DESC        = "dts_sell"
+	_DTS_STOP_LOSS_DESC   = "dts_stop_loss"
+	_DTS_MISS_PROFIT_DESC = "dts_miss_profit"
+)
+
 func (a LocalAccountDTS) Initialize(req model.LocalAccountInit) (model.ILocalAccount, error) {
 	var ignored = make(map[string]decimal.Decimal)
 	var assets = make(map[string]AssetStatusDTS)
@@ -58,7 +66,7 @@ func (a LocalAccountDTS) Initialize(req model.LocalAccountInit) (model.ILocalAcc
 		price, found := req.TradableAssetsPrice[rbalance.Asset]
 		if !found {
 			logrus.WithField("comp", "dts").
-				Warnf(logger.DTS_IGNORED_ASSET, rbalance.Asset)
+				Warnf(logger.XXX_IGNORED_ASSET, rbalance.Asset)
 			ignored[rbalance.Asset] = rbalance.Amount
 			continue
 		}
@@ -73,22 +81,22 @@ func (a LocalAccountDTS) Initialize(req model.LocalAccountInit) (model.ILocalAcc
 		LocalAccountMetadata: model.LocalAccountMetadata{
 			AccountId:    uuid.NewString(),
 			ExeId:        req.ExeId,
-			StrategyType: model.DTS_STRATEGY,
+			StrategyType: req.StrategyType,
 			Timestamp:    time.Now().UnixMicro()},
 		Ignored: ignored,
 		Assets:  assets}, nil
 }
 
 func (a LocalAccountDTS) RegisterTrading(op model.Operation) (model.ILocalAccount, error) {
-	// Check execution idts
+	// Check execution ids
 	if op.ExeId != a.ExeId {
 		logrus.WithField("comp", "dts").
-			Panicf(logger.DTS_ERR_MISMATCHING_EXE_IDTS, a.ExeId, op.ExeId)
+			Panicf(logger.XXX_ERR_MISMATCHING_EXE_IDTS, a.ExeId, op.ExeId)
 	}
 
 	// If the result status is failed, NOP
 	if op.Status == model.FAILED {
-		err := fmt.Errorf(logger.DTS_ERR_FAILED_OP, op.OpId)
+		err := fmt.Errorf(logger.XXX_ERR_FAILED_OP, op.OpId)
 		logrus.WithField("comp", "dts").Error(err.Error())
 		return a, err
 	}
@@ -103,7 +111,7 @@ func (a LocalAccountDTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	// Getting asset status
 	assetStatus, found := a.Assets[op.Base]
 	if !found {
-		err := fmt.Errorf(logger.DTS_ERR_ASSET_NOT_FOUND, op.Base)
+		err := fmt.Errorf(logger.XXX_ERR_ASSET_NOT_FOUND, op.Base)
 		logrus.WithField("comp", "dts").Error(err.Error())
 		return a, err
 	}
@@ -120,17 +128,17 @@ func (a LocalAccountDTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 		assetStatus.Usdt = assetStatus.Usdt.Add(quoteAmount).Round(8)
 		assetStatus.LastOperationType = OP_SELL_DTS
 	} else {
-		err := fmt.Errorf(logger.DTS_ERR_UNKNWON_OP_TYPE, op.Type)
+		err := fmt.Errorf(logger.XXX_ERR_UNKNWON_OP_TYPE, op.Type)
 		logrus.WithField("comp", "dts").Error(err.Error())
 		return a, err
 	}
 	if assetStatus.Amount.LessThan(decimal.Zero) {
 		logrus.WithField("comp", "dts").
-			Panicf(logger.DTS_ERR_NEGATIVE_BALANCE, assetStatus.Asset, assetStatus.Amount)
+			Panicf(logger.XXX_ERR_NEGATIVE_BALANCE, assetStatus.Asset, assetStatus.Amount)
 	}
 	if assetStatus.Usdt.LessThan(decimal.Zero) {
 		logrus.WithField("comp", "dts").
-			Panicf(logger.DTS_ERR_NEGATIVE_BALANCE, "USDT", assetStatus.Usdt)
+			Panicf(logger.XXX_ERR_NEGATIVE_BALANCE, "USDT", assetStatus.Usdt)
 	}
 	assetStatus.LastOperationPrice = op.Results.ActualPrice
 
@@ -145,7 +153,7 @@ func (a LocalAccountDTS) GetOperation(mms model.MiniMarketStats, slimts model.Sp
 	asset := mms.Asset
 	assetStatus, found := a.Assets[asset]
 	if !found {
-		err := fmt.Errorf(logger.DTS_ERR_ASSET_NOT_FOUND, asset)
+		err := fmt.Errorf(logger.XXX_ERR_ASSET_NOT_FOUND, asset)
 		logrus.WithField("comp", "dts").Error(err.Error())
 		return model.Operation{}, err
 	}
@@ -156,41 +164,41 @@ func (a LocalAccountDTS) GetOperation(mms model.MiniMarketStats, slimts model.Sp
 	currentAmntUsdt := assetStatus.Usdt
 	currentPrice := mms.LastPrice
 	if currentPrice.Equals(decimal.Zero) {
-		err := fmt.Errorf(logger.DTS_ERR_ZERO_EXP_PRICE, asset)
+		err := fmt.Errorf(logger.XXX_ERR_ZERO_EXP_PRICE, asset)
 		logrus.WithField("comp", "dts").Errorf(err.Error())
 		return model.Operation{}, err
 	}
 
 	dtsConfig := get_dts_config(config.GetStrategyConfig())
-	sellPrice := get_threshold_rate(lastOpPrice, dtsConfig.SellThreshold)
-	stopLossPrice := get_threshold_rate(lastOpPrice, utils.SignChangeDecimal(dtsConfig.StopLossThreshold))
-	buyPrice := get_threshold_rate(lastOpPrice, utils.SignChangeDecimal(dtsConfig.BuyThreshold))
-	missProfitPrice := get_threshold_rate(lastOpPrice, dtsConfig.MissProfitThreshold)
+	sellPrice := utils.IncrementByPercentage(lastOpPrice, dtsConfig.SellThreshold)
+	stopLossPrice := utils.IncrementByPercentage(lastOpPrice, utils.SignChangeDecimal(dtsConfig.StopLossThreshold))
+	buyPrice := utils.IncrementByPercentage(lastOpPrice, utils.SignChangeDecimal(dtsConfig.BuyThreshold))
+	missProfitPrice := utils.IncrementByPercentage(lastOpPrice, dtsConfig.MissProfitThreshold)
 
 	var op model.Operation = model.Operation{}
 	if lastOpType == OP_BUY_DTS && currentPrice.GreaterThanOrEqual(sellPrice) {
 		// sell command
-		operationInit := build_operation_init(asset, currentAmnt, currentPrice, "dts sell")
+		operationInit := build_operation_init(asset, currentAmnt, currentPrice, _DTS_SELL_DESC)
 		op = build_sell_op(a, operationInit)
 
 	} else if lastOpType == OP_BUY_DTS && currentPrice.LessThanOrEqual(stopLossPrice) {
 		// stop loss command
-		operationInit := build_operation_init(asset, currentAmnt, currentPrice, "dts stop loss")
+		operationInit := build_operation_init(asset, currentAmnt, currentPrice, _DTS_STOP_LOSS_DESC)
 		op = build_sell_op(a, operationInit)
 
 	} else if lastOpType == OP_SELL_DTS && currentPrice.LessThanOrEqual(buyPrice) {
 		// buy command
-		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice, "dts buy")
+		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice, _DTS_BUY_DESC)
 		op = build_buy_op(a, operationInit)
 
 	} else if lastOpType == OP_SELL_DTS && currentPrice.GreaterThanOrEqual(missProfitPrice) {
 		// miss profit command
-		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice, "dts miss profit")
+		operationInit := build_operation_init(asset, currentAmntUsdt, currentPrice, _DTS_MISS_PROFIT_DESC)
 		op = build_buy_op(a, operationInit)
 	} else {
 		// no op
 		logrus.WithField("comp", "dts").
-			Debugf(logger.DTS_TRADE, "NO_OP", asset, lastOpType, lastOpPrice, currentPrice)
+			Tracef(logger.DTS_TRADE, _NP_OP, asset, lastOpType, lastOpPrice, currentPrice)
 		return model.Operation{}, nil
 	}
 
@@ -214,13 +222,13 @@ func build_operation_init(asset string, amount, price decimal.Decimal, cause str
 
 func check_spot_market_limits(op model.Operation, slimits model.SpotMarketLimits) error {
 	if op.AmountSide == model.QUOTE_AMOUNT && op.Amount.LessThan(slimits.MinQuote) {
-		err := fmt.Errorf(logger.DTS_BELOW_QUOTE_LIMIT,
+		err := fmt.Errorf(logger.XXX_BELOW_QUOTE_LIMIT,
 			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, slimits.MinQuote)
 		logrus.WithField("comp", "dts").Error(err.Error())
 		return err
 	}
 	if op.AmountSide == model.BASE_AMOUNT && op.Amount.LessThan(slimits.MinBase) {
-		err := fmt.Errorf(logger.DTS_BELOW_BASE_LIMIT,
+		err := fmt.Errorf(logger.XXX_BELOW_BASE_LIMIT,
 			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, slimits.MinBase)
 		logrus.WithField("comp", "dts").Error(err.Error())
 		return err
@@ -258,13 +266,6 @@ func build_sell_op(laccount LocalAccountDTS, operationInit operation_init) model
 		Price:      operationInit.targetPrice,
 		Cause:      operationInit.cause,
 		Status:     model.PENDING}
-}
-
-func get_threshold_rate(price decimal.Decimal, percentage decimal.Decimal) decimal.Decimal {
-	abs := percentage.Abs()
-	sign := percentage.Div(abs).Round(8)
-	delta := price.Div(decimal.NewFromInt(100)).Mul(abs).Round(8)
-	return price.Add(delta.Mul(sign)).Round(8)
 }
 
 func init_asset_status_dts(rbalance model.RemoteBalance, price model.AssetPrice) AssetStatusDTS {
