@@ -3,12 +3,15 @@ package dts
 import (
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 )
 
 func TestStrategyConfig(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	exp :=
 		struct {
 			BuyThreshold        string
@@ -32,6 +35,7 @@ func TestStrategyConfig(t *testing.T) {
 }
 
 func TestStrategyConfig_HighPrecision(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	exp :=
 		struct {
 			BuyThreshold        string
@@ -58,6 +62,7 @@ func TestStrategyConfig_HighPrecision(t *testing.T) {
 }
 
 func TestStrategyConfig_MismatchingStrategyType(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	strategyConfig := config.StrategyConfig{
 		Type:   "FAKE_STRATEGY",
 		Config: struct{}{},
@@ -93,6 +98,7 @@ func TestStrategyConfig_FailedToParseConfig(t *testing.T) {
 }
 
 func TestStrategyConfig_ZeroThresholds(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	exp :=
 		struct {
 			BuyThreshold        string

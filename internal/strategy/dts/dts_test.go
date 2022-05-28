@@ -6,7 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
@@ -15,6 +17,7 @@ import (
 /********************** Testing Initialize() *************************/
 
 func TestInitialize(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	laccountInit := get_laccount_init_test()
 	laccountInit.RAccount.Balances = append(laccountInit.RAccount.Balances, model.RemoteBalance{
 		Asset:  "SHIBA",
@@ -33,6 +36,7 @@ func TestInitialize(t *testing.T) {
 /********************** Testing RegisterTrading() *************************/
 
 func TestRegisterTrading_BaseAmt_BuySide(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	laccount := get_laccount_last_buy_test()
 	assetStatus := laccount.Assets["BTC"]
 	assetStatus.Usdt = utils.DecimalFromString("50")
@@ -60,6 +64,7 @@ func TestRegisterTrading_BaseAmt_BuySide(t *testing.T) {
 }
 
 func TestRegisterTrading_BaseAmt_SellSide(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	laccount := get_laccount_last_buy_test()
 
 	amt := utils.DecimalFromString("11.34")
@@ -86,6 +91,7 @@ func TestRegisterTrading_BaseAmt_SellSide(t *testing.T) {
 }
 
 func TestRegisterTrading_QuoteAmt_BuySide(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	laccount := get_laccount_last_buy_test()
 	assetStatus := laccount.Assets["BTC"]
 	assetStatus.Usdt = utils.DecimalFromString("110.18")
@@ -115,6 +121,7 @@ func TestRegisterTrading_QuoteAmt_BuySide(t *testing.T) {
 }
 
 func TestRegisterTrading_QuoteAmt_SellSide(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	laccount := get_laccount_last_sell_test()
 	assetStatus := laccount.Assets["BTC"]
 	assetStatus.Amount = utils.DecimalFromString("1.18")
@@ -144,6 +151,7 @@ func TestRegisterTrading_QuoteAmt_SellSide(t *testing.T) {
 }
 
 func TestRegisterTrading_WrongExeId(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	exp := get_laccount_last_buy_test()
 	amt := utils.DecimalFromString("105.67")
 	price := utils.DecimalFromString("500")
@@ -155,6 +163,7 @@ func TestRegisterTrading_WrongExeId(t *testing.T) {
 }
 
 func TestRegisterTrading_OpFailed(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	exp := get_laccount_last_buy_test()
 
 	amt := utils.DecimalFromString("105.67")
@@ -170,6 +179,7 @@ func TestRegisterTrading_OpFailed(t *testing.T) {
 }
 
 func TestRegisterTrading_BadQuoteCurrency(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	exp := get_laccount_last_buy_test()
 
 	amt := utils.DecimalFromString("105.67")
@@ -185,6 +195,7 @@ func TestRegisterTrading_BadQuoteCurrency(t *testing.T) {
 }
 
 func TestRegisterTrading_AssetNotFound(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	exp := get_laccount_last_buy_test()
 
 	amt := utils.DecimalFromString("105.67")
@@ -200,6 +211,7 @@ func TestRegisterTrading_AssetNotFound(t *testing.T) {
 }
 
 func TestRegisterTrading_NegativeBalanceBase(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	exp := get_laccount_last_buy_test()
 
 	amt := utils.DecimalFromString("1923789.12")
@@ -213,6 +225,7 @@ func TestRegisterTrading_NegativeBalanceBase(t *testing.T) {
 }
 
 func TestRegisterTrading_NegativeBalanceQuote(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	exp := get_laccount_last_buy_test()
 
 	amt := utils.DecimalFromString("1923789.12")
@@ -228,6 +241,7 @@ func TestRegisterTrading_NegativeBalanceQuote(t *testing.T) {
 /********************** Testing GetOperation() *************************/
 
 func TestGetOperation_AssetNotFound(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	laccount := get_laccount_last_buy_test()
 	mms := get_mms("CRO", utils.DecimalFromString("0.55"))
 
@@ -238,6 +252,7 @@ func TestGetOperation_AssetNotFound(t *testing.T) {
 }
 
 func TestGetOperation_Noop(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	old := mock_strategy_config("13.45", "13.45", "20", "20")
 	defer restore_strategy_config(old)
 
@@ -251,6 +266,7 @@ func TestGetOperation_Noop(t *testing.T) {
 }
 
 func TestGetOperation_Sell(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	old := mock_strategy_config("13.45", "13.45", "20", "20")
 	defer restore_strategy_config(old)
 
@@ -275,6 +291,7 @@ func TestGetOperation_Sell(t *testing.T) {
 }
 
 func TestGetOperation_Sell_MinBaseQtyExceed(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	old := mock_strategy_config("13.45", "13.45", "20", "20")
 	defer restore_strategy_config(old)
 
@@ -294,6 +311,7 @@ func TestGetOperation_Sell_MinBaseQtyExceed(t *testing.T) {
 }
 
 func TestGetOperation_StopLoss(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	old := mock_strategy_config("13.45", "13.45", "20", "20")
 	defer restore_strategy_config(old)
 
@@ -318,6 +336,7 @@ func TestGetOperation_StopLoss(t *testing.T) {
 }
 
 func TestGetOperation_Buy(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	old := mock_strategy_config("13.45", "13.45", "20", "20")
 	defer restore_strategy_config(old)
 
@@ -342,6 +361,7 @@ func TestGetOperation_Buy(t *testing.T) {
 }
 
 func TestGetOperation_Buy_MinQuoteQtyExceeded(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	old := mock_strategy_config("13.45", "13.45", "20", "20")
 	defer restore_strategy_config(old)
 
@@ -362,6 +382,7 @@ func TestGetOperation_Buy_MinQuoteQtyExceeded(t *testing.T) {
 }
 
 func TestGetOperation_MissProfit(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	old := mock_strategy_config("13.45", "13.45", "20", "20")
 	defer restore_strategy_config(old)
 
@@ -386,6 +407,7 @@ func TestGetOperation_MissProfit(t *testing.T) {
 }
 
 func TestGetOperation_ZeroPrice(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	old := mock_strategy_config("13.45", "13.45", "20", "20")
 	defer restore_strategy_config(old)
 

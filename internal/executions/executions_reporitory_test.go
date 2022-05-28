@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
@@ -13,6 +15,7 @@ import (
 )
 
 func TestInsertOne(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -44,6 +47,7 @@ func TestInsertOne(t *testing.T) {
 }
 
 func TestFindLatestByExeId(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -97,6 +101,7 @@ func TestFindLatestByExeId(t *testing.T) {
 }
 
 func TestFindLatestByExeId_NoResults(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -115,6 +120,7 @@ func TestFindLatestByExeId_NoResults(t *testing.T) {
 }
 
 func TestFindCurrentlyActive(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -163,6 +169,7 @@ func TestFindCurrentlyActive(t *testing.T) {
 }
 
 func TestFindCurrentlyActive_NoResults(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()

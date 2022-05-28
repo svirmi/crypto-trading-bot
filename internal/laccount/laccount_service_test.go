@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
@@ -13,6 +15,7 @@ import (
 /**************************** DTS ******************************/
 
 func TestCreateOrRestore_Create_DTS(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old_mongo_conf := mock_mongo_config()
 	mongodb.Initialize()
@@ -42,6 +45,7 @@ func TestCreateOrRestore_Create_DTS(t *testing.T) {
 }
 
 func TestCreateOrRestore_Create_DTS_EmptyRAcc(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old_mongo_conf := mock_mongo_config()
 	mongodb.Initialize()
@@ -60,6 +64,7 @@ func TestCreateOrRestore_Create_DTS_EmptyRAcc(t *testing.T) {
 }
 
 func TestCreateOrRestore_Restore_DTS(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -90,6 +95,7 @@ func TestCreateOrRestore_Restore_DTS(t *testing.T) {
 /**************************** PTS ******************************/
 
 func TestCreateOrRestore_Create_PTS(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old_mongo_conf := mock_mongo_config()
 	mongodb.Initialize()
@@ -119,6 +125,7 @@ func TestCreateOrRestore_Create_PTS(t *testing.T) {
 }
 
 func TestCreateOrRestore_Create_PTS_EmptyRAcc(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old_mongo_conf := mock_mongo_config()
 	mongodb.Initialize()
@@ -137,6 +144,7 @@ func TestCreateOrRestore_Create_PTS_EmptyRAcc(t *testing.T) {
 }
 
 func TestCreateOrRestore_Restore_PTS(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()

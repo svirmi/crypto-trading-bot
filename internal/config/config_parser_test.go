@@ -1,7 +1,6 @@
 package config
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -16,13 +15,8 @@ var (
 	dts_test_resource_folder = "test-resources"
 )
 
-func TestMain(m *testing.M) {
-	logger.Initialize(false, logrus.TraceLevel)
-	code := m.Run()
-	os.Exit(code)
-}
-
 func TestInitialize_Mainnet(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	test_parse_config(t, model.MAINNET, dts_test_resource_folder)
 
 	got := appConfig
@@ -37,6 +31,7 @@ func TestInitialize_Mainnet(t *testing.T) {
 }
 
 func TestInitialize_Testnet(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	test_parse_config(t, model.TESTNET, dts_test_resource_folder)
 
 	got := appConfig
@@ -51,6 +46,7 @@ func TestInitialize_Testnet(t *testing.T) {
 }
 
 func TestInitialize_Simulation(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	test_parse_config(t, model.SIMULATION, dts_test_resource_folder)
 
 	got := appConfig

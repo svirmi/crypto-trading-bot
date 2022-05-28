@@ -1,24 +1,14 @@
 package operations
 
 import (
-	"os"
-	"testing"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
-
-func TestMain(m *testing.M) {
-	logger.Initialize(false, logrus.TraceLevel)
-	code := m.Run()
-	os.Exit(code)
-}
 
 func mock_mongo_config() func() config.MongoDbConfig {
 	old := config.GetMongoDbConfig

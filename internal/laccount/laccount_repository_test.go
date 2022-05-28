@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/dts"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy/pts"
@@ -16,6 +18,7 @@ import (
 )
 
 func TestFindLatestByExeId_None(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -35,6 +38,7 @@ func TestFindLatestByExeId_None(t *testing.T) {
 /****************************** DTS ********************************/
 
 func TestInsert_DTS(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -61,6 +65,7 @@ func TestInsert_DTS(t *testing.T) {
 }
 
 func TestFindLatestByExeId_DTS(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -100,6 +105,7 @@ func TestFindLatestByExeId_DTS(t *testing.T) {
 /****************************** PTS ********************************/
 
 func TestInsert_PTS(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -126,6 +132,7 @@ func TestInsert_PTS(t *testing.T) {
 }
 
 func TestFindLatestByExeId_PTS(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()

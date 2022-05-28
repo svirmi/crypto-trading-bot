@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -14,13 +13,8 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
-func TestMain(m *testing.M) {
-	logger.Initialize(false, logrus.TraceLevel)
-	code := m.Run()
-	os.Exit(code)
-}
-
 func TestHandleMiniMarketsStats(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Saving and restoring status
 	old_hanlde := handle_operation
 	old_skip := skip_mini_market_stats
@@ -83,6 +77,7 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 }
 
 func TestHandleMiniMarketsStats_NonActiveExe(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Saving and restoring status
 	old_get_op := get_operation
 	defer func() {
@@ -117,6 +112,7 @@ func TestHandleMiniMarketsStats_NonActiveExe(t *testing.T) {
 }
 
 func TestHandleMiniMarketsStats_Noop(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	// Saving and restoring status
 	old_hanlde := handle_operation
 	old_skip := skip_mini_market_stats
@@ -176,6 +172,7 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 }
 
 func TestComputeOpResults_Filled_NoSpread_Buy_BaseAmt(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("0.1")
 	price := utils.DecimalFromString("32887.16")
 	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
@@ -206,6 +203,7 @@ func TestComputeOpResults_Filled_NoSpread_Buy_BaseAmt(t *testing.T) {
 }
 
 func TestComputeOpResults_Filled_NoSpread_Sell_QuoteAmt(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("250.00")
 	price := utils.DecimalFromString("32000.0")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
@@ -236,6 +234,7 @@ func TestComputeOpResults_Filled_NoSpread_Sell_QuoteAmt(t *testing.T) {
 }
 
 func TestComputeOpResults_Filled_PositiveSpread_Buy_BaseAmt(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("0.1")
 	price := utils.DecimalFromString("32887.16")
 	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
@@ -266,6 +265,7 @@ func TestComputeOpResults_Filled_PositiveSpread_Buy_BaseAmt(t *testing.T) {
 }
 
 func TestComputeOpResults_Filled_NegativeSpread_Buy_BaseAmt(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("0.1")
 	price := utils.DecimalFromString("32887.16")
 	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
@@ -296,6 +296,7 @@ func TestComputeOpResults_Filled_NegativeSpread_Buy_BaseAmt(t *testing.T) {
 }
 
 func TestComputeOpResults_Filled_PositiveSpread_Sell_QuoteAmt(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("250.00")
 	price := utils.DecimalFromString("32500.00")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
@@ -326,6 +327,7 @@ func TestComputeOpResults_Filled_PositiveSpread_Sell_QuoteAmt(t *testing.T) {
 }
 
 func TestComputeOpResults_Filled_Negative_Spread_Sell_QuoteAmt(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("250.00")
 	price := utils.DecimalFromString("32500.00")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
@@ -356,6 +358,7 @@ func TestComputeOpResults_Filled_Negative_Spread_Sell_QuoteAmt(t *testing.T) {
 }
 
 func TestComputeOpResults_PartiallyFilled_Spread_Buy_BaseAmt(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("0.1")
 	price := utils.DecimalFromString("32887.16")
 	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
@@ -386,6 +389,7 @@ func TestComputeOpResults_PartiallyFilled_Spread_Buy_BaseAmt(t *testing.T) {
 }
 
 func TestComputeOpResults_PartiallyFilled_Spread_Sell_QuoteAmt(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("250.00")
 	price := utils.DecimalFromString("32500.00")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
@@ -416,6 +420,7 @@ func TestComputeOpResults_PartiallyFilled_Spread_Sell_QuoteAmt(t *testing.T) {
 }
 
 func TestComputeOpResults_NonExecuted_Buy_BaseAmt(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("1")
 	price := utils.DecimalFromString("32500.00")
 	exp := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
@@ -434,6 +439,7 @@ func TestComputeOpResults_NonExecuted_Buy_BaseAmt(t *testing.T) {
 }
 
 func TestComputeOpResults_NonExecuted_Sell_QuoteAmt(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("10000.5")
 	price := utils.DecimalFromString("32500.00")
 	exp := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
@@ -452,6 +458,7 @@ func TestComputeOpResults_NonExecuted_Sell_QuoteAmt(t *testing.T) {
 }
 
 func TestComputeOpResults_ZeroBaseDiff_Buy(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("0.75")
 	price := utils.DecimalFromString("32500.00")
 	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
@@ -482,6 +489,7 @@ func TestComputeOpResults_ZeroBaseDiff_Buy(t *testing.T) {
 }
 
 func TestComputeOpResults_ZeroBaseDiff_Sell(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("0.75")
 	price := utils.DecimalFromString("32500.00")
 	op := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.SELL, price)
@@ -512,6 +520,7 @@ func TestComputeOpResults_ZeroBaseDiff_Sell(t *testing.T) {
 }
 
 func TestComputeOpResults_ZeroQuoteDiff_Sell(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("32500.00")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
@@ -542,6 +551,7 @@ func TestComputeOpResults_ZeroQuoteDiff_Sell(t *testing.T) {
 }
 
 func TestComputeOpResults_ZeroQuoteDiff_Buy(t *testing.T) {
+	logger.Initialize(false, logrus.TraceLevel)
 	amt := utils.DecimalFromString("100")
 	price := utils.DecimalFromString("32500.00")
 	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.BUY, price)
