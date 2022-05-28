@@ -63,14 +63,14 @@ func (a LocalAccountDTS) Initialize(req model.LocalAccountInit) (model.ILocalAcc
 	var assets = make(map[string]AssetStatusDTS)
 
 	for _, rbalance := range req.RAccount.Balances {
+		if decimal.Zero.Equals(rbalance.Amount) {
+			continue
+		}
 		price, found := req.TradableAssetsPrice[rbalance.Asset]
 		if !found {
 			logrus.WithField("comp", "dts").
 				Warnf(logger.XXX_IGNORED_ASSET, rbalance.Asset)
 			ignored[rbalance.Asset] = rbalance.Amount
-			continue
-		}
-		if decimal.Zero.Equals(rbalance.Amount) {
 			continue
 		}
 		assetStatus := init_asset_status_dts(rbalance, price)

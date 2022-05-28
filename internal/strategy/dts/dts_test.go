@@ -19,12 +19,15 @@ import (
 func TestInitialize(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
 	laccountInit := get_laccount_init_test()
-	laccountInit.RAccount.Balances = append(laccountInit.RAccount.Balances, model.RemoteBalance{
-		Asset:  "SHIBA",
-		Amount: decimal.Zero})
-	got, err := LocalAccountDTS{}.Initialize(get_laccount_init_test())
+
+	// Addind a zero balance crypto that should be filtered out
+	balances := laccountInit.RAccount.Balances
+	balances = append(balances, model.RemoteBalance{Asset: "SHIBA", Amount: decimal.Zero})
+	laccountInit.RAccount.Balances = balances
+	got, err := LocalAccountDTS{}.Initialize(laccountInit)
 	testutils.AssertNil(t, err, "err")
 
+	// Testing the initialize function
 	exp := get_laccount_last_buy_test()
 	exp.ExeId = got.GetExeId()
 	exp.AccountId = got.GetAccountId()
@@ -184,9 +187,8 @@ func TestRegisterTrading_BadQuoteCurrency(t *testing.T) {
 
 	amt := utils.DecimalFromString("105.67")
 	price := utils.DecimalFromString("500")
-	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
+	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "ETH", model.SELL, price)
 	op.ExeId = exp.ExeId
-	op.Quote = "ETH"
 
 	got, err := exp.RegisterTrading(op)
 
@@ -200,9 +202,8 @@ func TestRegisterTrading_AssetNotFound(t *testing.T) {
 
 	amt := utils.DecimalFromString("105.67")
 	price := utils.DecimalFromString("500")
-	op := get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
+	op := get_operation_test(amt, model.QUOTE_AMOUNT, "CRO", "USDT", model.SELL, price)
 	op.ExeId = exp.ExeId
-	op.Base = "CRO"
 
 	got, err := exp.RegisterTrading(op)
 

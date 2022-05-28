@@ -52,14 +52,14 @@ func (a LocalAccountPTS) Initialize(req model.LocalAccountInit) (model.ILocalAcc
 			continue
 		}
 
+		if decimal.Zero.Equals(rbalance.Amount) {
+			continue
+		}
 		price, found := req.TradableAssetsPrice[rbalance.Asset]
 		if !found {
 			logrus.WithField("comp", "pts").
 				Warnf(logger.XXX_IGNORED_ASSET, rbalance.Asset)
 			ignored[rbalance.Asset] = rbalance.Amount
-			continue
-		}
-		if decimal.Zero.Equals(rbalance.Amount) {
 			continue
 		}
 		assetStatus := AssetStatusPTS{

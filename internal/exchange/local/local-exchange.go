@@ -346,6 +346,7 @@ func (be local_exchange) SendSpotMarketOrder(op model.Operation) (model.Operatio
 	quoteAmtAvailable := value.(decimal.Decimal)
 
 	// Executing market order
+	op.Timestamp = time.Now().UnixMicro()
 	if op.Side == model.SELL && op.AmountSide == model.BASE_AMOUNT {
 		baseAmtAvailable = baseAmtAvailable.Sub(op.Amount).Round(8)
 		quoteAmtAvailable = quoteAmtAvailable.Add(computedAmt).Round(8)
