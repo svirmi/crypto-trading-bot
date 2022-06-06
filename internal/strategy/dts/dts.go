@@ -87,6 +87,22 @@ func (a LocalAccountDTS) Initialize(req model.LocalAccountInit) (model.ILocalAcc
 		Assets:  assets}, nil
 }
 
+func (a LocalAccountDTS) GetAssetStatuses() map[string]model.AssetStatus {
+	assets := make(map[string]model.AssetStatus)
+	assets["USDT"] = model.AssetStatus{"USDT", decimal.Zero}
+	for asset, amount := range a.Ignored {
+		assets[asset] = model.AssetStatus{asset, amount}
+	}
+	for asset, assetStatusDts := range a.Assets {
+		assets[asset] = model.AssetStatus{asset, assetStatusDts.Amount}
+		usdtStatus := assets["USDT"]
+		usdtStatus.Amount = usdtStatus.Amount.Add(assetStatusDts.Usdt)
+		fmt.Println(usdtStatus.Amount)
+		assets["USDT"] = usdtStatus
+	}
+	return assets
+}
+
 func (a LocalAccountDTS) RegisterTrading(op model.Operation) (model.ILocalAccount, error) {
 	// Check execution ids
 	if op.ExeId != a.ExeId {

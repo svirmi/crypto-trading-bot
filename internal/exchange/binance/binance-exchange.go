@@ -84,8 +84,8 @@ func (be binance_exchange) SendSpotMarketOrder(op model.Operation) (model.Operat
 	return send_spot_market_order(op)
 }
 
-func (be binance_exchange) MiniMarketsStatsServe(assets []string) error {
-	return mini_markets_stats_serve(assets)
+func (be binance_exchange) MiniMarketsStatsServe() error {
+	return mini_markets_stats_serve()
 }
 
 func (be binance_exchange) MiniMarketsStatsStop() {

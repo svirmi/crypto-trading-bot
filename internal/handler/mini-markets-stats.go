@@ -52,7 +52,13 @@ var handle_mini_markets_stats = func() {
 			continue
 		}
 
+		assetStatuses := get_asset_statuses()
 		for _, miniMarketStats := range miniMarketsStats {
+			// Check if asset is in wallet
+			if _, found := assetStatuses[miniMarketStats.Asset]; !found {
+				continue
+			}
+
 			// Check that trading is enabled for given asset
 			symbol := utils.GetSymbolFromAsset(miniMarketStats.Asset)
 			if !can_spot_trade(symbol) {
@@ -109,6 +115,10 @@ var get_operation = func(miniMarketStats model.MiniMarketStats, slimits model.Sp
 
 var skip_mini_market_stats = func([]model.MiniMarketStats) {
 	logrus.Info(logger.HANDL_SKIP_MMS_UPDATE)
+}
+
+var get_asset_statuses = func() map[string]model.AssetStatus {
+	return tcontext.laccount.GetAssetStatuses()
 }
 
 var handle_operation = func(op model.Operation) {

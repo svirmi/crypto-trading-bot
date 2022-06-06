@@ -10,16 +10,11 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
-var mini_markets_stats_serve = func(assets []string) error {
+var mini_markets_stats_serve = func() error {
 	if mmsCh == nil {
 		err := fmt.Errorf(logger.BINEX_ERR_NIL_MMS_CH)
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return err
-	}
-
-	symbolsMap := make(map[string]bool)
-	for _, asset := range assets {
-		symbolsMap[utils.GetSymbolFromAsset(asset)] = true
 	}
 
 	errorHandler := func(err error) {
@@ -28,12 +23,8 @@ var mini_markets_stats_serve = func(assets []string) error {
 	}
 
 	callback := func(rMiniMarketsStats binanceapi.WsAllMiniMarketsStatEvent) {
-		miniMarketsStats := make([]model.MiniMarketStats, 0, len(assets))
+		miniMarketsStats := make([]model.MiniMarketStats, 0, len(rMiniMarketsStats))
 		for _, rMiniMarketStats := range rMiniMarketsStats {
-			// Filter out symbols that are not in local wallet
-			if !symbolsMap[rMiniMarketStats.Symbol] {
-				continue
-			}
 			miniMarketStats := to_mini_market_stats(*rMiniMarketStats)
 			miniMarketsStats = append(miniMarketsStats, miniMarketStats)
 		}

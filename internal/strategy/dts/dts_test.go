@@ -422,6 +422,28 @@ func TestGetOperation_ZeroPrice(t *testing.T) {
 	testutils.AssertTrue(t, got.IsEmpty(), "operation")
 }
 
+/********************** GetAssetStatuses() *************************/
+
+func TestGetAssetStatuses(t *testing.T) {
+	laccount := get_laccount_last_buy_test()
+	btc := laccount.Assets["BTC"]
+	eth := laccount.Assets["ETH"]
+	btc.Usdt = utils.DecimalFromString("0.0035")
+	eth.Usdt = utils.DecimalFromString("0.5")
+	laccount.Assets["BTC"] = btc
+	laccount.Assets["ETH"] = eth
+
+	exp := map[string]model.AssetStatus{
+		"USDT": {"USDT", utils.DecimalFromString("156.1735")},
+		"BUSD": {"BUSD", utils.DecimalFromString("1232.45")},
+		"BTC":  {"BTC", utils.DecimalFromString("11.34")},
+		"ETH":  {"ETH", utils.DecimalFromString("29.12")},
+		"DOT":  {"DOT", utils.DecimalFromString("13.67")}}
+
+	got := laccount.GetAssetStatuses()
+	testutils.AssertEq(t, exp, got, "asset_statuses")
+}
+
 /********************** Helpers *************************/
 
 func mock_strategy_config(bt, st, slt, mpt string) func() config.StrategyConfig {

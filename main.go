@@ -110,7 +110,7 @@ func main() {
 
 	// Handling price updates
 	handler.HandleMiniMarketsStats()
-	exchange.MiniMarketsStatsServe(tradableAssets)
+	exchange.MiniMarketsStatsServe()
 
 	// Wait until the application is stopped
 	select {}

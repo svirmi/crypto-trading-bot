@@ -32,6 +32,6 @@ type IExchange interface {
 	GetAssetsValue(bases []string) (map[string]AssetPrice, error)
 	GetAccout() (RemoteAccount, error)
 	SendSpotMarketOrder(op Operation) (Operation, error)
-	MiniMarketsStatsServe(assets []string) error
+	MiniMarketsStatsServe() error
 	MiniMarketsStatsStop()
 }

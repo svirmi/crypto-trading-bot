@@ -21,12 +21,14 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 	old_get_op := get_operation
 	old_can_spot_trade := can_spot_trade
 	old_get_spot_market_limits := get_spot_market_limits
+	old_get_asset_statuses := get_asset_statuses
 	defer func() {
 		handle_operation = old_hanlde
 		skip_mini_market_stats = old_skip
 		get_operation = old_get_op
 		can_spot_trade = old_can_spot_trade
 		get_spot_market_limits = old_get_spot_market_limits
+		get_asset_statuses = old_get_asset_statuses
 	}()
 
 	// Mocking dependencies
@@ -57,12 +59,16 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 		return model.SpotMarketLimits{}, nil
 	}
 
+	get_asset_statuses = func() map[string]model.AssetStatus {
+		return map[string]model.AssetStatus{"BTC": {"BTC", decimal.Zero}}
+	}
+
 	// Producer
 	end := make(chan struct{})
 	tcontext.mms = make(chan []model.MiniMarketStats)
 	go func() {
 		for i := 0; i < 6; i++ {
-			tcontext.mms <- []model.MiniMarketStats{get_mini_market_stats()}
+			tcontext.mms <- get_mini_markets_stats()
 			time.Sleep(time.Millisecond * 250)
 		}
 		close(tcontext.mms)
@@ -119,7 +125,9 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 	old_get_op := get_operation
 	old_can_spot_trade := can_spot_trade
 	old_get_spot_market_limits := get_spot_market_limits
+	old_get_asset_statuses := get_asset_statuses
 	defer func() {
+		get_asset_statuses = old_get_asset_statuses
 		handle_operation = old_hanlde
 		skip_mini_market_stats = old_skip
 		get_operation = old_get_op
@@ -152,12 +160,16 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 		return model.SpotMarketLimits{}, nil
 	}
 
+	get_asset_statuses = func() map[string]model.AssetStatus {
+		return map[string]model.AssetStatus{"BTC": {"BTC", decimal.Zero}}
+	}
+
 	// Producer
 	end := make(chan struct{})
 	tcontext.mms = make(chan []model.MiniMarketStats)
 	go func() {
 		for i := 0; i < 6; i++ {
-			tcontext.mms <- []model.MiniMarketStats{get_mini_market_stats()}
+			tcontext.mms <- get_mini_markets_stats()
 			time.Sleep(time.Millisecond * 50)
 		}
 		close(tcontext.mms)
@@ -581,10 +593,10 @@ func TestComputeOpResults_ZeroQuoteDiff_Buy(t *testing.T) {
 	testutils.AssertEq(t, exp, got, "operation_results")
 }
 
-func get_mini_market_stats() model.MiniMarketStats {
-	return model.MiniMarketStats{
-		Asset:     "BTC",
-		LastPrice: utils.DecimalFromString("36781.12")}
+func get_mini_markets_stats() []model.MiniMarketStats {
+	return []model.MiniMarketStats{
+		{Asset: "BTC", LastPrice: utils.DecimalFromString("36781.12")},
+		{Asset: "NON_EXISTING", LastPrice: utils.DecimalFromString("0")}}
 }
 
 func get_operation_test(amt decimal.Decimal, amtSide model.AmountSide, base, quote string,

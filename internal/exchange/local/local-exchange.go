@@ -395,7 +395,7 @@ func (be local_exchange) SendSpotMarketOrder(op model.Operation) (model.Operatio
 	return op, nil
 }
 
-func (be local_exchange) MiniMarketsStatsServe(assets []string) error {
+func (be local_exchange) MiniMarketsStatsServe() error {
 	go func() {
 		defer func() {
 			logrus.WithField("comp", "localex").Infof(logger.LOCALEX_DONE)
@@ -418,7 +418,7 @@ func (be local_exchange) MiniMarketsStatsServe(assets []string) error {
 			}
 
 			// Getting mmss from queues
-			mmss := make([]model.MiniMarketStats, 0, len(assets))
+			mmss := make([]model.MiniMarketStats, 0, raccount.Size())
 			for symbol, symbolMmss := range prices {
 				if symbolMmss.Disposed() {
 					continue

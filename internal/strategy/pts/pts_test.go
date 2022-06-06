@@ -240,6 +240,24 @@ func TestRegisterTrading_NegativeBalanceQuote(t *testing.T) {
 
 /********************** Testing GetOperation() *************************/
 
+/********************** GetAssetStatuses() *************************/
+
+func TestGetAssetStatuses(t *testing.T) {
+	laccount := get_laccount_test()
+
+	exp := map[string]model.AssetStatus{
+		"USDT": {"USDT", utils.DecimalFromString("155.67")},
+		"BUSD": {"BUSD", utils.DecimalFromString("1232.45")},
+		"BTC":  {"BTC", utils.DecimalFromString("11.34")},
+		"ETH":  {"ETH", utils.DecimalFromString("29.12")},
+		"DOT":  {"DOT", utils.DecimalFromString("13.67")}}
+
+	got := laccount.GetAssetStatuses()
+	testutils.AssertEq(t, exp, got, "asset_statuses")
+}
+
+/********************** Helpers *************************/
+
 func get_operation_test(amt decimal.Decimal, amtSide model.AmountSide, base, quote string,
 	side model.OpSide, price decimal.Decimal) model.Operation {
 
