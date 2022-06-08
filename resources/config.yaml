@@ -1,17 +1,17 @@
+### Crypto Trading Bot Config ###
 
-# testnet configuration
-
+#################### PERCENTAGE TRADING STRATEGY ######################
 exchange:
   apiKey: HTqza54XTX09uBANVQOvMO78N478MhDxLbEiBfSRR8Yc7MBIlXGxG2cwK4Ok3KvI
   secretKey: vOZJYqQrYjgwSL5EDUxLYTv7Gh8nQvRqX5IefmnySqSAUdVvgOTfTe6HJsO9tvTY
-  useTestnet: false
+  useTestnet: true
 mongoDb:
   uri: mongodb://localhost:27017
-  database: ctb
+  database: ctb-testnet
 strategy:
-  type: DEMO_TRADING_STRATEGY
+  type: PERCENTAGE_TRADING_STRATEGY
   config:
-    buyThreshold: '5'
-    sellThreshold: '5'
-    stopLossThreshold: '10'
-    missProfitThreshold: '10'
+    buyPercentage: '2.5'
+    sellPercentage: '2.5'
+    buyAmountPercentage: '5'
+    sellAmountPercentage: '5'

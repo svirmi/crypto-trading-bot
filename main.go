@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/analytics"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/local"
@@ -127,16 +128,32 @@ func register_interrupt_handler(env model.Env) chan os.Signal {
 	go func() {
 		<-sigc
 
-		if exchange != nil {
-			exchange.MiniMarketsStatsStop()
+		if env != model.SIMULATION {
+			terminate()
+		} else {
+			terminate_simulation()
 		}
-		if env == model.SIMULATION {
-			executions.Terminate(exe.ExeId)
-		}
-		mongodb.Disconnect()
 
 		logrus.Info("bye, bye")
 		os.Exit(0)
 	}()
 	return sigc
+}
+
+func terminate() {
+	if exchange != nil {
+		exchange.MiniMarketsStatsStop()
+	}
+	handler.Terminate()
+	mongodb.Disconnect()
+}
+
+func terminate_simulation() {
+	if exchange != nil {
+		exchange.MiniMarketsStatsStop()
+	}
+	handler.Terminate()
+	executions.Terminate(exe.ExeId)
+	analytics.StoreAnalytics(exe.ExeId)
+	mongodb.Disconnect()
 }

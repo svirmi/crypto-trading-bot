@@ -58,13 +58,13 @@ func TestInsertMany(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	exp2 := get_operation_test()
-	exp2.ExeId = exeIds[0]
-	exp2.Timestamp = time.Now().UnixMicro()
 	exp1 := get_operation_test()
-	exp1.Timestamp = time.Now().UnixMicro() + 100
 	exp1.ExeId = exeIds[0]
-	err := insert_many([]model.Operation{exp2, exp1})
+	exp1.Timestamp = time.Now().UnixMicro()
+	exp2 := get_operation_test()
+	exp2.Timestamp = time.Now().UnixMicro() + 100
+	exp2.ExeId = exeIds[0]
+	err := insert_many([]model.Operation{exp1, exp2})
 	testutils.AssertNil(t, err, "err")
 
 	gots, err := find_by_exe_id(exeIds[0])

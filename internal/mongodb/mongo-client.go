@@ -13,9 +13,11 @@ import (
 
 const (
 	// Collection names
-	_EXE_COL_NAME  = "executions"
-	_OP_COL_NAME   = "operations"
-	_LACC_COL_NAME = "laccounts"
+	_EXE_COL_NAME       = "executions"
+	_OP_COL_NAME        = "operations"
+	_LACC_COL_NAME      = "laccounts"
+	_PRICE_COL_NAME     = "prices"
+	_ANALITYCS_COL_NAME = "analytics"
 )
 
 type mongo_connection struct {
@@ -23,6 +25,8 @@ type mongo_connection struct {
 	executionsCol    *mongo.Collection
 	operationsCol    *mongo.Collection
 	localAccountsCol *mongo.Collection
+	priceCol         *mongo.Collection
+	analyticsCol     *mongo.Collection
 }
 
 var mongoConnection mongo_connection
@@ -50,7 +54,8 @@ func Initialize() error {
 		executionsCol:    get_collection_handle(mongoClient, _EXE_COL_NAME),
 		operationsCol:    get_collection_handle(mongoClient, _OP_COL_NAME),
 		localAccountsCol: get_collection_handle(mongoClient, _LACC_COL_NAME),
-	}
+		priceCol:         get_collection_handle(mongoClient, _PRICE_COL_NAME),
+		analyticsCol:     get_collection_handle(mongoClient, _ANALITYCS_COL_NAME)}
 	return nil
 }
 
@@ -64,6 +69,14 @@ var GetOperationsCol = func() *mongo.Collection {
 
 var GetLocalAccountsCol = func() *mongo.Collection {
 	return mongoConnection.localAccountsCol
+}
+
+var GetPriceCol = func() *mongo.Collection {
+	return mongoConnection.priceCol
+}
+
+var GetAnalyticsCol = func() *mongo.Collection {
+	return mongoConnection.analyticsCol
 }
 
 func Disconnect() {

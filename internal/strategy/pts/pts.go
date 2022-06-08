@@ -80,16 +80,16 @@ func (a LocalAccountPTS) Initialize(req model.LocalAccountInit) (model.ILocalAcc
 		Usdt:    usdt}, nil
 }
 
-func (a LocalAccountPTS) GetAssetStatuses() map[string]model.AssetStatus {
-	assets := make(map[string]model.AssetStatus)
-	assets["USDT"] = model.AssetStatus{"USDT", decimal.Zero}
+func (a LocalAccountPTS) GetAssetAmounts() map[string]model.AssetAmount {
+	assets := make(map[string]model.AssetAmount)
+	assets["USDT"] = model.AssetAmount{"USDT", decimal.Zero}
 	for asset, amount := range a.Ignored {
-		assets[asset] = model.AssetStatus{asset, amount}
+		assets[asset] = model.AssetAmount{asset, amount}
 	}
 	for asset, assetStatusDts := range a.Assets {
-		assets[asset] = model.AssetStatus{asset, assetStatusDts.Amount}
+		assets[asset] = model.AssetAmount{asset, assetStatusDts.Amount}
 	}
-	assets["USDT"] = model.AssetStatus{"USDT", a.Usdt}
+	assets["USDT"] = model.AssetAmount{"USDT", a.Usdt}
 	return assets
 }
 
@@ -97,7 +97,7 @@ func (a LocalAccountPTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	// Check execution ids
 	if op.ExeId != a.ExeId {
 		logrus.WithField("comp", "pts").
-			Panicf(logger.XXX_ERR_MISMATCHING_EXE_IDTS, a.ExeId, op.ExeId)
+			Panicf(logger.XXX_ERR_MISMATCHING_EXE_IDS, a.ExeId, op.ExeId)
 	}
 
 	// If the result status is failed, NOP

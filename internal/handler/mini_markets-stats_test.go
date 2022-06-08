@@ -21,14 +21,16 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 	old_get_op := get_operation
 	old_can_spot_trade := can_spot_trade
 	old_get_spot_market_limits := get_spot_market_limits
-	old_get_asset_statuses := get_asset_statuses
+	old_get_asset_statuses := get_asset_amounts
+	old_store_prices_deferred := store_prices_deferred
 	defer func() {
 		handle_operation = old_hanlde
 		skip_mini_market_stats = old_skip
 		get_operation = old_get_op
 		can_spot_trade = old_can_spot_trade
 		get_spot_market_limits = old_get_spot_market_limits
-		get_asset_statuses = old_get_asset_statuses
+		get_asset_amounts = old_get_asset_statuses
+		store_prices_deferred = old_store_prices_deferred
 	}()
 
 	// Mocking dependencies
@@ -59,9 +61,11 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 		return model.SpotMarketLimits{}, nil
 	}
 
-	get_asset_statuses = func() map[string]model.AssetStatus {
-		return map[string]model.AssetStatus{"BTC": {"BTC", decimal.Zero}}
+	get_asset_amounts = func() map[string]model.AssetAmount {
+		return map[string]model.AssetAmount{"BTC": {"BTC", decimal.Zero}}
 	}
+
+	store_prices_deferred = func(mmss []model.MiniMarketStats) {}
 
 	// Producer
 	end := make(chan struct{})
@@ -85,13 +89,18 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 func TestHandleMiniMarketsStats_NonActiveExe(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
 	// Saving and restoring status
+	old_store_prices_deferred := store_prices_deferred
 	old_get_op := get_operation
 	defer func() {
+		store_prices_deferred = old_store_prices_deferred
 		get_operation = old_get_op
 	}()
 
 	// Mocking dependencies
 	tcontext.execution.Status = model.EXE_TERMINATED
+
+	store_prices_deferred = func(mmss []model.MiniMarketStats) {}
+
 	get_op_counter := 0
 	get_operation = func(model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
 		get_op_counter++
@@ -125,14 +134,16 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 	old_get_op := get_operation
 	old_can_spot_trade := can_spot_trade
 	old_get_spot_market_limits := get_spot_market_limits
-	old_get_asset_statuses := get_asset_statuses
+	old_get_asset_statuses := get_asset_amounts
+	old_store_prices_deferred := store_prices_deferred
 	defer func() {
-		get_asset_statuses = old_get_asset_statuses
+		get_asset_amounts = old_get_asset_statuses
 		handle_operation = old_hanlde
 		skip_mini_market_stats = old_skip
 		get_operation = old_get_op
 		can_spot_trade = old_can_spot_trade
 		get_spot_market_limits = old_get_spot_market_limits
+		store_prices_deferred = old_store_prices_deferred
 	}()
 
 	// Mocking dependencies
@@ -160,9 +171,11 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 		return model.SpotMarketLimits{}, nil
 	}
 
-	get_asset_statuses = func() map[string]model.AssetStatus {
-		return map[string]model.AssetStatus{"BTC": {"BTC", decimal.Zero}}
+	get_asset_amounts = func() map[string]model.AssetAmount {
+		return map[string]model.AssetAmount{"BTC": {"BTC", decimal.Zero}}
 	}
+
+	store_prices_deferred = func(mmss []model.MiniMarketStats) {}
 
 	// Producer
 	end := make(chan struct{})

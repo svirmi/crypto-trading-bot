@@ -37,9 +37,13 @@ func (p AssetPrice) IsEmpty() bool {
 	return reflect.DeepEqual(p, AssetPrice{})
 }
 
-type AssetStatus struct {
+type AssetAmount struct {
 	Asset  string
 	Amount decimal.Decimal
+}
+
+func (p AssetAmount) IsEmpty() bool {
+	return reflect.DeepEqual(p, AssetAmount{})
 }
 
 // Strategy types
@@ -58,7 +62,7 @@ type ILocalAccount interface {
 	Initialize(LocalAccountInit) (ILocalAccount, error)
 	RegisterTrading(Operation) (ILocalAccount, error)
 	GetOperation(MiniMarketStats, SpotMarketLimits) (Operation, error)
-	GetAssetStatuses() map[string]AssetStatus
+	GetAssetAmounts() map[string]AssetAmount
 }
 
 // Abstract local account representation

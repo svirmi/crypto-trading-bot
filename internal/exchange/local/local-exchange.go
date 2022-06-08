@@ -60,7 +60,12 @@ func (be local_exchange) Initialize(mmsChannel chan []model.MiniMarketStats) err
 			return err
 		}
 
-		symbol := utils.GetSymbolFromAsset(asset)
+		symbol, err := utils.GetSymbolFromAsset(asset)
+		if err != nil {
+			logrus.WithField("comp", "localex").Error(err.Error())
+			return err
+		}
+
 		if _, found := localExchangeConfig.PriceFilepaths[symbol]; !found {
 			err := fmt.Errorf(logger.LOCALEX_ERR_PRICES_NOT_PROVIDED, symbol)
 			logrus.WithField("comp", "localex").Error(err.Error())
@@ -71,14 +76,12 @@ func (be local_exchange) Initialize(mmsChannel chan []model.MiniMarketStats) err
 	// Prices are to be provided per symbol, the form XXXUSDT
 	// USDTUSDT is not a valid symbol
 	// Skip prices whose corresponding asset is not in the wallet
-	symbolre, err := regexp.Compile(`^.+USDT$`)
 	if err != nil {
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return err
 	}
 	for symbol := range localExchangeConfig.PriceFilepaths {
-		matched := symbolre.Match([]byte(symbol))
-		if !matched {
+		if !utils.IsSymbolTradable(symbol) {
 			err := fmt.Errorf(logger.LOCALEX_ERR_INVALID_SYMBOL, symbol)
 			logrus.WithField("comp", "localex").Error(err.Error())
 			return err
@@ -91,7 +94,12 @@ func (be local_exchange) Initialize(mmsChannel chan []model.MiniMarketStats) err
 			return err
 		}
 
-		asset := utils.GetAssetFromSymbol(symbol)
+		asset, err := utils.GetAssetFromSymbol(symbol)
+		if err != nil {
+			logrus.WithField("comp", "localex").Error(err.Error())
+			return err
+		}
+
 		if _, found := localExchangeConfig.InitialBalances[asset]; !found {
 			logrus.WithField("comp", "localex").
 				Warnf(logger.LOCALEX_SKIP_SYMBOL_PRICES, asset, symbol)
@@ -163,7 +171,12 @@ func parse_prices_file(symbol, priceFilepath string) error {
 	}
 
 	// Parsing price file
-	asset := utils.GetAssetFromSymbol(symbol)
+	asset, err := utils.GetAssetFromSymbol(symbol)
+	if err != nil {
+		logrus.WithField("comp", "localex").Error(err.Error())
+		return err
+	}
+
 	prices[symbol] = crrqueue.New(int64(len(lines)))
 	for i := len(lines) - 1; i > 0; i-- {
 		mms, err := parse_mini_market_stats(lines[i], asset, intre, floatre)
@@ -260,7 +273,12 @@ func (be local_exchange) GetAssetsValue(bases []string) (map[string]model.AssetP
 	assetPrices := make(map[string]model.AssetPrice)
 
 	for _, base := range bases {
-		symbol := utils.GetSymbolFromAsset(base)
+		symbol, err := utils.GetSymbolFromAsset(base)
+		if err != nil {
+			logrus.WithField("comp", "localex").Error(err.Error())
+			return nil, err
+		}
+
 		values, found := prices[symbol]
 		if !found {
 			err := fmt.Errorf(logger.LOCALEX_ERR_UNKNOWN_SYMBOL, symbol)

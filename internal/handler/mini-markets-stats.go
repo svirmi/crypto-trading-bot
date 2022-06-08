@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -11,6 +12,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/operations"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/prices"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
@@ -39,28 +41,40 @@ func InvalidateTradingContext() {
 
 func HandleMiniMarketsStats() {
 	trading_context_init()
+	prices.Initialize()
 
 	go handle_mini_markets_stats()
+}
+
+func Terminate() {
+	prices.Terminate()
 }
 
 var handle_mini_markets_stats = func() {
 	sentinel := abool.New()
 
-	for miniMarketsStats := range tcontext.mms {
+	for mmss := range tcontext.mms {
+		// Store prices in db
+		store_prices_deferred(mmss)
+
 		// If the execution is not ACTIVE, no action should be applied
 		if tcontext.execution.Status != model.EXE_ACTIVE {
 			continue
 		}
 
-		assetStatuses := get_asset_statuses()
-		for _, miniMarketStats := range miniMarketsStats {
+		assetStatuses := get_asset_amounts()
+		for _, mms := range mmss {
 			// Check if asset is in wallet
-			if _, found := assetStatuses[miniMarketStats.Asset]; !found {
+			if _, found := assetStatuses[mms.Asset]; !found {
 				continue
 			}
 
 			// Check that trading is enabled for given asset
-			symbol := utils.GetSymbolFromAsset(miniMarketStats.Asset)
+			symbol, err := utils.GetSymbolFromAsset(mms.Asset)
+			if err != nil {
+				logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
+				continue
+			}
 			if !can_spot_trade(symbol) {
 				logrus.Warnf(logger.HANDL_TRADING_DISABLED, symbol)
 				continue
@@ -69,21 +83,21 @@ var handle_mini_markets_stats = func() {
 			// Getting spot market limits
 			slimits, err := get_spot_market_limits(symbol)
 			if err != nil {
-				logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, miniMarketStats.Asset, err.Error())
+				logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
 				continue
 			}
 
 			// Trading ongoing, skip market stats update
 			ok := sentinel.SetToIf(false, true)
 			if !ok {
-				skip_mini_market_stats(miniMarketsStats)
+				skip_mini_market_stats(mmss)
 				continue
 			}
 
 			// Getting operation
-			op, err := get_operation(miniMarketStats, slimits)
+			op, err := get_operation(mms, slimits)
 			if err != nil {
-				logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, miniMarketStats.Asset, err.Error())
+				logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
 				sentinel.UnSet()
 				continue
 			}
@@ -99,6 +113,24 @@ var handle_mini_markets_stats = func() {
 			}(op)
 		}
 	}
+}
+
+var store_prices_deferred = func(mmss []model.MiniMarketStats) {
+	timestamp := time.Now().UnixMicro()
+	symbolPrices := make([]model.SymbolPrice, 0, len(mmss))
+	for _, mms := range mmss {
+		symbol, err := utils.GetSymbolFromAsset(mms.Asset)
+		if err != nil {
+			logrus.Error(err.Error())
+			continue
+		}
+
+		symbolPrices = append(symbolPrices, model.SymbolPrice{
+			Symbol:    symbol,
+			Price:     mms.LastPrice,
+			Timestamp: timestamp})
+	}
+	prices.InsertManyDeferred(symbolPrices)
 }
 
 var can_spot_trade = func(symbol string) bool {
@@ -117,8 +149,8 @@ var skip_mini_market_stats = func([]model.MiniMarketStats) {
 	logrus.Info(logger.HANDL_SKIP_MMS_UPDATE)
 }
 
-var get_asset_statuses = func() map[string]model.AssetStatus {
-	return tcontext.laccount.GetAssetStatuses()
+var get_asset_amounts = func() map[string]model.AssetAmount {
+	return tcontext.laccount.GetAssetAmounts()
 }
 
 var handle_operation = func(op model.Operation) {

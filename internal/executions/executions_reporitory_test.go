@@ -73,12 +73,6 @@ func TestFindLatestByExeId(t *testing.T) {
 		Assets:    []string{"BTC", "ETH"},
 		Timestamp: time.Now().UnixMicro() + 100}
 	docs = append(docs, exe1)
-	exe2 := model.Execution{
-		ExeId:     exeIds[0],
-		Status:    model.EXE_PAUSED,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro() + 200}
-	docs = append(docs, exe2)
 	exp := model.Execution{
 		ExeId:     exeIds[0],
 		Status:    model.EXE_ACTIVE,
@@ -116,7 +110,7 @@ func TestFindLatestByExeId_NoResults(t *testing.T) {
 	got, err := find_latest_by_exeId(uuid.NewString())
 
 	testutils.AssertTrue(t, got.IsEmpty(), "execution")
-	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertNil(t, err, "err")
 }
 
 func TestFindCurrentlyActive(t *testing.T) {

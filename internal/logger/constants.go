@@ -43,6 +43,7 @@ const (
 	BINEX_ERR_NIL_MMS_CH           = "uninitialized mms channel"
 	BINEX_ERR_FAILED_TO_HANLDE_MMS = "failed to handle mms update | err=%s"
 	BINEX_ERR_ICEBERG_ORDER_FAILED = "iceberg order failed | symbol=%s, side=%s, amount=%s, amount_side=%s"
+	BINEX_ERR_SKIPPING_MMS         = "error detected, skipping mms | err=%s"
 
 	// Local exchange
 	LOCALEX_INIT_RACCOUNT             = "initializing remote account | asset_count=%d"
@@ -88,6 +89,28 @@ const (
 	LACC_ERR_BUILD_FAILURE     = "failed to buid local account"
 	LACC_ERR_EMPTY_RACC        = "no tradable crypto assets found"
 
+	// Prices
+	PRICES_DOUBLE_INITIALIZATION = "prices queue already initialized"
+	PRICES_NO_INITIALIZATION     = "prices queue was not initialized"
+	PRICES_INSERT_MANY           = "storing %d crypto prices"
+
+	// Prices error
+	ANAL_PRICES_ERR_NO_INITIALIZATION = "failed to defer insert prices | buffer=nil"
+	ANAL_BUILDING_EXE                 = "building execution analytics | exeId=%s"
+	ANAL_BUILDING_OPS                 = "building operation analytics | exeId=%s, ops_size=%d"
+	ANAL_BUILDING_WALLETS             = "building wallet analytics | exeId=%s, laccs_size=%d, prices_size=%d"
+	ANAL_STORE_ANALYTICS              = "storing %d analytics objects"
+
+	// Analytics error
+	ANAL_ERR_FAILED_TO_GENERATE  = "failed to generate analytics | err=%s"
+	ANAL_ERR_CURRENTLY_ACTIVE    = "cannot generate analytics of an active execution | exeId=%s"
+	ANAL_ERR_BAD_EXE_STATUS      = "bad exe status | exeId=%s, exp=%s, got=%s"
+	ANAL_ERR_NO_PRICES           = "no prices found in between t1=%d and t2=%d"
+	ANAL_ERR_NO_LACCS            = "no laccounts found with exeId=%s"
+	ANAL_ERR_ASSET_NOT_FOUND     = "asset %s not found in laccount"
+	ANAL_ERR_MISMATCHING_EXE_IDS = "mismatching execution ids | exe_id_1=%s, exe_id_2=%s"
+	ANAL_ERR_SKIP_ANALYTICS      = "error detected, skipping analytics | err=%s"
+
 	// Utils error
 	UTILS_ERR_FAILED_TO_DECODE_DECIMAL = "failed to decode \"%v\" to a number"
 
@@ -101,7 +124,7 @@ const (
 	XXX_ERR_ZERO_EXP_PRICE         = "expected price cannot be zero | asset=%s"
 	XXX_BELOW_QUOTE_LIMIT          = "amount below quote limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_quote=%s"
 	XXX_BELOW_BASE_LIMIT           = "amount below base limit | symbol=%s, side=%s, amt=%s, amt_side=%s, min_base=%s"
-	XXX_ERR_MISMATCHING_EXE_IDTS   = "mismatching execution ids | exe_id_1=%s, exe_id_2=%s"
+	XXX_ERR_MISMATCHING_EXE_IDS    = "mismatching execution ids | exe_id_1=%s, exe_id_2=%s"
 	XXX_ERR_FAILED_OP              = "cannot register failed operation | op_id=%s"
 	XXX_ERR_UNKNWON_OP_TYPE        = "unknown opweration type %s"
 	XXX_ERR_NEGATIVE_BALANCE       = "negative balance detected | asset=%s, balance=%s"

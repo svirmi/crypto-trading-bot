@@ -9,8 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Inserts operations in DB
-// Returns an error if computation failed
 func insert_many(ops []model.Operation) error {
 	collection := mongodb.GetOperationsCol()
 
@@ -24,22 +22,16 @@ func insert_many(ops []model.Operation) error {
 	return err
 }
 
-// Inserts an operation in DB
-// Returns an error if computation failed
 func insert(op model.Operation) error {
 	_, err := mongodb.GetOperationsCol().InsertOne(context.TODO(), op)
 	return err
 }
 
-// Finds all operations by execution id exeId
-// Returns list of operations sorted by timestamp (desc), if any
-// was found, nil otherwise
-// Returns an error if computation failed
 func find_by_exe_id(exeId string) ([]model.Operation, error) {
 	collection := mongodb.GetOperationsCol()
 
 	// Defining query
-	options := options.Find().SetSort(bson.D{{"timestamp", -1}})
+	options := options.Find().SetSort(bson.D{{"timestamp", 1}})
 	filter := bson.D{{"exeId", exeId}}
 
 	// Querying DB

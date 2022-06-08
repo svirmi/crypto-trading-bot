@@ -424,7 +424,7 @@ func TestGetOperation_ZeroPrice(t *testing.T) {
 
 /********************** GetAssetStatuses() *************************/
 
-func TestGetAssetStatuses(t *testing.T) {
+func TestGetAssetAmounts(t *testing.T) {
 	laccount := get_laccount_last_buy_test()
 	btc := laccount.Assets["BTC"]
 	eth := laccount.Assets["ETH"]
@@ -433,14 +433,14 @@ func TestGetAssetStatuses(t *testing.T) {
 	laccount.Assets["BTC"] = btc
 	laccount.Assets["ETH"] = eth
 
-	exp := map[string]model.AssetStatus{
+	exp := map[string]model.AssetAmount{
 		"USDT": {"USDT", utils.DecimalFromString("156.1735")},
 		"BUSD": {"BUSD", utils.DecimalFromString("1232.45")},
 		"BTC":  {"BTC", utils.DecimalFromString("11.34")},
 		"ETH":  {"ETH", utils.DecimalFromString("29.12")},
 		"DOT":  {"DOT", utils.DecimalFromString("13.67")}}
 
-	got := laccount.GetAssetStatuses()
+	got := laccount.GetAssetAmounts()
 	testutils.AssertEq(t, exp, got, "asset_statuses")
 }
 

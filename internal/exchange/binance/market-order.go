@@ -18,7 +18,18 @@ var filter_tradable_assets = func(bases []string) []string {
 	// exchanged for USDT directly
 	tradables := make([]string, 0)
 	for _, base := range bases {
-		_, found := symbols[utils.GetSymbolFromAsset(base)]
+		if base == "USDT" {
+			continue
+		}
+
+		symbol, err := utils.GetSymbolFromAsset(base)
+		if err != nil {
+			logrus.WithField("comp", "binancex").
+				Error(err.Error())
+			continue
+		}
+
+		_, found := symbols[symbol]
 		if !found {
 			logrus.WithField("comp", "binancex").
 				Warnf(logger.BINEX_NON_TRADABLE_ASSET, base)
@@ -35,7 +46,7 @@ var get_assets_value = func(bases []string) (map[string]model.AssetPrice, error)
 
 	pricesService := httpClient.NewListPricesService()
 	for _, base := range bases {
-		symbol := utils.GetSymbolFromAsset(base)
+		symbol, _ := utils.GetSymbolFromAsset(base)
 		rprices, err := binance_get_price(pricesService.Symbol(symbol))
 		if err != nil {
 			logrus.WithField("comp", "binancex").Error(err.Error())
@@ -215,10 +226,12 @@ var do_do_send_spot_market_order = func(op model.Operation) error {
 
 func to_CCTB_symbol_price(rprice *binanceapi.SymbolPrice) (model.AssetPrice, error) {
 	amount := utils.DecimalFromString(rprice.Price)
+	asset, err := utils.GetAssetFromSymbol(rprice.Symbol)
+	if err != nil {
+		return model.AssetPrice{}, err
+	}
 
-	return model.AssetPrice{
-		Asset: utils.GetAssetFromSymbol(rprice.Symbol),
-		Price: amount}, nil
+	return model.AssetPrice{Asset: asset, Price: amount}, nil
 }
 
 func to_CCTB_remote_account(account *binanceapi.Account) (model.RemoteAccount, error) {

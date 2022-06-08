@@ -30,84 +30,22 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 	}
 
 	logrus.Infof(logger.EXE_START, exe.ExeId, exe.Status, exe.Assets)
-	if insert_one(exe); err != nil {
+	if err = insert_one(exe); err != nil {
 		return model.Execution{}, err
 	}
 	return exe, nil
 }
 
-func GetLatestByExeId(exeId string) (model.Execution, error) {
-	exe, err := find_latest_by_exeId(exeId)
-	if err != nil {
-		return model.Execution{}, err
-	}
-	return exe, nil
+func GetLastestByExeId(exeId string) (model.Execution, error) {
+	return find_latest_by_exeId(exeId)
 }
 
 func GetCurrentlyActive() (model.Execution, error) {
 	return find_currently_active()
 }
 
-func Pause(exeId string) (model.Execution, error) {
-	exe, err := find_latest_by_exeId(exeId)
-	if err != nil {
-		return model.Execution{}, err
-	}
-	if exe.IsEmpty() {
-		err = fmt.Errorf(logger.EXE_ERR_NOT_FOUND, exeId)
-		logrus.Error(err.Error())
-		return model.Execution{}, err
-	}
-	if exe.Status == model.EXE_PAUSED {
-		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
-			exe.ExeId, model.EXE_PAUSED, model.EXE_PAUSED)
-		logrus.Error(err.Error())
-		return model.Execution{}, err
-	}
-	if exe.Status == model.EXE_TERMINATED {
-		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
-			exeId, model.EXE_TERMINATED, model.EXE_PAUSED)
-		logrus.Error(err.Error())
-		return model.Execution{}, err
-	}
-
-	exe.Status = model.EXE_PAUSED
-	exe.Timestamp = time.Now().UnixMicro()
-	if err := insert_one(exe); err != nil {
-		return model.Execution{}, err
-	}
-	return exe, nil
-}
-
-func Resume(exeId string) (model.Execution, error) {
-	exe, err := find_latest_by_exeId(exeId)
-	if err != nil {
-		return model.Execution{}, err
-	}
-	if exe.IsEmpty() {
-		err = fmt.Errorf(logger.EXE_ERR_NOT_FOUND, exeId)
-		logrus.Error(err.Error())
-		return model.Execution{}, err
-	}
-	if exe.Status == model.EXE_ACTIVE {
-		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
-			exe.ExeId, model.EXE_ACTIVE, model.EXE_ACTIVE)
-		logrus.Error(err.Error())
-		return model.Execution{}, err
-	}
-	if exe.Status == model.EXE_TERMINATED {
-		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
-			exe.ExeId, model.EXE_TERMINATED, model.EXE_ACTIVE)
-		logrus.Error(err.Error())
-		return model.Execution{}, err
-	}
-
-	exe.Status = model.EXE_ACTIVE
-	exe.Timestamp = time.Now().UnixMicro()
-	if err := insert_one(exe); err != nil {
-		return model.Execution{}, err
-	}
-	return exe, nil
+func GetByExeId(exeId string) ([]model.Execution, error) {
+	return find_by_exeId(exeId)
 }
 
 func Terminate(exeId string) (model.Execution, error) {

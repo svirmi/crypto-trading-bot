@@ -148,7 +148,7 @@ func TestGetLatestByExeId(t *testing.T) {
 	insert_one(exp)
 
 	// Getting latest by exe id
-	got, err := GetLatestByExeId(exeIds[0])
+	got, err := GetLastestByExeId(exeIds[0])
 
 	testutils.AssertNil(t, err, "err")
 	testutils.AssertEq(t, exp, got, "execution")
@@ -242,23 +242,8 @@ func TestStatuses(t *testing.T) {
 		Timestamp: time.Now().UnixMicro()}
 	insert_one(exe)
 
-	// Updating status to PAUSED
-	got, err := Pause(exeIds[0])
-	testutils.AssertNil(t, err, "err")
-	testutils.AssertEq(t, model.EXE_PAUSED, got.Status, "execution")
-
-	// Updating status to ACTIVE
-	got, err = Resume(exeIds[0])
-	testutils.AssertNil(t, err, "err")
-	testutils.AssertEq(t, model.EXE_ACTIVE, got.Status, "execution")
-
-	// Updating status to ACTIVE again
-	got, err = Resume(exeIds[0])
-	testutils.AssertNotNil(t, err, "err")
-	testutils.AssertTrue(t, got.IsEmpty(), "execution")
-
 	// Updating status to TERMINATED
-	got, err = Terminate(exeIds[0])
+	got, err := Terminate(exeIds[0])
 	testutils.AssertNil(t, err, "err")
 	testutils.AssertEq(t, model.EXE_TERMINATED, got.Status, "execution")
 }

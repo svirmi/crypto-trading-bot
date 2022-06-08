@@ -25,7 +25,16 @@ var mini_markets_stats_serve = func() error {
 	callback := func(rMiniMarketsStats binanceapi.WsAllMiniMarketsStatEvent) {
 		miniMarketsStats := make([]model.MiniMarketStats, 0, len(rMiniMarketsStats))
 		for _, rMiniMarketStats := range rMiniMarketsStats {
-			miniMarketStats := to_mini_market_stats(*rMiniMarketStats)
+			if !utils.IsSymbolTradable(rMiniMarketStats.Symbol) {
+				continue
+			}
+
+			miniMarketStats, err := to_mini_market_stats(*rMiniMarketStats)
+			if err != nil {
+				logrus.Errorf(logger.BINEX_ERR_SKIPPING_MMS, err.Error())
+				continue
+			}
+
 			miniMarketsStats = append(miniMarketsStats, miniMarketStats)
 		}
 
@@ -72,22 +81,26 @@ var mini_markets_stats_stop = func() {
 
 /********************** Mapping to local representation **********************/
 
-func to_mini_market_stats(rMiniMarketStat binanceapi.WsMiniMarketsStatEvent) model.MiniMarketStats {
+func to_mini_market_stats(rMiniMarketStat binanceapi.WsMiniMarketsStatEvent) (model.MiniMarketStats, error) {
 	lastPrice := utils.DecimalFromString(rMiniMarketStat.LastPrice)
 	openPrice := utils.DecimalFromString(rMiniMarketStat.OpenPrice)
 	lowPrice := utils.DecimalFromString(rMiniMarketStat.LowPrice)
 	highPrice := utils.DecimalFromString(rMiniMarketStat.HighPrice)
 	baseVolume := utils.DecimalFromString(rMiniMarketStat.BaseVolume)
 	quoteVolume := utils.DecimalFromString(rMiniMarketStat.QuoteVolume)
+	asset, err := utils.GetAssetFromSymbol(rMiniMarketStat.Symbol)
+	if err != nil {
+		return model.MiniMarketStats{}, err
+	}
 
 	return model.MiniMarketStats{
 		Event:       rMiniMarketStat.Event,
 		Time:        rMiniMarketStat.Time,
-		Asset:       utils.GetAssetFromSymbol(rMiniMarketStat.Symbol),
+		Asset:       asset,
 		LastPrice:   lastPrice,
 		OpenPrice:   openPrice,
 		LowPrice:    lowPrice,
 		HighPrice:   highPrice,
 		BaseVolume:  baseVolume,
-		QuoteVolume: quoteVolume}
+		QuoteVolume: quoteVolume}, nil
 }

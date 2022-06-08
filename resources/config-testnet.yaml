@@ -1,6 +1,6 @@
-# testnet configuration
+### Crypto Trading Bot Testnet Config ###
 
-### Demo trading startegy ###
+######################## DEMO TRADING STRATEGY ########################
 #exchange:
 #  apiKey: fkAHgTpxMVBWXueZfAyYK2NnR4SZdTNPR45mlJivVg4dNEnoWSbODTUQHDkiNjN6
 #  secretKey: 4yFKwURuMG7onlVoqFeV4Fz3I7ZNcNFMmDTRrlUk45IbbudFEWJtXAQGhqJEJtPg
@@ -16,7 +16,7 @@
 #    stopLossThreshold: '5'
 #    missProfitThreshold: '5'
 
-### Percentage trading startegy ###
+#################### PERCENTAGE TRADING STRATEGY ######################
 exchange:
   apiKey: fkAHgTpxMVBWXueZfAyYK2NnR4SZdTNPR45mlJivVg4dNEnoWSbODTUQHDkiNjN6
   secretKey: 4yFKwURuMG7onlVoqFeV4Fz3I7ZNcNFMmDTRrlUk45IbbudFEWJtXAQGhqJEJtPg

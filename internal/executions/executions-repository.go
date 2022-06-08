@@ -21,19 +21,46 @@ func find_latest_by_exeId(exeId string) (model.Execution, error) {
 
 	var result model.Execution
 	opts := options.FindOne().SetSort(bson.D{{"timestamp", -1}})
-	err := collection.FindOne(context.TODO(), bson.D{{"exeId", exeId}}, opts).Decode(&result)
-	return result, err
+	sr := collection.FindOne(context.TODO(), bson.D{{"exeId", exeId}}, opts)
+	if sr.Err() == mongo.ErrNoDocuments {
+		return model.Execution{}, nil
+	}
+
+	err := sr.Decode(&result)
+	if err != nil {
+		return model.Execution{}, err
+	}
+	return result, nil
+}
+
+func find_by_exeId(exeId string) ([]model.Execution, error) {
+	collection := mongodb.GetExecutionsCol()
+
+	opts := options.Find().SetSort(bson.D{{"timestamp", 1}})
+	cursor, err := collection.Find(context.TODO(), bson.D{{"exeId", exeId}}, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []model.Execution
+	err = cursor.All(context.TODO(), &results)
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 func find_currently_active() (model.Execution, error) {
 	collection := mongodb.GetExecutionsCol()
 
-	var result model.Execution
 	opts := options.FindOne().SetSort(bson.D{{"timestamp", -1}})
-	err := collection.FindOne(context.TODO(), bson.D{{}}, opts).Decode(&result)
-	if err == mongo.ErrNoDocuments {
+	sr := collection.FindOne(context.TODO(), bson.D{{}}, opts)
+	if sr.Err() == mongo.ErrNoDocuments {
 		return model.Execution{}, nil
 	}
+
+	var result model.Execution
+	err := sr.Decode(&result)
 	if err != nil {
 		return model.Execution{}, err
 	}

@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/shopspring/decimal"
@@ -15,12 +17,54 @@ const (
 
 /*** Symbols ***/
 
-func GetSymbolFromAsset(base string) string {
-	return base + "USDT"
+func IsSymbolTradable(symbol string) bool {
+	symbolre, _ := regexp.Compile(`^.+USDT$`)
+	return symbolre.Match([]byte(symbol))
 }
 
-func GetAssetFromSymbol(symbol string) string {
-	return strings.TrimSuffix(symbol, "USDT")
+func GetSymbolFromAsset(base string) (string, error) {
+	// base is already a symbol
+	symbolre, _ := regexp.Compile(`^.*USDT$`)
+	if symbolre.Match([]byte(base)) {
+		return "", fmt.Errorf("cannot convert asset %s to symbol", base)
+	}
+
+	return base + "USDT", nil
+}
+
+func GetSymbolsFromAssets(bases []string) ([]string, []error) {
+	symbols := make([]string, 0, len(bases))
+	errors := make([]error, 0)
+	for _, base := range bases {
+		symbol, err := GetSymbolFromAsset(base)
+		if err != nil {
+			errors = append(errors, err)
+			continue
+		}
+		symbols = append(symbols, symbol)
+	}
+	return symbols, errors
+}
+
+func GetAssetFromSymbol(symbol string) (string, error) {
+	if !IsSymbolTradable(symbol) {
+		return "", fmt.Errorf("cannot convert symbol %s to asset", symbol)
+	}
+
+	return strings.TrimSuffix(symbol, "USDT"), nil
+}
+
+func GetAssetsFromSymbols(symbols []string) ([]string, []error) {
+	assets := make([]string, 0, len(symbols))
+	errors := make([]error, 0)
+	for _, symbol := range symbols {
+		asset, err := GetAssetFromSymbol(symbol)
+		if err != nil {
+			errors = append(errors, err)
+		}
+		assets = append(assets, asset)
+	}
+	return assets, errors
 }
 
 /*** Decimals ***/

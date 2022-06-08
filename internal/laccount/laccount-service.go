@@ -56,6 +56,10 @@ func GetLatestByExeId(exeId string) (model.ILocalAccount, error) {
 	return find_latest_by_exeId(exeId)
 }
 
+func GetByExeId(exeId string) ([]model.ILocalAccount, error) {
+	return find_by_exeId(exeId)
+}
+
 func initialise_local_account(req model.LocalAccountInit) (model.ILocalAccount, error) {
 	if len(req.RAccount.Balances) == 0 {
 		err := fmt.Errorf(logger.LACC_ERR_EMPTY_RACC)

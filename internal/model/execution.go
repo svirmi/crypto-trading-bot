@@ -6,7 +6,6 @@ type ExeStatus string
 
 const (
 	EXE_ACTIVE     ExeStatus = "EXE_ACTIVE"     // Execution started
-	EXE_PAUSED     ExeStatus = "EXE_PAUSED"     // Execution paused, manual operations enabled
 	EXE_TERMINATED ExeStatus = "EXE_TERMINATED" // Execution terminated
 )
 
