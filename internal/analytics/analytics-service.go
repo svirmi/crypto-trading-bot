@@ -210,7 +210,8 @@ func build_op_analytics(op model.Operation) model.OpAnalytics {
 		Quote:         op.Quote,
 		Amount:        op.Amount,
 		Side:          op.Side,
-		AmountSide:    op.AmountSide}
+		AmountSide:    op.AmountSide,
+		Price:         op.Price}
 }
 
 func build_exe_analytics(exe model.Execution) model.ExeAnalytics {

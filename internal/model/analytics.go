@@ -53,6 +53,7 @@ type OpAnalytics struct {
 	Amount        decimal.Decimal `bson:"amount"`
 	Side          OpSide          `bson:"side"`
 	AmountSide    AmountSide      `bson:"amountSide"`
+	Price         decimal.Decimal `bson:"price"`
 }
 
 func (a OpAnalytics) GetExeId() string {
