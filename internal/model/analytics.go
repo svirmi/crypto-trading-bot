@@ -21,11 +21,13 @@ type IAnalytics interface {
 }
 
 type ExeAnalytics struct {
-	ExeId         string        `bson:"exeId"`
-	AnalyticsType AnalyticsType `bson:"analyticsType"`
-	Timestamp     int64         `bson:"timestamp"`
-	Assets        []string      `bson:"assets"`
-	Status        ExeStatus     `bson:"status"`
+	ExeId         string            `bson:"exeId"`
+	AnalyticsType AnalyticsType     `bson:"analyticsType"`
+	Timestamp     int64             `bson:"timestamp"`
+	Assets        []string          `bson:"assets"`
+	Status        ExeStatus         `bson:"status"`
+	StrategyType  StrategyType      `bson:"strategyType"`
+	Props         map[string]string `bson:"props"`
 }
 
 func (a ExeAnalytics) GetExeId() string {
