@@ -199,7 +199,7 @@ func build_wallet_analytics(lacc model.ILocalAccount, spricesByTs model.SymbolPr
 	wanal.WalletValue = walletValue
 
 	// Updating timestamp
-	wanal.Timestamp = lacc.GetTimestamp()
+	wanal.Timestamp = spricesByTs.Timestamp
 
 	return wanal, nil
 }
