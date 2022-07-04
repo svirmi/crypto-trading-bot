@@ -4,118 +4,53 @@ import (
 	"testing"
 
 	"github.com/sirupsen/logrus"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
 func TestStrategyConfig(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	exp :=
-		struct {
-			BuyPercentage        string
-			SellPercentage       string
-			BuyAmountPercentage  string
-			SellAmountPercentage string
-		}{
-			BuyPercentage:        "10.05",
-			SellPercentage:       "5.45",
-			BuyAmountPercentage:  "15",
-			SellAmountPercentage: "10",
-		}
 
-	strategyConfig := config.StrategyConfig{
-		Type:   string(model.PTS_STRATEGY),
-		Config: exp}
-	got := get_pts_config(strategyConfig)
+	props := map[string]string{
+		_BUY_PERCENTAGE:         "10.05",
+		_SELL_PERCENTAGE:        "5.454",
+		_BUY_AMOUNT_PERCENTAGE:  "15",
+		_SELL_AMOUNT_PERCENTAGE: "10"}
 
-	testutils.AssertEq(t, exp, got, "pts_config")
-}
+	exp := strategy_config_pts{
+		BuyPercentage:        utils.DecimalFromString("10.05"),
+		SellPercentage:       utils.DecimalFromString("5.45"),
+		BuyAmountPercentage:  utils.DecimalFromString("15"),
+		SellAmountPercentage: utils.DecimalFromString("10")}
 
-func TestStrategyConfig_HighPrecision(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
-	exp :=
-		struct {
-			BuyPercentage        string
-			SellPercentage       string
-			BuyAmountPercentage  string
-			SellAmountPercentage string
-		}{
-			BuyPercentage:        "10.049445",
-			SellPercentage:       "5.4459",
-			BuyAmountPercentage:  "15.0001",
-			SellAmountPercentage: "9.9999",
-		}
-
-	strategyConfig := config.StrategyConfig{
-		Type:   string(model.PTS_STRATEGY),
-		Config: exp}
-	got := get_pts_config(strategyConfig)
-
-	exp.BuyPercentage = "10.05"
-	exp.SellPercentage = "5.45"
-	exp.BuyAmountPercentage = "15"
-	exp.SellAmountPercentage = "10"
-	testutils.AssertEq(t, exp, got, "pts_config")
-}
-
-func TestStrategyConfig_MismatchingStrategyType(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
-	strategyConfig := config.StrategyConfig{
-		Type:   "FAKE_STRATEGY",
-		Config: struct{}{},
-	}
-
-	testutils.AssertPanic(t, func() {
-		get_pts_config(strategyConfig)
-	})
+	testutils.AssertEq(t, exp, parse_config(props), "pts_config")
 }
 
 func TestStrategyConfig_FailedToParseConfig(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	exp :=
-		struct {
-			WrongBuyPercentage        string
-			WrongSellPercentage       string
-			WrongBuyAmountPercentage  string
-			WrongSellAmountPercentage string
-		}{
-			WrongBuyPercentage:        "10.05",
-			WrongSellPercentage:       "5.45",
-			WrongBuyAmountPercentage:  "15",
-			WrongSellAmountPercentage: "10",
-		}
 
-	strategyConfig := config.StrategyConfig{
-		Type:   string(model.PTS_STRATEGY),
-		Config: exp}
+	props := map[string]string{
+		_BUY_PERCENTAGE:        "10.05",
+		_SELL_PERCENTAGE:       "5.454",
+		_BUY_AMOUNT_PERCENTAGE: "15",
+		"nonExisting":          "10"}
 
 	testutils.AssertPanic(t, func() {
-		get_pts_config(strategyConfig)
+		parse_config(props)
 	})
 }
 
-func TestStrategyConfig_ZeroThresholds(t *testing.T) {
+func TestStrategyConfig_BelowZeroThresholds(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	exp :=
-		struct {
-			BuyPercentage        string
-			SellPercentage       string
-			BuyAmountPercentage  string
-			SellAmountPercentage string
-		}{
-			BuyPercentage:        "0",
-			SellPercentage:       "5.45",
-			BuyAmountPercentage:  "15.56",
-			SellAmountPercentage: "0",
-		}
 
-	strategyConfig := config.StrategyConfig{
-		Type:   string(model.PTS_STRATEGY),
-		Config: exp}
+	props := map[string]string{
+		_BUY_PERCENTAGE:         "10.05",
+		_SELL_PERCENTAGE:        "-1",
+		_BUY_AMOUNT_PERCENTAGE:  "15",
+		_SELL_AMOUNT_PERCENTAGE: "10"}
 
 	testutils.AssertPanic(t, func() {
-		get_pts_config(strategyConfig)
+		parse_config(props)
 	})
 }

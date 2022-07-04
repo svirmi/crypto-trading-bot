@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
@@ -246,7 +245,8 @@ func TestGetOperation_AssetNotFound(t *testing.T) {
 	laccount := get_laccount_last_buy_test()
 	mms := get_mms("CRO", utils.DecimalFromString("0.55"))
 
-	op, err := laccount.GetOperation(mms, get_spot_market_limit())
+	props := get_props("13.45", "13.45", "20", "20")
+	op, err := laccount.GetOperation(props, mms, get_spot_market_limit())
 
 	testutils.AssertTrue(t, op.IsEmpty(), "operation")
 	testutils.AssertNotNil(t, err, "err")
@@ -254,13 +254,12 @@ func TestGetOperation_AssetNotFound(t *testing.T) {
 
 func TestGetOperation_Noop(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	old := mock_strategy_config("13.45", "13.45", "20", "20")
-	defer restore_strategy_config(old)
 
 	laccount := get_laccount_last_buy_test()
 	mms := get_mms("BTC", utils.DecimalFromString("39560.1"))
 
-	got, err := laccount.GetOperation(mms, get_spot_market_limit())
+	props := get_props("13.45", "13.45", "20", "20")
+	got, err := laccount.GetOperation(props, mms, get_spot_market_limit())
 
 	testutils.AssertNil(t, err, "err")
 	testutils.AssertTrue(t, got.IsEmpty(), "operation")
@@ -268,15 +267,14 @@ func TestGetOperation_Noop(t *testing.T) {
 
 func TestGetOperation_Sell(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	old := mock_strategy_config("13.45", "13.45", "20", "20")
-	defer restore_strategy_config(old)
 
 	laccount := get_laccount_last_buy_test()
 	amt := utils.DecimalFromString("11.34")
 	price := utils.DecimalFromString("44881.330525")
 	mms := get_mms("BTC", price)
 
-	got, err := laccount.GetOperation(mms, get_spot_market_limit())
+	props := get_props("13.45", "13.45", "20", "20")
+	got, err := laccount.GetOperation(props, mms, get_spot_market_limit())
 	testutils.AssertNil(t, err, "err")
 
 	exp := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.SELL, price)
@@ -293,8 +291,6 @@ func TestGetOperation_Sell(t *testing.T) {
 
 func TestGetOperation_Sell_MinBaseQtyExceed(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	old := mock_strategy_config("13.45", "13.45", "20", "20")
-	defer restore_strategy_config(old)
 
 	laccount := get_laccount_last_buy_test()
 	btcSpotMarketLimits := get_spot_market_limit()
@@ -306,22 +302,22 @@ func TestGetOperation_Sell_MinBaseQtyExceed(t *testing.T) {
 	price := utils.DecimalFromString("44881.330525")
 	mms := get_mms("BTC", price)
 
-	got, err := laccount.GetOperation(mms, btcSpotMarketLimits)
+	props := get_props("13.45", "13.45", "20", "20")
+	got, err := laccount.GetOperation(props, mms, btcSpotMarketLimits)
 	testutils.AssertNil(t, err, "err")
 	testutils.AssertTrue(t, got.IsEmpty(), "operation")
 }
 
 func TestGetOperation_StopLoss(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	old := mock_strategy_config("13.45", "13.45", "20", "20")
-	defer restore_strategy_config(old)
 
 	laccount := get_laccount_last_buy_test()
 	amt := utils.DecimalFromString("11.34")
 	price := utils.DecimalFromString("31648.36")
 	mms := get_mms("BTC", price)
 
-	got, err := laccount.GetOperation(mms, get_spot_market_limit())
+	props := get_props("13.45", "13.45", "20", "20")
+	got, err := laccount.GetOperation(props, mms, get_spot_market_limit())
 	testutils.AssertNil(t, err, "err")
 
 	exp := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.SELL, price)
@@ -338,15 +334,14 @@ func TestGetOperation_StopLoss(t *testing.T) {
 
 func TestGetOperation_Buy(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	old := mock_strategy_config("13.45", "13.45", "20", "20")
-	defer restore_strategy_config(old)
 
 	laccount := get_laccount_last_sell_test()
 	amt := utils.DecimalFromString("999.99")
 	price := utils.DecimalFromString("38.798975")
 	mms := get_mms("DOT", price)
 
-	got, err := laccount.GetOperation(mms, get_spot_market_limit())
+	props := get_props("13.45", "13.45", "20", "20")
+	got, err := laccount.GetOperation(props, mms, get_spot_market_limit())
 	testutils.AssertNil(t, err, "err")
 
 	exp := get_operation_test(amt, model.QUOTE_AMOUNT, "DOT", "USDT", model.BUY, price)
@@ -363,8 +358,6 @@ func TestGetOperation_Buy(t *testing.T) {
 
 func TestGetOperation_Buy_MinQuoteQtyExceeded(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	old := mock_strategy_config("13.45", "13.45", "20", "20")
-	defer restore_strategy_config(old)
 
 	laccount := get_laccount_last_sell_test()
 	dotSpotMarketLimits := get_spot_market_limit()
@@ -376,7 +369,8 @@ func TestGetOperation_Buy_MinQuoteQtyExceeded(t *testing.T) {
 	price := utils.DecimalFromString("38.798975")
 	mms := get_mms("DOT", price)
 
-	got, err := laccount.GetOperation(mms, dotSpotMarketLimits)
+	props := get_props("13.45", "13.45", "20", "20")
+	got, err := laccount.GetOperation(props, mms, dotSpotMarketLimits)
 
 	testutils.AssertNil(t, err, "err")
 	testutils.AssertTrue(t, got.IsEmpty(), "operation")
@@ -384,15 +378,14 @@ func TestGetOperation_Buy_MinQuoteQtyExceeded(t *testing.T) {
 
 func TestGetOperation_MissProfit(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	old := mock_strategy_config("13.45", "13.45", "20", "20")
-	defer restore_strategy_config(old)
 
 	laccount := get_laccount_last_sell_test()
 	amt := utils.DecimalFromString("999.99")
 	price := utils.DecimalFromString("59.34")
 	mms := get_mms("DOT", price)
 
-	got, err := laccount.GetOperation(mms, get_spot_market_limit())
+	props := get_props("13.45", "13.45", "20", "20")
+	got, err := laccount.GetOperation(props, mms, get_spot_market_limit())
 	testutils.AssertNil(t, err, "err")
 
 	exp := get_operation_test(amt, model.QUOTE_AMOUNT, "DOT", "USDT", model.BUY, price)
@@ -409,14 +402,13 @@ func TestGetOperation_MissProfit(t *testing.T) {
 
 func TestGetOperation_ZeroPrice(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	old := mock_strategy_config("13.45", "13.45", "20", "20")
-	defer restore_strategy_config(old)
 
 	laccount := get_laccount_last_buy_test()
 	price := decimal.Zero
 	mms := get_mms("BTC", price)
 
-	got, err := laccount.GetOperation(mms, get_spot_market_limit())
+	props := get_props("13.45", "13.45", "20", "20")
+	got, err := laccount.GetOperation(props, mms, get_spot_market_limit())
 
 	testutils.AssertNotNil(t, err, "err")
 	testutils.AssertTrue(t, got.IsEmpty(), "operation")
@@ -446,27 +438,12 @@ func TestGetAssetAmounts(t *testing.T) {
 
 /********************** Helpers *************************/
 
-func mock_strategy_config(bt, st, slt, mpt string) func() config.StrategyConfig {
-	old := config.GetStrategyConfig
-	config.GetStrategyConfig = func() config.StrategyConfig {
-		return config.StrategyConfig{
-			Type: string(model.DTS_STRATEGY),
-			Config: struct {
-				BuyThreshold        string
-				SellThreshold       string
-				StopLossThreshold   string
-				MissProfitThreshold string
-			}{
-				BuyThreshold:        bt,
-				SellThreshold:       st,
-				StopLossThreshold:   slt,
-				MissProfitThreshold: mpt}}
-	}
-	return old
-}
-
-func restore_strategy_config(old func() config.StrategyConfig) {
-	config.GetStrategyConfig = old
+func get_props(bt, st, slt, mpt string) map[string]string {
+	return map[string]string{
+		_BUY_THRESHOLD:         bt,
+		_SELL_THRESHOLD:        st,
+		_MISS_PROFIT_THRESHOLD: mpt,
+		_STOP_LOSS_THRESHOLD:   slt}
 }
 
 func get_mms(asset string, lastPrice decimal.Decimal) model.MiniMarketStats {

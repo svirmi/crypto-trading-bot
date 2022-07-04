@@ -23,8 +23,8 @@ func (m MongoDbConfig) IsEmpty() bool {
 }
 
 type StrategyConfig struct {
-	Type   string      `yaml:"type"`
-	Config interface{} `yaml:"config"`
+	Type   string            `yaml:"type"`
+	Config map[string]string `yaml:"config"`
 }
 
 func (s StrategyConfig) IsEmpty() bool {

@@ -61,7 +61,7 @@ type ILocalAccount interface {
 	GetTimestamp() int64
 	Initialize(LocalAccountInit) (ILocalAccount, error)
 	RegisterTrading(Operation) (ILocalAccount, error)
-	GetOperation(MiniMarketStats, SpotMarketLimits) (Operation, error)
+	GetOperation(map[string]string, MiniMarketStats, SpotMarketLimits) (Operation, error)
 	GetAssetAmounts() map[string]AssetAmount
 }
 

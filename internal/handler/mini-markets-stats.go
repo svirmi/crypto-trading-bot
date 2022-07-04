@@ -16,33 +16,18 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
-type trading_context struct {
-	laccount  model.ILocalAccount
-	execution model.Execution
-	mms       chan []model.MiniMarketStats
-	exchange  model.IExchange
-}
+var (
+	mmsChannel chan []model.MiniMarketStats
+	exchange   model.IExchange
+)
 
-var tcontext trading_context
-
-func Initialize(laccount model.ILocalAccount, execution model.Execution,
-	mmsChannel chan []model.MiniMarketStats, exchange model.IExchange) {
-
-	tcontext.laccount = laccount
-	tcontext.execution = execution
-	tcontext.mms = mmsChannel
-	tcontext.exchange = exchange
-}
-
-func InvalidateTradingContext() {
-	tcontext.execution = model.Execution{}
-	tcontext.laccount = nil
+func Initialize(_mmsChannel chan []model.MiniMarketStats, _exchange model.IExchange) {
+	mmsChannel = _mmsChannel
+	exchange = _exchange
 }
 
 func HandleMiniMarketsStats() {
-	trading_context_init()
 	prices.Initialize()
-
 	go handle_mini_markets_stats()
 }
 
@@ -53,18 +38,31 @@ func Terminate() {
 var handle_mini_markets_stats = func() {
 	sentinel := abool.New()
 
-	for mmss := range tcontext.mms {
+	for mmss := range mmsChannel {
 		// Store prices in db
 		store_prices_deferred(mmss)
 
+		// Getting execution
+		exe, err := get_active_exe()
+		if err != nil {
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMSS_UPDATE, err.Error())
+			continue
+		}
 		// If the execution is not ACTIVE, no action should be applied
-		if tcontext.execution.Status != model.EXE_ACTIVE {
+		if exe.Status != model.EXE_ACTIVE {
 			continue
 		}
 
-		assetStatuses := get_asset_amounts()
+		// Getting local account
+		lacc, err := get_latest_lacc(exe.ExeId)
+		if err != nil {
+			logrus.Errorf(logger.HANDL_ERR_SKIP_MMSS_UPDATE, err.Error())
+			continue
+		}
+
 		for _, mms := range mmss {
 			// Check if asset is in wallet
+			assetStatuses := get_asset_amounts(lacc)
 			if _, found := assetStatuses[mms.Asset]; !found {
 				continue
 			}
@@ -95,7 +93,7 @@ var handle_mini_markets_stats = func() {
 			}
 
 			// Getting operation
-			op, err := get_operation(mms, slimits)
+			op, err := get_operation(exe, lacc, mms, slimits)
 			if err != nil {
 				logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
 				sentinel.UnSet()
@@ -109,10 +107,18 @@ var handle_mini_markets_stats = func() {
 			// Set sentinel, handle operation and defer sentinel reset
 			go func(op model.Operation) {
 				defer sentinel.UnSet()
-				handle_operation(op)
+				lacc = handle_operation(lacc, op)
 			}(op)
 		}
 	}
+}
+
+var get_active_exe = func() (model.Execution, error) {
+	return executions.GetCurrentlyActive()
+}
+
+var get_latest_lacc = func(exeId string) (model.ILocalAccount, error) {
+	return laccount.GetLatestByExeId(exeId)
 }
 
 var store_prices_deferred = func(mmss []model.MiniMarketStats) {
@@ -134,81 +140,82 @@ var store_prices_deferred = func(mmss []model.MiniMarketStats) {
 }
 
 var can_spot_trade = func(symbol string) bool {
-	return tcontext.exchange.CanSpotTrade(symbol)
+	return exchange.CanSpotTrade(symbol)
 }
 
 var get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
-	return tcontext.exchange.GetSpotMarketLimits(symbol)
+	return exchange.GetSpotMarketLimits(symbol)
 }
 
-var get_operation = func(miniMarketStats model.MiniMarketStats, slimits model.SpotMarketLimits) (model.Operation, error) {
-	return tcontext.laccount.GetOperation(miniMarketStats, slimits)
+var get_operation = func(exe model.Execution, lacc model.ILocalAccount, mms model.MiniMarketStats, slimits model.SpotMarketLimits) (model.Operation, error) {
+	return lacc.GetOperation(exe.Props, mms, slimits)
 }
 
 var skip_mini_market_stats = func([]model.MiniMarketStats) {
 	logrus.Info(logger.HANDL_SKIP_MMS_UPDATE)
 }
 
-var get_asset_amounts = func() map[string]model.AssetAmount {
-	return tcontext.laccount.GetAssetAmounts()
+var get_asset_amounts = func(lacc model.ILocalAccount) map[string]model.AssetAmount {
+	return lacc.GetAssetAmounts()
 }
 
-var handle_operation = func(op model.Operation) {
+var handle_operation = func(lacc model.ILocalAccount, op model.Operation) model.ILocalAccount {
 	// Price equals to zero
 	if op.Amount.Equals(decimal.Zero) {
 		logrus.Errorf(logger.HANDL_ERR_ZERO_REQUESTED_AMOUNT)
-		return
+		return lacc
 	}
 	if op.Price.Equals(decimal.Zero) {
 		logrus.Errorf(logger.HANDL_ERR_ZERO_EXP_PRICE)
-		return
+		return lacc
 	}
 
 	// Getting remote account before operation
-	raccount1, err := tcontext.exchange.GetAccout()
+	raccount1, err := exchange.GetAccout()
 	if err != nil {
 		logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
-		return
+		return lacc
 	}
 
 	// Sending market order
-	op, err = tcontext.exchange.SendSpotMarketOrder(op)
+	op, err = exchange.SendSpotMarketOrder(op)
 	if err != nil {
 		logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
-		return
+		return lacc
 	}
 
 	// Getting remote account after operation
-	raccount2, err := tcontext.exchange.GetAccout()
+	raccount2, err := exchange.GetAccout()
 	if err != nil {
 		logrus.Panicf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
 	}
 
 	// Computing operation results
-	op.FromId = tcontext.laccount.GetAccountId()
+	op.FromId = lacc.GetAccountId()
 	op, err = compute_op_results(raccount1, raccount2, op)
 	if err != nil {
 		logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
-		return
+		return lacc
 	}
 
 	// Updating local account
-	tcontext.laccount, err = tcontext.laccount.RegisterTrading(op)
+	lacc, err = lacc.RegisterTrading(op)
 	if err != nil {
 		logrus.Panicf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
 	}
 
 	// Inserting operation and updating laccount in DB
-	op.ToId = tcontext.laccount.GetAccountId()
+	op.ToId = lacc.GetAccountId()
 	err = operations.Create(op)
 	if err != nil {
 		logrus.Panicf(err.Error())
 	}
 
-	err = laccount.Create(tcontext.laccount)
+	err = laccount.Create(lacc)
 	if err != nil {
 		logrus.Panicf(err.Error())
 	}
+	return lacc
 }
 
 func compute_op_results(old, new model.RemoteAccount, op model.Operation) (model.Operation, error) {
@@ -294,22 +301,4 @@ func compute_op_results(old, new model.RemoteAccount, op model.Operation) (model
 	logrus.Infof(logger.HANDL_OPERATION_RESULTS,
 		op.Results.BaseDiff, op.Results.QuoteDiff, op.Results.ActualPrice, op.Results.Spread, op.Status)
 	return op, nil
-}
-
-func trading_context_init() {
-	if tcontext.execution.IsEmpty() {
-		execution, err := executions.GetCurrentlyActive()
-		if err != nil {
-			logrus.Panicf(err.Error())
-		}
-		tcontext.execution = execution
-	}
-
-	if tcontext.laccount == nil {
-		laccount, err := laccount.GetLatestByExeId(tcontext.execution.ExeId)
-		if err != nil {
-			logrus.Panicf(err.Error())
-		}
-		tcontext.laccount = laccount
-	}
 }

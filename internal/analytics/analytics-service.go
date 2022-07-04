@@ -3,10 +3,8 @@ package analytics
 import (
 	"fmt"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
@@ -79,8 +77,7 @@ func StoreAnalytics(exeId string) {
 
 	// Building execution analytics
 	logrus.Infof(logger.ANAL_BUILDING_EXE, exeId)
-	strategyConfig := config.GetStrategyConfig()
-	anals = append(anals, build_exe_analytics(exe1, strategyConfig))
+	anals = append(anals, build_exe_analytics(exe1))
 
 	// Building wallet analytics
 	logrus.Infof(logger.ANAL_BUILDING_WALLETS, exeId, len(laccs), len(sprices))
@@ -217,22 +214,13 @@ func build_op_analytics(op model.Operation) model.OpAnalytics {
 		AmountSide:    op.AmountSide}
 }
 
-func build_exe_analytics(exe model.Execution, strategyConfig config.StrategyConfig) model.ExeAnalytics {
-	stype := model.StrategyType(strategyConfig.Type)
-
-	sconfig := strategyConfig.Config
-	var props map[string]string
-	err := mapstructure.Decode(sconfig, &props)
-	if err != nil {
-		logrus.Error(err.Error())
-	}
-
+func build_exe_analytics(exe model.Execution) model.ExeAnalytics {
 	return model.ExeAnalytics{
 		ExeId:         exe.ExeId,
 		AnalyticsType: model.EXE_ANALYTICS,
 		Timestamp:     exe.Timestamp,
 		Assets:        exe.Assets,
 		Status:        model.EXE_TERMINATED,
-		StrategyType:  stype,
-		Props:         props}
+		StrategyType:  exe.StrategyType,
+		Props:         exe.Props}
 }

@@ -22,6 +22,7 @@ const (
 	MONGO_CONNECTING        = "connecting to mongo at %s"
 	MONGO_DISCONNECTING     = "disconnecting from mongo"
 	MONGO_COLLECTION_HANLDE = "getting handler to mongo %s/%s collection"
+	MONGO_INDEXES_CREATION  = "indexes %v successfully upserted"
 
 	// Binance exchange
 	BINEX_REGISTERING_SYMBOLS = "registering trading symbols"
@@ -118,6 +119,7 @@ const (
 	XXX_IGNORED_ASSET = "%s will be ignored"
 
 	// Strategy error
+	XXX_ERR_MISSING_PROP_KEY       = "missing prop key %s"
 	XXX_ERR_MISMATCHING_STRATEGY   = "mismatching strategy type | exp=%s, got=%s"
 	XXX_ERR_FAILED_TO_PARSE_CONFIG = "failed to parse config %+v"
 	XXX_ERR_ASSET_NOT_FOUND        = "asset %s not found in local wallet"
@@ -151,6 +153,7 @@ const (
 	HANDL_TRADING_DISABLED  = "%s trading disabled, skipping mms"
 
 	// Hanlder error
+	HANDL_ERR_SKIP_MMSS_UPDATE      = "error detected, skipping mmss | err=%s"
 	HANDL_ERR_SKIP_MMS_UPDATE       = "error detected, skipping mms | asset=%s, err=%s"
 	HANDL_ERR_ZERO_EXP_PRICE        = "expected price cannot be zero, skipping mms"
 	HANDL_ERR_ZERO_REQUESTED_AMOUNT = "requested amount cannot be zero, skipping mms"

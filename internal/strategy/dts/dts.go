@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
@@ -164,7 +163,7 @@ func (a LocalAccountDTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	return a, nil
 }
 
-func (a LocalAccountDTS) GetOperation(mms model.MiniMarketStats, slimts model.SpotMarketLimits) (model.Operation, error) {
+func (a LocalAccountDTS) GetOperation(props map[string]string, mms model.MiniMarketStats, slimts model.SpotMarketLimits) (model.Operation, error) {
 	asset := mms.Asset
 	assetStatus, found := a.Assets[asset]
 	if !found {
@@ -184,7 +183,7 @@ func (a LocalAccountDTS) GetOperation(mms model.MiniMarketStats, slimts model.Sp
 		return model.Operation{}, err
 	}
 
-	dtsConfig := get_dts_config(config.GetStrategyConfig())
+	dtsConfig := parse_config(props)
 	sellPrice := utils.IncrementByPercentage(lastOpPrice, dtsConfig.SellThreshold)
 	stopLossPrice := utils.IncrementByPercentage(lastOpPrice, utils.SignChangeDecimal(dtsConfig.StopLossThreshold))
 	buyPrice := utils.IncrementByPercentage(lastOpPrice, utils.SignChangeDecimal(dtsConfig.BuyThreshold))

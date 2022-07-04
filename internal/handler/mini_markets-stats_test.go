@@ -16,6 +16,8 @@ import (
 func TestHandleMiniMarketsStats(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
 	// Saving and restoring status
+	old_get_active_exe := get_active_exe
+	old_get_latest_lacc := get_latest_lacc
 	old_hanlde := handle_operation
 	old_skip := skip_mini_market_stats
 	old_get_op := get_operation
@@ -24,6 +26,8 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 	old_get_asset_statuses := get_asset_amounts
 	old_store_prices_deferred := store_prices_deferred
 	defer func() {
+		get_active_exe = old_get_active_exe
+		get_latest_lacc = old_get_latest_lacc
 		handle_operation = old_hanlde
 		skip_mini_market_stats = old_skip
 		get_operation = old_get_op
@@ -34,12 +38,19 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 	}()
 
 	// Mocking dependencies
-	tcontext.execution.Status = model.EXE_ACTIVE
+	get_active_exe = func() (model.Execution, error) {
+		return model.Execution{Status: model.EXE_ACTIVE}, nil
+	}
+
+	get_latest_lacc = func(exeId string) (model.ILocalAccount, error) {
+		return nil, nil
+	}
 
 	handled_counter := 0
-	handle_operation = func(model.Operation) {
+	handle_operation = func(lacc model.ILocalAccount, op model.Operation) model.ILocalAccount {
 		handled_counter++
 		time.Sleep(time.Millisecond * 500)
+		return lacc
 	}
 
 	skipped_counter := 0
@@ -47,7 +58,7 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 		skipped_counter++
 	}
 
-	get_operation = func(model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
+	get_operation = func(model.Execution, model.ILocalAccount, model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
 		op := model.Operation{}
 		op.OpId = uuid.NewString()
 		return op, nil
@@ -61,7 +72,7 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 		return model.SpotMarketLimits{}, nil
 	}
 
-	get_asset_amounts = func() map[string]model.AssetAmount {
+	get_asset_amounts = func(model.ILocalAccount) map[string]model.AssetAmount {
 		return map[string]model.AssetAmount{"BTC": {"BTC", decimal.Zero}}
 	}
 
@@ -69,13 +80,13 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 
 	// Producer
 	end := make(chan struct{})
-	tcontext.mms = make(chan []model.MiniMarketStats)
+	mmsChannel = make(chan []model.MiniMarketStats)
 	go func() {
 		for i := 0; i < 6; i++ {
-			tcontext.mms <- get_mini_markets_stats()
+			mmsChannel <- get_mini_markets_stats()
 			time.Sleep(time.Millisecond * 250)
 		}
-		close(tcontext.mms)
+		close(mmsChannel)
 		end <- struct{}{}
 	}()
 
@@ -89,33 +100,37 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 func TestHandleMiniMarketsStats_NonActiveExe(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
 	// Saving and restoring status
+	old_get_active_exe := get_active_exe
 	old_store_prices_deferred := store_prices_deferred
 	old_get_op := get_operation
 	defer func() {
+		get_active_exe = old_get_active_exe
 		store_prices_deferred = old_store_prices_deferred
 		get_operation = old_get_op
 	}()
 
 	// Mocking dependencies
-	tcontext.execution.Status = model.EXE_TERMINATED
+	get_active_exe = func() (model.Execution, error) {
+		return model.Execution{Status: model.EXE_TERMINATED}, nil
+	}
 
 	store_prices_deferred = func(mmss []model.MiniMarketStats) {}
 
 	get_op_counter := 0
-	get_operation = func(model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
+	get_operation = func(model.Execution, model.ILocalAccount, model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
 		get_op_counter++
 		return model.Operation{}, nil
 	}
 
 	// Producer
 	end := make(chan struct{})
-	tcontext.mms = make(chan []model.MiniMarketStats)
+	mmsChannel = make(chan []model.MiniMarketStats)
 	go func() {
 		for i := 0; i < 6; i++ {
-			tcontext.mms <- []model.MiniMarketStats{}
+			mmsChannel <- []model.MiniMarketStats{}
 			time.Sleep(time.Millisecond * 50)
 		}
-		close(tcontext.mms)
+		close(mmsChannel)
 		end <- struct{}{}
 	}()
 
@@ -129,6 +144,8 @@ func TestHandleMiniMarketsStats_NonActiveExe(t *testing.T) {
 func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
 	// Saving and restoring status
+	old_get_active_exe := get_active_exe
+	old_get_latest_lacc := get_latest_lacc
 	old_hanlde := handle_operation
 	old_skip := skip_mini_market_stats
 	old_get_op := get_operation
@@ -137,6 +154,8 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 	old_get_asset_statuses := get_asset_amounts
 	old_store_prices_deferred := store_prices_deferred
 	defer func() {
+		get_active_exe = old_get_active_exe
+		get_latest_lacc = old_get_latest_lacc
 		get_asset_amounts = old_get_asset_statuses
 		handle_operation = old_hanlde
 		skip_mini_market_stats = old_skip
@@ -147,11 +166,18 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 	}()
 
 	// Mocking dependencies
-	tcontext.execution.Status = model.EXE_ACTIVE
+	get_active_exe = func() (model.Execution, error) {
+		return model.Execution{Status: model.EXE_ACTIVE}, nil
+	}
+
+	get_latest_lacc = func(exeId string) (model.ILocalAccount, error) {
+		return nil, nil
+	}
 
 	handled_counter := 0
-	handle_operation = func(model.Operation) {
+	handle_operation = func(lacc model.ILocalAccount, op model.Operation) model.ILocalAccount {
 		handled_counter++
+		return lacc
 	}
 
 	skipped_counter := 0
@@ -159,7 +185,7 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 		skipped_counter++
 	}
 
-	get_operation = func(model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
+	get_operation = func(model.Execution, model.ILocalAccount, model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
 		return model.Operation{}, nil
 	}
 
@@ -171,7 +197,7 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 		return model.SpotMarketLimits{}, nil
 	}
 
-	get_asset_amounts = func() map[string]model.AssetAmount {
+	get_asset_amounts = func(model.ILocalAccount) map[string]model.AssetAmount {
 		return map[string]model.AssetAmount{"BTC": {"BTC", decimal.Zero}}
 	}
 
@@ -179,13 +205,13 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 
 	// Producer
 	end := make(chan struct{})
-	tcontext.mms = make(chan []model.MiniMarketStats)
+	mmsChannel = make(chan []model.MiniMarketStats)
 	go func() {
 		for i := 0; i < 6; i++ {
-			tcontext.mms <- get_mini_markets_stats()
+			mmsChannel <- get_mini_markets_stats()
 			time.Sleep(time.Millisecond * 50)
 		}
-		close(tcontext.mms)
+		close(mmsChannel)
 		end <- struct{}{}
 	}()
 

@@ -10,7 +10,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
-func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
+func CreateOrRestore(req model.ExecutionInit) (model.Execution, error) {
 	// Get current active execution from DB
 	exe, err := find_currently_active()
 	if err != nil {
@@ -24,7 +24,7 @@ func CreateOrRestore(raccount model.RemoteAccount) (model.Execution, error) {
 	}
 
 	// No active execution found, starting a new one
-	exe, err = build_execution(raccount)
+	exe, err = build_execution(req)
 	if err != nil {
 		return model.Execution{}, err
 	}
@@ -73,7 +73,9 @@ func Terminate(exeId string) (model.Execution, error) {
 	return exe, nil
 }
 
-func build_execution(raccount model.RemoteAccount) (model.Execution, error) {
+func build_execution(req model.ExecutionInit) (model.Execution, error) {
+	raccount := req.Raccount
+
 	if len(raccount.Balances) == 0 {
 		err := fmt.Errorf(logger.EXE_ERR_EMPTY_RACC)
 		logrus.Error(err.Error())
@@ -86,8 +88,10 @@ func build_execution(raccount model.RemoteAccount) (model.Execution, error) {
 	}
 
 	return model.Execution{
-		ExeId:     uuid.NewString(),
-		Status:    model.EXE_ACTIVE,
-		Assets:    assets,
-		Timestamp: time.Now().UnixMicro()}, nil
+		ExeId:        uuid.NewString(),
+		Status:       model.EXE_ACTIVE,
+		Assets:       assets,
+		StrategyType: req.StrategyType,
+		Props:        req.Props,
+		Timestamp:    time.Now().UnixMicro()}, nil
 }

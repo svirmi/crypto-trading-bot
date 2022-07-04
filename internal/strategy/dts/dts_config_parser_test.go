@@ -4,120 +4,54 @@ import (
 	"testing"
 
 	"github.com/sirupsen/logrus"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
 func TestStrategyConfig(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	exp :=
-		struct {
-			BuyThreshold        string
-			SellThreshold       string
-			StopLossThreshold   string
-			MissProfitThreshold string
-		}{
-			BuyThreshold:        "12.34",
-			SellThreshold:       "23.45",
-			StopLossThreshold:   "34.56",
-			MissProfitThreshold: "45.67",
-		}
 
-	strategyConfig := config.StrategyConfig{
-		Type:   string(model.DTS_STRATEGY),
-		Config: exp,
-	}
-	got := get_dts_config(strategyConfig)
+	props := map[string]string{
+		_BUY_THRESHOLD:         "12.34",
+		_SELL_THRESHOLD:        "23.45",
+		_MISS_PROFIT_THRESHOLD: "45.67",
+		_STOP_LOSS_THRESHOLD:   "34.561"}
 
-	testutils.AssertEq(t, exp, got, "dts_config")
-}
-
-func TestStrategyConfig_HighPrecision(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
-	exp :=
-		struct {
-			BuyThreshold        string
-			SellThreshold       string
-			StopLossThreshold   string
-			MissProfitThreshold string
-		}{
-			BuyThreshold:        "12.339",
-			SellThreshold:       "23.451",
-			StopLossThreshold:   "34.56",
-			MissProfitThreshold: "45.665",
-		}
-
-	strategyConfig := config.StrategyConfig{
-		Type:   string(model.DTS_STRATEGY),
-		Config: exp}
-	got := get_dts_config(strategyConfig)
-
-	exp.BuyThreshold = "12.34"
-	exp.SellThreshold = "23.45"
-	exp.StopLossThreshold = "34.56"
-	exp.MissProfitThreshold = "45.67"
-	testutils.AssertEq(t, exp, got, "pts_config")
-}
-
-func TestStrategyConfig_MismatchingStrategyType(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
-	strategyConfig := config.StrategyConfig{
-		Type:   "FAKE_STRATEGY",
-		Config: struct{}{},
+	exp := strategy_config_dts{
+		BuyThreshold:        utils.DecimalFromString("12.34"),
+		SellThreshold:       utils.DecimalFromString("23.45"),
+		MissProfitThreshold: utils.DecimalFromString("45.67"),
+		StopLossThreshold:   utils.DecimalFromString("34.56"),
 	}
 
-	testutils.AssertPanic(t, func() {
-		get_dts_config(strategyConfig)
-	})
+	testutils.AssertEq(t, exp, parse_config(props), "dts_config")
 }
 
 func TestStrategyConfig_FailedToParseConfig(t *testing.T) {
-	exp :=
-		struct {
-			WrongBuyThreshold        string
-			WrongSellThreshold       string
-			WrongStopLossThreshold   string
-			WrongMissProfitThreshold string
-		}{
-			WrongBuyThreshold:        "12.34",
-			WrongSellThreshold:       "23.45",
-			WrongStopLossThreshold:   "34.56",
-			WrongMissProfitThreshold: "45.67",
-		}
+	logger.Initialize(false, logrus.TraceLevel)
 
-	strategyConfig := config.StrategyConfig{
-		Type:   string(model.DTS_STRATEGY),
-		Config: exp,
-	}
+	props := map[string]string{
+		"nonExisting":          "12.34",
+		_SELL_THRESHOLD:        "23.45",
+		_MISS_PROFIT_THRESHOLD: "45.67",
+		_STOP_LOSS_THRESHOLD:   "34.56"}
 
 	testutils.AssertPanic(t, func() {
-		get_dts_config(strategyConfig)
+		parse_config(props)
 	})
 }
 
-func TestStrategyConfig_ZeroThresholds(t *testing.T) {
+func TestStrategyConfig_BelowZeroThresholds(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
-	exp :=
-		struct {
-			BuyThreshold        string
-			SellThreshold       string
-			StopLossThreshold   string
-			MissProfitThreshold string
-		}{
-			BuyThreshold:        "0",
-			SellThreshold:       "23.45",
-			StopLossThreshold:   "34.56",
-			MissProfitThreshold: "0",
-		}
 
-	strategyConfig := config.StrategyConfig{
-		Type:   string(model.DTS_STRATEGY),
-		Config: exp,
-	}
+	props := map[string]string{
+		_BUY_THRESHOLD:         "12.34",
+		_SELL_THRESHOLD:        "23.45",
+		_MISS_PROFIT_THRESHOLD: "0",
+		_STOP_LOSS_THRESHOLD:   "34.56"}
 
 	testutils.AssertPanic(t, func() {
-		get_dts_config(strategyConfig)
+		parse_config(props)
 	})
 }

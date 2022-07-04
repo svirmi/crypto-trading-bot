@@ -3,7 +3,6 @@ package executions
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -31,11 +30,8 @@ func TestInsertOne(t *testing.T) {
 	}()
 
 	// Building test execution
-	exp := model.Execution{
-		ExeId:     exeIds[0],
-		Status:    model.EXE_ACTIVE,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro()}
+	exp := get_execution()
+	exp.ExeId = exeIds[0]
 	insert_one(exp)
 
 	// Getting execution object from DB
@@ -67,23 +63,17 @@ func TestFindLatestByExeId(t *testing.T) {
 
 	// Building test execution
 	var docs []interface{}
-	exe1 := model.Execution{
-		ExeId:     exeIds[0],
-		Status:    model.EXE_ACTIVE,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro() + 100}
+	exe1 := get_execution()
+	exe1.ExeId = exeIds[0]
 	docs = append(docs, exe1)
-	exp := model.Execution{
-		ExeId:     exeIds[0],
-		Status:    model.EXE_ACTIVE,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro() + 300}
+
+	exp := exe1
+	exp.Timestamp = exe1.Timestamp + 300
 	docs = append(docs, exp)
-	other1 := model.Execution{
-		ExeId:     otherExeIds[0],
-		Status:    model.EXE_TERMINATED,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro()}
+
+	other1 := get_execution()
+	other1.ExeId = otherExeIds[0]
+	other1.Status = model.EXE_TERMINATED
 	docs = append(docs, other1)
 	mongodb.GetExecutionsCol().InsertMany(context.TODO(), docs, nil)
 
@@ -119,14 +109,13 @@ func TestFindCurrentlyActive(t *testing.T) {
 	old := mock_mongo_config()
 	mongodb.Initialize()
 	var exeIds = []string{uuid.NewString()}
-	var otherExeIds = []string{uuid.NewString(), uuid.NewString()}
+	var otherExeIds = []string{uuid.NewString()}
 
 	// Restoring status after test execution
 	defer func() {
 		filter1 := bson.M{"exeId": exeIds[0]}
-		filter3 := bson.M{"exeId": otherExeIds[0]}
-		filter4 := bson.M{"exeId": otherExeIds[1]}
-		filter := bson.M{"$or": []bson.M{filter1, filter3, filter4}}
+		filter2 := bson.M{"exeId": otherExeIds[0]}
+		filter := bson.M{"$or": []bson.M{filter1, filter2}}
 		mongodb.GetExecutionsCol().DeleteMany(context.TODO(), filter, nil)
 
 		restore_mongo_config(old)
@@ -135,24 +124,21 @@ func TestFindCurrentlyActive(t *testing.T) {
 
 	// Building test execution
 	var docs []interface{}
-	exe1 := model.Execution{
-		ExeId:     otherExeIds[1],
-		Status:    model.EXE_TERMINATED,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro() + 100}
+	exe1 := get_execution()
+	exe1.ExeId = otherExeIds[0]
+	exe1.Status = model.EXE_ACTIVE
 	docs = append(docs, exe1)
-	exe2 := model.Execution{
-		ExeId:     otherExeIds[0],
-		Status:    model.EXE_TERMINATED,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro() + 200}
+
+	exe2 := exe1
+	exe2.Timestamp = exe2.Timestamp + 100
+	exe2.Status = model.EXE_TERMINATED
 	docs = append(docs, exe2)
-	exp := model.Execution{
-		ExeId:     exeIds[0],
-		Status:    model.EXE_ACTIVE,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro() + 300}
+
+	exp := get_execution()
+	exp.ExeId = exeIds[0]
+	exp.Timestamp = exe2.Timestamp + 100
 	docs = append(docs, exp)
+
 	mongodb.GetExecutionsCol().InsertMany(context.TODO(), docs, nil)
 
 	// Getting execution object from DB

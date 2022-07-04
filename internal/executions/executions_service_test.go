@@ -11,7 +11,6 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -31,26 +30,13 @@ func TestCreateOrRestore_Create(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	balances := []model.RemoteBalance{
-		{Asset: "BTC", Amount: utils.DecimalFromString("5.0")},
-		{Asset: "ETH", Amount: utils.DecimalFromString("10.45")}}
-	raccount := model.RemoteAccount{
-		MakerCommission:  0,
-		TakerCommission:  1,
-		BuyerCommission:  2,
-		SellerCommission: 1,
-		Balances:         balances}
-
-	got, err := CreateOrRestore(raccount)
+	got, err := CreateOrRestore(get_execution_init())
 	testutils.AssertNil(t, err, "err")
-
-	exp := model.Execution{
-		ExeId:     got.ExeId,
-		Status:    model.EXE_ACTIVE,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: got.Timestamp}
-
 	exeIds = append(exeIds, got.ExeId)
+
+	exp := get_execution()
+	exp.ExeId = got.ExeId
+	exp.Timestamp = got.Timestamp
 
 	testutils.AssertEq(t, exp, got, "execution")
 }
@@ -67,16 +53,13 @@ func TestCreateOrRestore_Create_EmptyRacc(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	raccount := model.RemoteAccount{
-		MakerCommission:  0,
-		TakerCommission:  1,
-		BuyerCommission:  2,
-		SellerCommission: 1,
-		Balances:         []model.RemoteBalance{}}
+	exeReq := get_execution_init()
+	exeReq.Raccount.Balances = []model.RemoteBalance{}
 
-	_, err := CreateOrRestore(raccount)
+	_, err := CreateOrRestore(exeReq)
 	testutils.AssertNotNil(t, err, "err")
 }
+
 func TestCreateOrRestore_Restore(t *testing.T) {
 	logger.Initialize(false, logrus.TraceLevel)
 	// Setting up test
@@ -93,25 +76,11 @@ func TestCreateOrRestore_Restore(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	balances := []model.RemoteBalance{
-		{Asset: "BTC", Amount: utils.DecimalFromString("5.0")},
-		{Asset: "ETH", Amount: utils.DecimalFromString("10.45")}}
-	raccount := model.RemoteAccount{
-		MakerCommission:  0,
-		TakerCommission:  1,
-		BuyerCommission:  2,
-		SellerCommission: 1,
-		Balances:         balances}
-
-	exp := model.Execution{
-		ExeId:     uuid.NewString(),
-		Status:    model.EXE_ACTIVE,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro()}
+	exp := get_execution()
 	insert_one(exp)
 	exeIds = append(exeIds, exp.ExeId)
 
-	got, err := CreateOrRestore(raccount)
+	got, err := CreateOrRestore(get_execution_init())
 
 	testutils.AssertNil(t, err, "err")
 	testutils.AssertEq(t, exp, got, "execution")
@@ -134,11 +103,8 @@ func TestGetLatestByExeId(t *testing.T) {
 	}()
 
 	// Inserting execution v1
-	exp := model.Execution{
-		ExeId:     exeIds[0],
-		Status:    model.EXE_ACTIVE,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro()}
+	exp := get_execution()
+	exp.ExeId = exeIds[0]
 	insert_one(exp)
 
 	// Inserting execution v2
@@ -173,14 +139,11 @@ func TestGetCurrentlyActive(t *testing.T) {
 	}()
 
 	// Inserting exe1 v1
-	exp := model.Execution{
-		ExeId:     exeIds[0],
-		Status:    model.EXE_ACTIVE,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro() + 100}
+	exp := get_execution()
+	exp.ExeId = exeIds[0]
 	insert_one(exp)
 
-	// Inserting exe2 v2
+	// Inserting exe1 v2
 	exp.Status = model.EXE_TERMINATED
 	exp.Assets = append(exp.Assets, "DOT")
 	exp.Timestamp = time.Now().UnixMicro() + 200
@@ -235,11 +198,8 @@ func TestStatuses(t *testing.T) {
 	}()
 
 	// Inserting execution v1
-	exe := model.Execution{
-		ExeId:     exeIds[0],
-		Status:    model.EXE_ACTIVE,
-		Assets:    []string{"BTC", "ETH"},
-		Timestamp: time.Now().UnixMicro()}
+	exe := get_execution()
+	exe.ExeId = exeIds[0]
 	insert_one(exe)
 
 	// Updating status to TERMINATED

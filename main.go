@@ -81,7 +81,12 @@ func main() {
 	}
 
 	// Creating or restoring execution
-	exe, err = executions.CreateOrRestore(raccount)
+	strategyConfig := config.GetStrategyConfig()
+	exeReq := model.ExecutionInit{
+		Raccount:     raccount,
+		StrategyType: model.StrategyType(strategyConfig.Type),
+		Props:        strategyConfig.Config}
+	exe, err = executions.CreateOrRestore(exeReq)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
@@ -94,20 +99,19 @@ func main() {
 	}
 
 	// Creating or restoring local account
-	strategyConfig := config.GetStrategyConfig()
 	strategyType := model.StrategyType(strategyConfig.Type)
-	req := model.LocalAccountInit{
+	laccReq := model.LocalAccountInit{
 		ExeId:               exe.ExeId,
 		RAccount:            raccount,
 		StrategyType:        strategyType,
 		TradableAssetsPrice: prices}
-	lacc, err = laccount.CreateOrRestore(req)
+	lacc, err = laccount.CreateOrRestore(laccReq)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
 
 	// Initializing handler
-	handler.Initialize(lacc, exe, mmsch, exchange)
+	handler.Initialize(mmsch, exchange)
 
 	// Handling price updates
 	handler.HandleMiniMarketsStats()
