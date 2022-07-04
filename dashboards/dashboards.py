@@ -46,6 +46,8 @@ exe_id_assets = st.selectbox('<Select an execution ID>',
 exe_id = exe_id_assets.split(' ')[0]
 # full assets
 assets = exe_id_assets.split(' ')[1].split('@')
+if 'USDT' not in assets:
+    assets.append('USDT')
 # crypto assets
 crypto_assets = [a for a in assets if a != 'USDT']
 
