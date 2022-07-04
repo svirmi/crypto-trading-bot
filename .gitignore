@@ -9,3 +9,6 @@
 !test-resources/**
 resources/simulation/*
 !resources/simulation/.gitkeep
+!**/*.py
+!**/*.txt
+.ipynb_checkpoints

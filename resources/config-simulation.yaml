@@ -23,12 +23,12 @@
 #################### PERCENTAGE TRADING STRATEGY ######################
 exchange:
   initialBalances:
-    ETH: '10'
-    BTC: '1'
-    USDT: '200000'
+    ETH: '5'
+    # BTC: '1'
+    USDT: '20000'
   priceFilepaths:
-    ETHUSDT: /home/stacksmasher/crypto-prices/Gemini_ETHUSD_d_2021.csv
-    BTCUSDT: /home/stacksmasher/crypto-prices/Gemini_BTCUSD_d_2021.csv
+    ETHUSDT: /Users/niccolotogni/Desktop/bot_data/daily-prices/Gemini_ETHUSD_d_2021.csv
+    # BTCUSDT: /Users/niccolotogni/Desktop/bot_data/daily-prices/Gemini_BTCUSD_d_2021.csv
   priceDelay: '100'
 mongoDb:
   uri: mongodb://localhost:27017
@@ -37,6 +37,6 @@ strategy:
   type: PERCENTAGE_TRADING_STRATEGY
   config:
     buyPercentage: '10'
-    sellPercentage: '10'
-    buyAmountPercentage: '20'
-    sellAmountPercentage: '20'
+    sellPercentage: '15'
+    buyAmountPercentage: '5'
+    sellAmountPercentage: '5'
