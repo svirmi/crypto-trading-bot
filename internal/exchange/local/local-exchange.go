@@ -142,6 +142,10 @@ func (be local_exchange) Initialize(mmsChannel chan []model.MiniMarketStats) err
 }
 
 func parse_prices_file(symbol, priceFilepath string) error {
+	// Parsing priceFilepath
+	priceFilepath = os.ExpandEnv(priceFilepath)
+
+	// Opening price file
 	file, err := os.Open(priceFilepath)
 	if err != nil {
 		logrus.WithField("comp", "localex").Error(err.Error())

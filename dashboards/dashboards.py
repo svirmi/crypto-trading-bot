@@ -15,7 +15,6 @@ MONGO_COLLECTION = 'analytics'
 EXECUTION = 'execution-analytics'
 OPERATIONS = 'operation-analytics'
 WALLET = 'wallet-analytics'
-TERMINATED_STATUS = 'EXE_TERMINATED'
 
 st.set_page_config(layout="wide")
 
@@ -29,7 +28,7 @@ mongo_client = MongoClient(MONGO_HOST, MONGO_PORT)
 analytics = mongo_client[MONGO_DB][MONGO_COLLECTION]
 
 # Load finished executions 
-executions = list(analytics.find({'analyticsType': EXECUTION, 'status': TERMINATED_STATUS}))
+executions = list(analytics.find({'analyticsType': EXECUTION, 'status': 'EXE_TERMINATED'}))
 
 strategy_types = []
 for execution in executions:
@@ -46,8 +45,6 @@ exe_id_assets = st.selectbox('<Select an execution ID>',
 exe_id = exe_id_assets.split(' ')[0]
 # full assets
 assets = exe_id_assets.split(' ')[1].split('@')
-if 'USDT' not in assets:
-    assets.append('USDT')
 # crypto assets
 crypto_assets = [a for a in assets if a != 'USDT']
 

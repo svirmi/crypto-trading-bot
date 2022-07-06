@@ -23,12 +23,10 @@
 #################### PERCENTAGE TRADING STRATEGY ######################
 exchange:
   initialBalances:
-    ETH: '100'
-    # BTC: '1'
-    # USDT: '20000'
+    ETH: '10'
+    USDT: '20000'
   priceFilepaths:
-    ETHUSDT: /Users/niccolotogni/Desktop/bot_data/daily-prices/Gemini_ETHUSD_d_2021.csv
-    # BTCUSDT: /Users/niccolotogni/Desktop/bot_data/daily-prices/Gemini_BTCUSD_d_2021.csv
+    ETHUSDT: ${HOME}/crypto-prices/ETHUSD_d_2021.csv
   priceDelay: '100'
 mongoDb:
   uri: mongodb://localhost:27017
