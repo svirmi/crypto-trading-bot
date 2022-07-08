@@ -68,7 +68,6 @@ const (
 	LOCALEX_ERR_INVALID_ASSET          = "not a valid asset | asset=%s, asset_exp_format=XXX, symbol_exp_format=XXXUSDT"
 	LOCALEX_ERR_INVALID_SYMBOL         = "not a valid symbol | symbol=%s, symbol_exp_format=XXXUSDT, asset_exp_format=XXX"
 	LOCALEX_ERR_PRICES_NOT_PROVIDED    = "no price file was provided for %s"
-	LOCALEX_ERR_PRICE_DELAY_TOO_SMALL  = "price delay too small | price_delay=%s, min_price_delay=%s"
 
 	// Execution
 	EXE_RESTORE = "restoring execution | exe_id=%s, status=%s, assets=%v"
@@ -158,4 +157,5 @@ const (
 	HANDL_ERR_ZERO_EXP_PRICE        = "expected price cannot be zero, skipping mms"
 	HANDL_ERR_ZERO_REQUESTED_AMOUNT = "requested amount cannot be zero, skipping mms"
 	HANDL_ERR_ZERO_BASE_QUOTE_DIFF  = "market order not executed | base_diff=0, quote_diff=0"
+	HANDL_ERR_FAILED_TO_ACK_MMSS    = "failed to ack mms(s) | len(cllCh)=%d, cap(cllCh)=%d"
 )

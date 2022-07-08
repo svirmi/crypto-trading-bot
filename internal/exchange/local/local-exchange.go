@@ -22,10 +22,11 @@ import (
 )
 
 var (
-	raccount   *crrmap.ConcurrentMap
-	prices     map[string]*crrqueue.Queue
-	priceDelay decimal.Decimal
-	mmsCh      chan []model.MiniMarketStats
+	raccount *crrmap.ConcurrentMap
+	prices   map[string]*crrqueue.Queue
+
+	mmsCh chan []model.MiniMarketStats
+	cllCh chan model.MiniMarketStatsAck
 )
 
 type local_exchange struct{}
@@ -34,12 +35,11 @@ func GetExchange() model.IExchange {
 	return local_exchange{}
 }
 
-func (be local_exchange) Initialize(mmsChannel chan []model.MiniMarketStats) error {
+func (be local_exchange) Initialize(mmsChannel chan []model.MiniMarketStats, cllChannel chan model.MiniMarketStatsAck) error {
 	// Decoding config
 	localExchangeConfig := struct {
 		InitialBalances map[string]string
 		PriceFilepaths  map[string]string
-		PriceDelay      string
 	}{}
 	err := mapstructure.Decode(config.GetExchangeConfig(), &localExchangeConfig)
 	if err != nil {
@@ -109,15 +109,7 @@ func (be local_exchange) Initialize(mmsChannel chan []model.MiniMarketStats) err
 
 	// Initializing mms channel
 	mmsCh = mmsChannel
-
-	// Initializing price delay
-	minPriceDelay := utils.DecimalFromString("50")
-	priceDelay = utils.DecimalFromString(localExchangeConfig.PriceDelay)
-	if priceDelay.LessThan(minPriceDelay) {
-		err := fmt.Errorf(logger.LOCALEX_ERR_PRICE_DELAY_TOO_SMALL, priceDelay, minPriceDelay)
-		logrus.Error(err.Error())
-		return err
-	}
+	cllCh = cllChannel
 
 	// Parsing account balances
 	logrus.Infof(logger.LOCALEX_INIT_RACCOUNT, len(localExchangeConfig.InitialBalances))
@@ -463,8 +455,7 @@ func (be local_exchange) MiniMarketsStatsServe() error {
 
 			// Serving mmss through the channel
 			mmsCh <- mmss
-			delay := priceDelay.Abs().IntPart()
-			time.Sleep(time.Duration(delay) * time.Millisecond)
+			wait_mms_acks(len(mmss))
 
 			// Removing mmss from queues
 			for _, symbolMmss := range prices {
@@ -474,6 +465,17 @@ func (be local_exchange) MiniMarketsStatsServe() error {
 	}()
 
 	return nil
+}
+
+func wait_mms_acks(size int) {
+	var sum int = 0
+
+	for mmsAck := range cllCh {
+		sum = sum + mmsAck.Count
+		if sum == size {
+			break
+		}
+	}
 }
 
 func (be local_exchange) MiniMarketsStatsStop() {

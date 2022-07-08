@@ -25,7 +25,7 @@ func GetExchange() model.IExchange {
 	return binance_exchange{}
 }
 
-func (be binance_exchange) Initialize(mmsChannel chan []model.MiniMarketStats) error {
+func (be binance_exchange) Initialize(mmsChannel chan []model.MiniMarketStats, _ chan model.MiniMarketStatsAck) error {
 	// Decoding config
 	binanceConfig := struct {
 		ApiKey     string

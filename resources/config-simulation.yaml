@@ -8,7 +8,6 @@
 #  priceFilepaths:
 #    ETHUSDT: /home/stacksmasher/crypto-prices/Gemini_ETHUSD_d_2021.csv
 #    BTCUSDT: /home/stacksmasher/crypto-prices/Gemini_BTCUSD_d_2021.csv
-#  priceDelay: '100'
 #mongoDb:
 #  uri: mongodb://localhost:27017
 #  database: ctb-simulation
@@ -27,7 +26,6 @@ exchange:
     USDT: '20000'
   priceFilepaths:
     ETHUSDT: ${HOME}/crypto-prices/ETHUSD_d_2021.csv
-  priceDelay: '100'
 mongoDb:
   uri: mongodb://localhost:27017
   database: ctb-simulation

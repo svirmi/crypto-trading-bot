@@ -25,13 +25,13 @@ func ParseEnv(s string) Env {
 }
 
 type IExchange interface {
-	Initialize(mmsch chan []MiniMarketStats) error
-	CanSpotTrade(symbol string) bool
-	GetSpotMarketLimits(symbol string) (SpotMarketLimits, error)
-	FilterTradableAssets(bases []string) []string
-	GetAssetsValue(bases []string) (map[string]AssetPrice, error)
+	Initialize(chan []MiniMarketStats, chan MiniMarketStatsAck) error
+	CanSpotTrade(string) bool
+	GetSpotMarketLimits(string) (SpotMarketLimits, error)
+	FilterTradableAssets([]string) []string
+	GetAssetsValue([]string) (map[string]AssetPrice, error)
 	GetAccout() (RemoteAccount, error)
-	SendSpotMarketOrder(op Operation) (Operation, error)
+	SendSpotMarketOrder(Operation) (Operation, error)
 	MiniMarketsStatsServe() error
 	MiniMarketsStatsStop()
 }

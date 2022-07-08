@@ -50,7 +50,6 @@ var mini_markets_stats_serve = func() error {
 			logrus.WithField("comp", "binancex").
 				Warnf(logger.BINEX_DROP_MMS_UPDATE, len(miniMarketsStats))
 		}
-
 	}
 
 	// Opening web socket and intialising control structure

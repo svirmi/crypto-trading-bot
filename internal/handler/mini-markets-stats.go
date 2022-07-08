@@ -17,13 +17,15 @@ import (
 )
 
 var (
-	mmsChannel chan []model.MiniMarketStats
-	exchange   model.IExchange
+	mmsChannel      chan []model.MiniMarketStats
+	callbackChannel chan model.MiniMarketStatsAck
+	exchange        model.IExchange
 )
 
-func Initialize(_mmsChannel chan []model.MiniMarketStats, _exchange model.IExchange) {
-	mmsChannel = _mmsChannel
-	exchange = _exchange
+func Initialize(mmsCh chan []model.MiniMarketStats, callbackCh chan model.MiniMarketStatsAck, ex model.IExchange) {
+	mmsChannel = mmsCh
+	callbackChannel = callbackCh
+	exchange = ex
 }
 
 func HandleMiniMarketsStats() {
@@ -46,10 +48,12 @@ var handle_mini_markets_stats = func() {
 		exe, err := get_active_exe()
 		if err != nil {
 			logrus.Errorf(logger.HANDL_ERR_SKIP_MMSS_UPDATE, err.Error())
+			ack_mmss(len(mmss))
 			continue
 		}
 		// If the execution is not ACTIVE, no action should be applied
 		if exe.Status != model.EXE_ACTIVE {
+			ack_mmss(len(mmss))
 			continue
 		}
 
@@ -57,6 +61,7 @@ var handle_mini_markets_stats = func() {
 		lacc, err := get_latest_lacc(exe.ExeId)
 		if err != nil {
 			logrus.Errorf(logger.HANDL_ERR_SKIP_MMSS_UPDATE, err.Error())
+			ack_mmss(len(mmss))
 			continue
 		}
 
@@ -64,6 +69,7 @@ var handle_mini_markets_stats = func() {
 			// Check if asset is in wallet
 			assetStatuses := get_asset_amounts(lacc)
 			if _, found := assetStatuses[mms.Asset]; !found {
+				ack_mmss(1)
 				continue
 			}
 
@@ -71,10 +77,12 @@ var handle_mini_markets_stats = func() {
 			symbol, err := utils.GetSymbolFromAsset(mms.Asset)
 			if err != nil {
 				logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
+				ack_mmss(1)
 				continue
 			}
 			if !can_spot_trade(symbol) {
 				logrus.Warnf(logger.HANDL_TRADING_DISABLED, symbol)
+				ack_mmss(1)
 				continue
 			}
 
@@ -82,6 +90,7 @@ var handle_mini_markets_stats = func() {
 			slimits, err := get_spot_market_limits(symbol)
 			if err != nil {
 				logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
+				ack_mmss(1)
 				continue
 			}
 
@@ -89,6 +98,7 @@ var handle_mini_markets_stats = func() {
 			ok := sentinel.SetToIf(false, true)
 			if !ok {
 				skip_mini_market_stats(mmss)
+				ack_mmss(1)
 				continue
 			}
 
@@ -96,20 +106,38 @@ var handle_mini_markets_stats = func() {
 			op, err := get_operation(exe, lacc, mms, slimits)
 			if err != nil {
 				logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, mms.Asset, err.Error())
+				ack_mmss(1)
 				sentinel.UnSet()
 				continue
 			}
 			if op.IsEmpty() {
+				ack_mmss(1)
 				sentinel.UnSet()
 				continue
 			}
 
 			// Set sentinel, handle operation and defer sentinel reset
 			go func(op model.Operation) {
-				defer sentinel.UnSet()
+				defer func() {
+					ack_mmss(1)
+					sentinel.UnSet()
+				}()
 				lacc = handle_operation(lacc, op)
 			}(op)
 		}
+	}
+}
+
+var ack_mmss = func(size int) {
+	if callbackChannel == nil {
+		return
+	}
+
+	select {
+	case callbackChannel <- model.MiniMarketStatsAck{Count: size}:
+	default:
+		logrus.Errorf(logger.HANDL_ERR_FAILED_TO_ACK_MMSS,
+			len(callbackChannel), cap(callbackChannel))
 	}
 }
 

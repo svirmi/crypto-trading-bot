@@ -22,7 +22,6 @@ import (
 var (
 	exchange model.IExchange
 	exe      model.Execution
-	lacc     model.ILocalAccount
 )
 
 func main() {
@@ -67,9 +66,16 @@ func main() {
 		logrus.Panic(err.Error())
 	}
 
+	// Instanciating channels
+	var mmsch chan []model.MiniMarketStats
+	var cllch chan model.MiniMarketStatsAck
+	mmsch = make(chan []model.MiniMarketStats)
+	if env == model.SIMULATION {
+		cllch = make(chan model.MiniMarketStatsAck, 10)
+	}
+
 	// Initializing exchange
-	mmsch := make(chan []model.MiniMarketStats)
-	err = exchange.Initialize(mmsch)
+	err = exchange.Initialize(mmsch, cllch)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
@@ -105,13 +111,13 @@ func main() {
 		RAccount:            raccount,
 		StrategyType:        strategyType,
 		TradableAssetsPrice: prices}
-	lacc, err = laccount.CreateOrRestore(laccReq)
+	_, err = laccount.CreateOrRestore(laccReq)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
 
 	// Initializing handler
-	handler.Initialize(mmsch, exchange)
+	handler.Initialize(mmsch, cllch, exchange)
 
 	// Handling price updates
 	handler.HandleMiniMarketsStats()

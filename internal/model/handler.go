@@ -21,3 +21,11 @@ type MiniMarketStats struct {
 func (m MiniMarketStats) IsEmpty() bool {
 	return reflect.DeepEqual(m, MiniMarketStats{})
 }
+
+type MiniMarketStatsAck struct {
+	Count int
+}
+
+func (m MiniMarketStatsAck) IsEmpty() bool {
+	return reflect.DeepEqual(m, MiniMarketStatsAck{})
+}
