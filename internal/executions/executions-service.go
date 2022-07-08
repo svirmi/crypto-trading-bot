@@ -82,9 +82,16 @@ func build_execution(req model.ExecutionInit) (model.Execution, error) {
 		return model.Execution{}, err
 	}
 
+	var usdt bool = false
 	assets := make([]string, 0, len(raccount.Balances))
 	for _, balance := range raccount.Balances {
 		assets = append(assets, balance.Asset)
+		if balance.Asset == "USDT" {
+			usdt = true
+		}
+	}
+	if !usdt {
+		assets = append(assets, "USDT")
 	}
 
 	return model.Execution{

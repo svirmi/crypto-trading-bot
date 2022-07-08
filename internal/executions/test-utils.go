@@ -48,7 +48,7 @@ func get_execution() model.Execution {
 	return model.Execution{
 		ExeId:        uuid.NewString(),
 		Status:       model.EXE_ACTIVE,
-		Assets:       []string{"BTC", "ETH"},
+		Assets:       []string{"BTC", "ETH", "USDT"},
 		StrategyType: model.DTS_STRATEGY,
 		Props: map[string]string{
 			"prop1": "value1",
