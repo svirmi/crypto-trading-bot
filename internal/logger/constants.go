@@ -89,6 +89,9 @@ const (
 	LACC_ERR_BUILD_FAILURE     = "failed to buid local account"
 	LACC_ERR_EMPTY_RACC        = "no tradable crypto assets found"
 
+	// Strategy error
+	STR_ERR_UNKNOWN_STRATEGY = "unknown stretegy type %s"
+
 	// Prices
 	PRICES_DOUBLE_INITIALIZATION = "prices queue already initialized"
 	PRICES_NO_INITIALIZATION     = "prices queue was not initialized"

@@ -40,7 +40,7 @@ func (de decimal_codec) DecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueR
 	return nil
 }
 
-func build_custom_registry() *bsoncodec.Registry {
+func GetCustomRegistry() *bsoncodec.Registry {
 	var primitiveCodecs bson.PrimitiveCodecs
 	rb := bsoncodec.NewRegistryBuilder()
 	bsoncodec.DefaultValueEncoders{}.RegisterDefaultEncoders(rb)

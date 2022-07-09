@@ -42,7 +42,7 @@ func Initialize() error {
 	logrus.Infof(logger.MONGO_CONNECTING, mongoDbConfig.Uri)
 	clientOptions := options.Client().
 		ApplyURI(mongoDbConfig.Uri).
-		SetRegistry(build_custom_registry())
+		SetRegistry(GetCustomRegistry())
 	mongoClient, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		return err
