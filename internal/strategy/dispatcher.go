@@ -12,6 +12,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 )
 
+func ValidateConfig(strategyType model.StrategyType, props map[string]string) error {
+	if strategyType == model.DTS_STRATEGY {
+		return dts.LocalAccountDTS{}.ValidateConfig(props)
+	} else if strategyType == model.PTS_STRATEGY {
+		return pts.LocalAccountPTS{}.ValidateConfig(props)
+	} else {
+		err := fmt.Errorf(logger.STR_ERR_UNKNOWN_STRATEGY, strategyType)
+		logrus.Error(err.Error())
+		return err
+	}
+}
+
 func DecodeLaccount(raw bson.Raw, registry *bsoncodec.Registry) (model.ILocalAccount, error) {
 	payload := struct {
 		model.LocalAccountMetadata `bson:"metadata"`

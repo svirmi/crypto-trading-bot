@@ -8,13 +8,6 @@
 #mongoDb:
 #  uri: mongodb://localhost:27017
 #  database: ctb-testnet
-#strategy:
-#  type: DEMO_TRADING_STRATEGY
-#  config:
-#    buyThreshold: '2.5'
-#    sellThreshold: '2.5'
-#    stopLossThreshold: '5'
-#    missProfitThreshold: '5'
 
 #################### PERCENTAGE TRADING STRATEGY ######################
 exchange:
@@ -24,10 +17,3 @@ exchange:
 mongoDb:
   uri: mongodb://localhost:27017
   database: ctb-testnet
-strategy:
-  type: PERCENTAGE_TRADING_STRATEGY
-  config:
-    buyPercentage: '2.5'
-    sellPercentage: '2.5'
-    buyAmountPercentage: '5'
-    sellAmountPercentage: '5'

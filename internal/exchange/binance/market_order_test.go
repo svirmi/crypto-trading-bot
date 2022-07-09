@@ -8,7 +8,6 @@ import (
 	binanceapi "github.com/adshao/go-binance/v2"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
-	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
@@ -16,7 +15,7 @@ import (
 )
 
 func TestFilterTradableAsset(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old := symbols
 	defer func() {
 		symbols = old
@@ -33,7 +32,7 @@ func TestFilterTradableAsset(t *testing.T) {
 }
 
 func TestGetAssetsValue(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old_get_price := binance_get_price
 	old_symbols := symbols
 	defer func() {
@@ -67,7 +66,7 @@ func TestGetAssetsValue(t *testing.T) {
 }
 
 func TestGetAccount(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old := binance_get_account
 	defer func() {
 		binance_get_account = old
@@ -91,7 +90,7 @@ func TestGetAccount(t *testing.T) {
 }
 
 func TestSendMarketOrder_NoSuchSymbol(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old := symbols
 	defer func() {
 		symbols = old
@@ -110,7 +109,7 @@ func TestSendMarketOrder_NoSuchSymbol(t *testing.T) {
 }
 
 func TestSendMarketOrder_Direct_Buy_BaseAmt(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old_symbols := symbols
 	old_create_order := binance_create_order
 	old_get_spot_limits := get_spot_market_limits
@@ -147,7 +146,7 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt(t *testing.T) {
 }
 
 func TestSendMarketOrder_Direct_Buy_BaseAmt_SpotDisabled(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old_symbols := symbols
 	old_get_spot_limits := get_spot_market_limits
 	defer func() {
@@ -174,7 +173,7 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_SpotDisabled(t *testing.T) {
 }
 
 func TestSendMarketOrder_Direct_Buy_BaseAmt_BelowMinBase(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old_symbols := symbols
 	old_get_spot_limits := get_spot_market_limits
 	defer func() {
@@ -201,7 +200,7 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_BelowMinBase(t *testing.T) {
 }
 
 func TestSendMarketOrder_Direct_Buy_BaseAmt_Iceberg(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old_symbols := symbols
 	old_get_spot_limits := get_spot_market_limits
 	old_do_do_send_market_order := do_do_send_spot_market_order
@@ -255,7 +254,7 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_Iceberg(t *testing.T) {
 }
 
 func TestSendMarketOrder_Direct_Buy_BaseAmt_IcebergWithFailures(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old_symbols := symbols
 	old_get_spot_limits := get_spot_market_limits
 	old_do_do_send_market_order := do_do_send_spot_market_order
@@ -307,7 +306,7 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_IcebergWithFailures(t *testing.T) {
 }
 
 func TestSendMarketOrder_Direct_Sell_QuoteAmt(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old_symbols := symbols
 	old_create_order := binance_create_order
 	old_get_spot_limits := get_spot_market_limits
@@ -344,7 +343,7 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt(t *testing.T) {
 }
 
 func TestSendMarketOrder_Direct_Sell_QuoteAmt_BelowMinQuote(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old_symbols := symbols
 	old_get_spot_limits := get_spot_market_limits
 	defer func() {
@@ -371,7 +370,7 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt_BelowMinQuote(t *testing.T) {
 }
 
 func TestSendMarketOrder_Direct_Sell_QuoteAmt_Iceberg(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old_symbols := symbols
 	old_get_spot_limits := get_spot_market_limits
 	old_do_do_send_spot_market_order := do_do_send_spot_market_order
@@ -425,7 +424,7 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt_Iceberg(t *testing.T) {
 }
 
 func TestSendMarketOrder_Direct_Sell_QuoteAmt_IcebergWithFailures(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old_symbols := symbols
 	old_get_spot_limits := get_spot_market_limits
 	old_do_do_send_spot_market_order := do_do_send_spot_market_order
@@ -477,7 +476,7 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt_IcebergWithFailures(t *testing.T) 
 }
 
 func TestSendMarketOrder_Indirect_Buy_BaseAmt(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old_symbols := symbols
 	old_create_order := binance_create_order
 	old_get_spot_limits := get_spot_market_limits
@@ -518,7 +517,7 @@ func TestSendMarketOrder_Indirect_Buy_BaseAmt(t *testing.T) {
 }
 
 func TestSendMarketOrder_Indirect_Sell_QuoteAmt(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old_symbols := symbols
 	old_create_order := binance_create_order
 	old_get_spot_limits := get_spot_market_limits

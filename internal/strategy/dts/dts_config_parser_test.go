@@ -3,14 +3,13 @@ package dts
 import (
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
 func TestStrategyConfig(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 
 	props := map[string]string{
 		_BUY_THRESHOLD:         "12.34",
@@ -25,11 +24,13 @@ func TestStrategyConfig(t *testing.T) {
 		StopLossThreshold:   utils.DecimalFromString("34.56"),
 	}
 
-	testutils.AssertEq(t, exp, parse_config(props), "dts_config")
+	config, err := parse_config(props)
+	testutils.AssertNil(t, err, "error")
+	testutils.AssertEq(t, exp, config, "dts_config")
 }
 
 func TestStrategyConfig_FailedToParseConfig(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 
 	props := map[string]string{
 		"nonExisting":          "12.34",
@@ -37,13 +38,13 @@ func TestStrategyConfig_FailedToParseConfig(t *testing.T) {
 		_MISS_PROFIT_THRESHOLD: "45.67",
 		_STOP_LOSS_THRESHOLD:   "34.56"}
 
-	testutils.AssertPanic(t, func() {
-		parse_config(props)
-	})
+	config, err := parse_config(props)
+	testutils.AssertNotNil(t, err, "error")
+	testutils.AssertEq(t, strategy_config_dts{}, config, "pts_config")
 }
 
 func TestStrategyConfig_BelowZeroThresholds(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 
 	props := map[string]string{
 		_BUY_THRESHOLD:         "12.34",
@@ -51,7 +52,7 @@ func TestStrategyConfig_BelowZeroThresholds(t *testing.T) {
 		_MISS_PROFIT_THRESHOLD: "0",
 		_STOP_LOSS_THRESHOLD:   "34.56"}
 
-	testutils.AssertPanic(t, func() {
-		parse_config(props)
-	})
+	config, err := parse_config(props)
+	testutils.AssertNotNil(t, err, "error")
+	testutils.AssertEq(t, strategy_config_dts{}, config, "pts_config")
 }

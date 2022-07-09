@@ -12,7 +12,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Initialize(colors bool, level logrus.Level) {
+func Initialize(colors bool, v, vv bool) {
+	var level logrus.Level = logrus.InfoLevel
+	if vv {
+		level = logrus.TraceLevel
+	} else if v {
+		level = logrus.DebugLevel
+	}
+
 	formatter := new(log_formatter)
 	formatter.CustomCallerFormatter = func(f *runtime.Frame) string {
 		return fmt.Sprintf("%s:%d", path.Base(f.File), f.Line)

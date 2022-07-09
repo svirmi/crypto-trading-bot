@@ -11,8 +11,10 @@ import (
 )
 
 const (
-	_MAX_NUM = "1000000000000"  // 10^12
-	_MIN_NUM = "-1000000000000" // -10^12
+	_MAX_NUM       = "1000000000000"  // 10^12
+	_MIN_NUM       = "-1000000000000" // -10^12
+	_INTEGER_REGEX = `^[1-9][0-9]*$`
+	_FLOAT_REGEX   = `^(([1-9][0-9]+)|[0-9])(\.[0-9]+)?$`
 )
 
 /*** Symbols ***/
@@ -68,6 +70,14 @@ func GetAssetsFromSymbols(symbols []string) ([]string, []error) {
 }
 
 /*** Decimals ***/
+
+func GetFloatRegexp() string {
+	return _FLOAT_REGEX
+}
+
+func GetIntegerRegexp() string {
+	return _INTEGER_REGEX
+}
 
 func DecimalFromString(str string) decimal.Decimal {
 	decimal, err := decimal.NewFromString(str)

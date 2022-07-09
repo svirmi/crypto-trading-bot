@@ -29,12 +29,7 @@ func Initialize(mmsCh chan []model.MiniMarketStats, callbackCh chan model.MiniMa
 }
 
 func HandleMiniMarketsStats() {
-	prices.Initialize()
 	go handle_mini_markets_stats()
-}
-
-func Terminate() {
-	prices.Terminate()
 }
 
 var handle_mini_markets_stats = func() {

@@ -6,6 +6,7 @@ require (
 	github.com/Workiva/go-datastructures v1.0.53 // indirect
 	github.com/adshao/go-binance v2.3.2+incompatible // indirect
 	github.com/adshao/go-binance/v2 v2.3.2
+	github.com/alecthomas/kong v0.6.1 // indirect
 	github.com/aws/aws-sdk-go v1.40.59 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect

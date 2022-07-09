@@ -13,6 +13,14 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
+// PTS config props
+const (
+	_BUY_PERCENTAGE         = "buyPercentage"
+	_SELL_PERCENTAGE        = "sellPercentage"
+	_BUY_AMOUNT_PERCENTAGE  = "buyAmountPercentage"
+	_SELL_AMOUNT_PERCENTAGE = "sellAmountPercentage"
+)
+
 type AssetStatusPTS struct {
 	Asset              string          `bson:"asset"`              // Asset being tracked
 	Amount             decimal.Decimal `bson:"amount"`             // Amount of that asset currently owned
@@ -173,7 +181,11 @@ func (a LocalAccountPTS) GetOperation(props map[string]string, mms model.MiniMar
 		return model.Operation{}, err
 	}
 
-	config := parse_config(props)
+	config, err := parse_config(props)
+	if err != nil {
+		return model.Operation{}, err
+	}
+
 	sellPrice := utils.IncrementByPercentage(lastOpPrice, config.SellPercentage)
 	buyPrice := utils.IncrementByPercentage(lastOpPrice, utils.SignChangeDecimal(config.BuyPercentage))
 	sellAmnt := utils.PercentageOf(currentAmnt, config.SellAmountPercentage)
@@ -190,7 +202,7 @@ func (a LocalAccountPTS) GetOperation(props map[string]string, mms model.MiniMar
 		return model.Operation{}, nil
 	}
 
-	err := check_spot_market_limits(op, slimts)
+	err = check_spot_market_limits(op, slimts)
 	if err != nil {
 		return model.Operation{}, err
 	}

@@ -146,12 +146,12 @@ func parse_prices_file(symbol, priceFilepath string) error {
 	defer file.Close()
 
 	// Compiling regexps
-	intre, err := regexp.Compile(`^[1-9][0-9]*$`)
+	intre, err := regexp.Compile(utils.GetIntegerRegexp())
 	if err != nil {
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return err
 	}
-	floatre, err := regexp.Compile(`^(([1-9][0-9]+)|[0-9])(\.[0-9]+)?$`)
+	floatre, err := regexp.Compile(utils.GetFloatRegexp())
 	if err != nil {
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return err

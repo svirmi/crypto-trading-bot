@@ -1,17 +1,12 @@
 package dts
 
 import (
+	"fmt"
+
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
-)
-
-const (
-	_BUY_THRESHOLD         = "buyThreshold"
-	_SELL_THRESHOLD        = "sellThreshold"
-	_STOP_LOSS_THRESHOLD   = "stopLossThreshold"
-	_MISS_PROFIT_THRESHOLD = "missProfitThreshold"
 )
 
 type strategy_config_dts struct {
@@ -21,22 +16,35 @@ type strategy_config_dts struct {
 	MissProfitThreshold decimal.Decimal
 }
 
-func parse_config(props map[string]string) (s strategy_config_dts) {
+func (l LocalAccountDTS) ValidateConfig(props map[string]string) error {
+	_, err := parse_config(props)
+	return err
+}
+
+func parse_config(props map[string]string) (s strategy_config_dts, err error) {
 	bt, found := props[_BUY_THRESHOLD]
 	if !found {
-		logrus.WithField("comp", "dts").Panicf(logger.XXX_ERR_MISSING_PROP_KEY, _BUY_THRESHOLD)
+		err = fmt.Errorf(logger.XXX_ERR_MISSING_PROP_KEY, _BUY_THRESHOLD)
+		logrus.WithField("comp", "dts").Error(err.Error())
+		return strategy_config_dts{}, err
 	}
 	st, found := props[_SELL_THRESHOLD]
 	if !found {
-		logrus.WithField("comp", "dts").Panicf(logger.XXX_ERR_MISSING_PROP_KEY, _SELL_THRESHOLD)
+		err = fmt.Errorf(logger.XXX_ERR_MISSING_PROP_KEY, _SELL_THRESHOLD)
+		logrus.WithField("comp", "dts").Error(err.Error())
+		return strategy_config_dts{}, err
 	}
 	mpt, found := props[_MISS_PROFIT_THRESHOLD]
 	if !found {
-		logrus.WithField("comp", "dts").Panicf(logger.XXX_ERR_MISSING_PROP_KEY, _MISS_PROFIT_THRESHOLD)
+		err = fmt.Errorf(logger.XXX_ERR_MISSING_PROP_KEY, _MISS_PROFIT_THRESHOLD)
+		logrus.WithField("comp", "dts").Error(err.Error())
+		return strategy_config_dts{}, err
 	}
 	slt, found := props[_STOP_LOSS_THRESHOLD]
 	if !found {
-		logrus.WithField("comp", "dts").Panicf(logger.XXX_ERR_MISSING_PROP_KEY, _STOP_LOSS_THRESHOLD)
+		err = fmt.Errorf(logger.XXX_ERR_MISSING_PROP_KEY, _STOP_LOSS_THRESHOLD)
+		logrus.WithField("comp", "dts").Error(err.Error())
+		return strategy_config_dts{}, err
 	}
 
 	s.BuyThreshold = utils.DecimalFromString(bt).Round(2)
@@ -50,8 +58,10 @@ func parse_config(props map[string]string) (s strategy_config_dts) {
 		s.MissProfitThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.StopLossThreshold.LessThanOrEqual(decimal.Zero) {
 
-		logrus.WithField("comp", "dts").Panic(logger.DTS_ERR_NEGATIVE_THRESHOLDS)
+		err = fmt.Errorf(logger.DTS_ERR_NEGATIVE_THRESHOLDS)
+		logrus.WithField("comp", "dts").Error(err.Error())
+		return strategy_config_dts{}, err
 	}
 
-	return s
+	return s, nil
 }

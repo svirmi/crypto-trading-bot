@@ -1,10 +1,36 @@
 package model
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/shopspring/decimal"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 )
+
+// Strategy types
+type StrategyType string
+
+// Strategies
+const (
+	DTS_STRATEGY       StrategyType = "DEMO_TRADING_STRATEGY"
+	DTS_STRATEGY_SHORT StrategyType = "dts"
+	PTS_STRATEGY       StrategyType = "PERCENTAGE_TRADING_STRATEGY"
+	PTS_STRATEGY_SHORT StrategyType = "pts"
+)
+
+func ParseStr(s string) (StrategyType, error) {
+	if s == string(DTS_STRATEGY) || s == string(DTS_STRATEGY_SHORT) {
+		return DTS_STRATEGY, nil
+	}
+	if s == string(PTS_STRATEGY) || s == string(PTS_STRATEGY_SHORT) {
+		return PTS_STRATEGY, nil
+	}
+
+	envs := fmt.Sprintf("[%s|%s,%s|%s]", DTS_STRATEGY, DTS_STRATEGY_SHORT, PTS_STRATEGY, PTS_STRATEGY_SHORT)
+	err := fmt.Errorf(logger.MODEL_ERR_UNKNOWN_ENV, s, envs)
+	return StrategyType(s), err
+}
 
 // Representation of remote Binance wallet
 type RemoteAccount struct {
@@ -46,14 +72,6 @@ func (p AssetAmount) IsEmpty() bool {
 	return reflect.DeepEqual(p, AssetAmount{})
 }
 
-// Strategy types
-type StrategyType string
-
-const (
-	DTS_STRATEGY StrategyType = "DEMO_TRADING_STRATEGY"
-	PTS_STRATEGY StrategyType = "PERCENTAGE_TRADING_STRATEGY"
-)
-
 type ILocalAccount interface {
 	GetAccountId() string
 	GetExeId() string
@@ -63,6 +81,7 @@ type ILocalAccount interface {
 	RegisterTrading(Operation) (ILocalAccount, error)
 	GetOperation(map[string]string, MiniMarketStats, SpotMarketLimits) (Operation, error)
 	GetAssetAmounts() map[string]AssetAmount
+	ValidateConfig(map[string]string) error
 }
 
 // Abstract local account representation
@@ -105,15 +124,4 @@ type LocalAccountInit struct {
 
 func (acr LocalAccountInit) IsEmpty() bool {
 	return reflect.DeepEqual(acr, LocalAccountInit{})
-}
-
-type SpotMarketLimits struct {
-	MinBase  decimal.Decimal
-	MaxBase  decimal.Decimal
-	StepBase decimal.Decimal
-	MinQuote decimal.Decimal
-}
-
-func (s SpotMarketLimits) IsEmpty() bool {
-	return reflect.DeepEqual(s, SpotMarketLimits{})
 }

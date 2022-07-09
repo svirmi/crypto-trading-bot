@@ -13,6 +13,14 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
+// DTS config props
+const (
+	_BUY_THRESHOLD         = "buyThreshold"
+	_SELL_THRESHOLD        = "sellThreshold"
+	_STOP_LOSS_THRESHOLD   = "stopLossThreshold"
+	_MISS_PROFIT_THRESHOLD = "missProfitThreshold"
+)
+
 type OperationTypeDTS string
 
 const (
@@ -183,7 +191,11 @@ func (a LocalAccountDTS) GetOperation(props map[string]string, mms model.MiniMar
 		return model.Operation{}, err
 	}
 
-	dtsConfig := parse_config(props)
+	dtsConfig, err := parse_config(props)
+	if err != nil {
+		return model.Operation{}, nil
+	}
+
 	sellPrice := utils.IncrementByPercentage(lastOpPrice, dtsConfig.SellThreshold)
 	stopLossPrice := utils.IncrementByPercentage(lastOpPrice, utils.SignChangeDecimal(dtsConfig.StopLossThreshold))
 	buyPrice := utils.IncrementByPercentage(lastOpPrice, utils.SignChangeDecimal(dtsConfig.BuyThreshold))
@@ -216,7 +228,7 @@ func (a LocalAccountDTS) GetOperation(props map[string]string, mms model.MiniMar
 		return model.Operation{}, nil
 	}
 
-	err := check_spot_market_limits(op, slimts)
+	err = check_spot_market_limits(op, slimts)
 	if err != nil {
 		return model.Operation{}, nil
 	}

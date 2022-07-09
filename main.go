@@ -1,15 +1,15 @@
 package main
 
 import (
-	"flag"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
+	"github.com/alecthomas/kong"
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/analytics"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/local"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/handler"
@@ -17,45 +17,91 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/prices"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy"
 )
 
-var (
-	exchange model.IExchange
-	exe      model.Execution
+const (
+	config_folder              = "resources"
+	simulation_config_filepath = "config-simulation.yaml"
+	testnet_config_filepath    = "config-testnet.yaml"
+	mainnet_config_filepath    = "config.yaml"
 )
+
+type Flags struct {
+	v               bool
+	vv              bool
+	colors          bool
+	config_filepath string
+}
+
+type Simulate struct {
+	StrategyType   string            `arg:"" help:"Strategy type."`
+	StrategyConfig map[string]string `arg:"" help:"Strategy config."`
+}
+
+func (r *Simulate) Run(flags Flags) error {
+	if flags.config_filepath == "" {
+		flags.config_filepath = filepath.Join(config_folder, simulation_config_filepath)
+	}
+
+	run_simulation(flags, r.StrategyType, r.StrategyConfig)
+	return nil
+}
+
+type Testnet struct{}
+
+func (r *Testnet) Run(flags Flags) error {
+	if flags.config_filepath == "" {
+		flags.config_filepath = filepath.Join(config_folder, testnet_config_filepath)
+	}
+	return nil
+}
+
+type Mainnet struct{}
+
+func (r *Mainnet) Run(flags Flags) error {
+	if flags.config_filepath == "" {
+		flags.config_filepath = filepath.Join(config_folder, mainnet_config_filepath)
+	}
+	return nil
+}
+
+var cli struct {
+	Debug          bool     `short:"d" help:"Debug level verbosity."`
+	Trace          bool     `short:"t" help:"Trace level verbosity."`
+	Colors         bool     `short:"c" help:"Enable log colors."`
+	ConfigFilepath string   `short:"f" help:"config file path."`
+	Simulate       Simulate `cmd:"" help:"Run strategy simulation."`
+	Testnet        Testnet  `cmd:"" help:"Run against Binance testnet."`
+	Mainnet        Mainnet  `cmd:"" help:"Run against Binance mainnet."`
+}
 
 func main() {
-	// Parsing command line
-	envstr := flag.String("env", string(model.MAINNET), "if present, application runs on testnet")
-	v := flag.Bool("v", false, "if present, debug logs are shown")
-	vv := flag.Bool("vv", false, "if present, trace logs are shown")
-	colors := flag.Bool("colors", false, "if present, logs are colored")
-	flag.Parse()
+	// Parse args and call the Run() method of the selected command
+	ctx := kong.Parse(&cli)
+	ctx.Run(Flags{cli.Debug, cli.Trace, cli.Colors, cli.ConfigFilepath})
+}
 
-	// Initalizing logger
-	var level logrus.Level = logrus.InfoLevel
-	if *vv {
-		level = logrus.TraceLevel
-	} else if *v {
-		level = logrus.DebugLevel
-	}
-	logger.Initialize(*colors, level)
+func run_simulation(flags Flags, strategyName string, strategyConfig map[string]string) {
+	// Initialize logger
+	logger.Initialize(flags.colors, flags.v, flags.vv)
 
 	// Register interrupt handler
-	env := model.ParseEnv(*envstr)
-	register_interrupt_handler(env)
+	register_interrupt_handler()
 
-	// Getting exchange instance
-	if model.SIMULATION == env {
-		exchange = local.GetExchange()
-	} else if model.TESTNET == env || model.MAINNET == env {
-		exchange = binance.GetExchange()
-	} else {
-		logrus.Panicf(logger.MAIN_ERR_UNSUPPORTED_ENV, env)
+	// Validating configuration
+	strategyType, err := model.ParseStr(strategyName)
+	if err != nil {
+		logrus.Panic(err.Error())
+	}
+	err = strategy.ValidateConfig(strategyType, strategyConfig)
+	if err != nil {
+		logrus.Panic(err.Error())
 	}
 
-	// Parsing config
-	err := config.Initialize(env)
+	// Parsing config files
+	err = config.Initialize(flags.config_filepath)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
@@ -65,16 +111,18 @@ func main() {
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
+	terminate_mongodb = func() {
+		mongodb.Disconnect()
+	}
 
 	// Instanciating channels
 	var mmsch chan []model.MiniMarketStats
 	var cllch chan model.MiniMarketStatsAck
 	mmsch = make(chan []model.MiniMarketStats)
-	if env == model.SIMULATION {
-		cllch = make(chan model.MiniMarketStatsAck, 10)
-	}
+	cllch = make(chan model.MiniMarketStatsAck, 10)
 
 	// Initializing exchange
+	exchange := local.GetExchange()
 	err = exchange.Initialize(mmsch, cllch)
 	if err != nil {
 		logrus.Panic(err.Error())
@@ -87,47 +135,58 @@ func main() {
 	}
 
 	// Creating or restoring execution
-	strategyConfig := config.GetStrategyConfig()
 	exeReq := model.ExecutionInit{
 		Raccount:     raccount,
-		StrategyType: model.StrategyType(strategyConfig.Type),
-		Props:        strategyConfig.Config}
-	exe, err = executions.CreateOrRestore(exeReq)
+		StrategyType: strategyType,
+		Props:        strategyConfig}
+	exe, err := executions.CreateOrRestore(exeReq)
 	if err != nil {
 		logrus.Panic(err.Error())
+	}
+	terminate_execution = func() {
+		executions.Terminate(exe.ExeId)
+		analytics.StoreAnalytics(exe.ExeId)
 	}
 
 	// Getting tradable assets
 	tradableAssets := exchange.FilterTradableAssets(exe.Assets)
-	prices, err := exchange.GetAssetsValue(tradableAssets)
+	assetPrices, err := exchange.GetAssetsValue(tradableAssets)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
 
 	// Creating or restoring local account
-	strategyType := model.StrategyType(strategyConfig.Type)
 	laccReq := model.LocalAccountInit{
 		ExeId:               exe.ExeId,
 		RAccount:            raccount,
 		StrategyType:        strategyType,
-		TradableAssetsPrice: prices}
+		TradableAssetsPrice: assetPrices}
 	_, err = laccount.CreateOrRestore(laccReq)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
 
+	// Initializing prices
+	prices.Initialize()
+	terminate_prices = func() {
+		prices.Terminate()
+	}
+
 	// Initializing handler
 	handler.Initialize(mmsch, cllch, exchange)
-
-	// Handling price updates
 	handler.HandleMiniMarketsStats()
+
+	// Start serving mini markets stats
 	exchange.MiniMarketsStatsServe()
+	terminate_exchange = func() {
+		exchange.MiniMarketsStatsStop()
+	}
 
 	// Wait until the application is stopped
 	select {}
 }
 
-func register_interrupt_handler(env model.Env) chan os.Signal {
+func register_interrupt_handler() chan os.Signal {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc,
 		syscall.SIGHUP,
@@ -137,33 +196,28 @@ func register_interrupt_handler(env model.Env) chan os.Signal {
 
 	go func() {
 		<-sigc
-
-		if env != model.SIMULATION {
-			terminate()
-		} else {
-			terminate_simulation()
-		}
-
+		terminate_exchange()
+		terminate_prices()
+		terminate_execution()
+		terminate_mongodb()
 		logrus.Info("bye, bye")
 		os.Exit(0)
 	}()
 	return sigc
 }
 
-func terminate() {
-	if exchange != nil {
-		exchange.MiniMarketsStatsStop()
-	}
-	handler.Terminate()
-	mongodb.Disconnect()
+var terminate_exchange = func() {
+	// Empty implementation
 }
 
-func terminate_simulation() {
-	if exchange != nil {
-		exchange.MiniMarketsStatsStop()
-	}
-	handler.Terminate()
-	executions.Terminate(exe.ExeId)
-	analytics.StoreAnalytics(exe.ExeId)
-	mongodb.Disconnect()
+var terminate_prices = func() {
+	// Empty implementation
+}
+
+var terminate_execution = func() {
+	// Empty implementation
+}
+
+var terminate_mongodb = func() {
+	// Empty implementation
 }

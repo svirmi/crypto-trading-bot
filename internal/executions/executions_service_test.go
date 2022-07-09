@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
@@ -15,7 +14,7 @@ import (
 )
 
 func TestCreateOrRestore_Create(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -42,7 +41,7 @@ func TestCreateOrRestore_Create(t *testing.T) {
 }
 
 func TestCreateOrRestore_Create_EmptyRacc(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -61,7 +60,7 @@ func TestCreateOrRestore_Create_EmptyRacc(t *testing.T) {
 }
 
 func TestCreateOrRestore_Restore(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -87,7 +86,7 @@ func TestCreateOrRestore_Restore(t *testing.T) {
 }
 
 func TestGetLatestByExeId(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -121,7 +120,7 @@ func TestGetLatestByExeId(t *testing.T) {
 }
 
 func TestGetCurrentlyActive(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -163,7 +162,7 @@ func TestGetCurrentlyActive(t *testing.T) {
 }
 
 func TestGetCurrentlyActive_None(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -182,7 +181,7 @@ func TestGetCurrentlyActive_None(t *testing.T) {
 }
 
 func TestStatuses(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()

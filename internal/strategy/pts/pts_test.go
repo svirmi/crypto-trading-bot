@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
-	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
@@ -16,7 +15,7 @@ import (
 /********************** Testing Initialize() *************************/
 
 func TestInitialize(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	laccountInit := get_laccount_init_test()
 
 	// Testing that LocalAccountPTS is properly initialized and
@@ -53,7 +52,7 @@ func TestInitialize(t *testing.T) {
 /********************** Testing RegisterTrading() *************************/
 
 func TestRegisterTrading_BaseAmt_BuySide(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	laccount := get_laccount_test()
 
 	amt := utils.DecimalFromString("0.1")
@@ -78,7 +77,7 @@ func TestRegisterTrading_BaseAmt_BuySide(t *testing.T) {
 }
 
 func TestRegisterTrading_BaseAmt_SellSide(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	laccount := get_laccount_test()
 
 	amt := utils.DecimalFromString("11.34")
@@ -103,7 +102,7 @@ func TestRegisterTrading_BaseAmt_SellSide(t *testing.T) {
 }
 
 func TestRegisterTrading_QuoteAmt_BuySide(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	laccount := get_laccount_test()
 
 	amt := utils.DecimalFromString("105.67")
@@ -128,7 +127,7 @@ func TestRegisterTrading_QuoteAmt_BuySide(t *testing.T) {
 }
 
 func TestRegisterTrading_QuoteAmt_SellSide(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	laccount := get_laccount_test()
 
 	amt := utils.DecimalFromString("10000")
@@ -153,7 +152,7 @@ func TestRegisterTrading_QuoteAmt_SellSide(t *testing.T) {
 }
 
 func TestRegisterTrading_WrongExeId(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	exp := get_laccount_test()
 	amt := utils.DecimalFromString("105.67")
 	price := utils.DecimalFromString("500")
@@ -165,7 +164,7 @@ func TestRegisterTrading_WrongExeId(t *testing.T) {
 }
 
 func TestRegisterTrading_OpFailed(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	exp := get_laccount_test()
 
 	amt := utils.DecimalFromString("105.67")
@@ -181,7 +180,7 @@ func TestRegisterTrading_OpFailed(t *testing.T) {
 }
 
 func TestRegisterTrading_BadQuoteCurrency(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	exp := get_laccount_test()
 
 	amt := utils.DecimalFromString("105.67")
@@ -196,7 +195,7 @@ func TestRegisterTrading_BadQuoteCurrency(t *testing.T) {
 }
 
 func TestRegisterTrading_AssetNotFound(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	exp := get_laccount_test()
 
 	amt := utils.DecimalFromString("105.67")
@@ -211,7 +210,7 @@ func TestRegisterTrading_AssetNotFound(t *testing.T) {
 }
 
 func TestRegisterTrading_NegativeBalanceBase(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	exp := get_laccount_test()
 
 	amt := utils.DecimalFromString("1923789.12")
@@ -225,7 +224,7 @@ func TestRegisterTrading_NegativeBalanceBase(t *testing.T) {
 }
 
 func TestRegisterTrading_NegativeBalanceQuote(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	exp := get_laccount_test()
 
 	amt := utils.DecimalFromString("1923789.12")

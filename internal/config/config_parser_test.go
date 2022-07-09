@@ -5,72 +5,57 @@ import (
 	"testing"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
 )
 
 var (
-	dts_test_resource_folder = "test-resources"
+	test_resource_folder            = "test-resources"
+	test_simulation_config_filename = "config-simulation.yaml"
+	test_testnet_config_filename    = "config-testnet.yaml"
+	test_mainnet_config_filename    = "config.yaml"
 )
 
 func TestInitialize_Mainnet(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
-	test_parse_config(t, model.MAINNET, dts_test_resource_folder)
+	logger.Initialize(false, true, true)
+	test_parse_config(test_resource_folder, test_mainnet_config_filename)
 
 	got := appConfig
 	got_econfig := make(map[string]string)
-	got_sconfig := make(map[string]string)
 	mapstructure.Decode(got.Exchange, &got_econfig)
-	mapstructure.Decode(got.Strategy.Config, &got_sconfig)
 	got.Exchange = got_econfig
-	got.Strategy.Config = got_sconfig
 
 	testutils.AssertEq(t, get_mainnet_config(), got, "config")
 }
 
 func TestInitialize_Testnet(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
-	test_parse_config(t, model.TESTNET, dts_test_resource_folder)
+	logger.Initialize(false, true, true)
+	test_parse_config(test_resource_folder, test_testnet_config_filename)
 
 	got := appConfig
 	got_econfig := make(map[string]string)
-	got_sconfig := make(map[string]string)
 	mapstructure.Decode(got.Exchange, &got_econfig)
-	mapstructure.Decode(got.Strategy.Config, &got_sconfig)
 	got.Exchange = got_econfig
-	got.Strategy.Config = got_sconfig
 
 	testutils.AssertEq(t, get_testnet_config(), got, "config")
 }
 
 func TestInitialize_Simulation(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
-	test_parse_config(t, model.SIMULATION, dts_test_resource_folder)
+	logger.Initialize(false, true, true)
+	test_parse_config(test_resource_folder, test_simulation_config_filename)
 
 	got := appConfig
 	got_econfig := make(map[string]string)
-	got_sconfig := make(map[string]string)
 	mapstructure.Decode(got.Exchange, &got_econfig)
-	mapstructure.Decode(got.Strategy.Config, &got_sconfig)
 	got.Exchange = got_econfig
-	got.Strategy.Config = got_sconfig
 
 	testutils.AssertEq(t, get_simulation_config(), got, "config")
 }
 
-func test_parse_config(t *testing.T, env model.Env, test_resource_folder string) {
-	// Restoring interanl status after test execution
-	resource_folder_org := resource_folder
-	resource_folder = test_resource_folder
-	defer func() {
-		resource_folder = resource_folder_org
-	}()
-
+func test_parse_config(test_resource_folder, test_config_filename string) {
 	// Testing testnet config parsing
-	resource_folder = filepath.Join("..", "..", resource_folder)
-	config, _ := parse_config(env)
+	test_config_filepath := filepath.Join("..", "..", test_resource_folder, test_config_filename)
+	config, _ := parse_config(test_config_filepath)
 	appConfig = config
 }
 
@@ -81,12 +66,7 @@ func get_mainnet_config() Config {
 			"propB": "propB"},
 		MongoDb: MongoDbConfig{
 			Uri:      "mongodb://localhost:27017",
-			Database: "ctb"},
-		Strategy: StrategyConfig{
-			Type: "TEST_STRATEGY_TYPE",
-			Config: map[string]string{
-				"prop1": "prop1",
-				"prop2": "prop2"}}}
+			Database: "ctb"}}
 }
 
 func get_testnet_config() Config {
@@ -96,12 +76,7 @@ func get_testnet_config() Config {
 			"propB": "propB"},
 		MongoDb: MongoDbConfig{
 			Uri:      "mongodb://localhost:27017",
-			Database: "ctb-testnet"},
-		Strategy: StrategyConfig{
-			Type: "TEST_STRATEGY_TYPE",
-			Config: map[string]string{
-				"prop1": "prop1",
-				"prop2": "prop2"}}}
+			Database: "ctb-testnet"}}
 }
 
 func get_simulation_config() Config {
@@ -111,10 +86,5 @@ func get_simulation_config() Config {
 			"propB": "propB"},
 		MongoDb: MongoDbConfig{
 			Uri:      "mongodb://localhost:27017",
-			Database: "ctb-simulation"},
-		Strategy: StrategyConfig{
-			Type: "TEST_STRATEGY_TYPE",
-			Config: map[string]string{
-				"prop1": "prop1",
-				"prop2": "prop2"}}}
+			Database: "ctb-simulation"}}
 }

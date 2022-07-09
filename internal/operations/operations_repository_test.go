@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
@@ -15,7 +14,7 @@ import (
 )
 
 func TestInsert(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -43,7 +42,7 @@ func TestInsert(t *testing.T) {
 }
 
 func TestInsertMany(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()
@@ -75,7 +74,7 @@ func TestInsertMany(t *testing.T) {
 }
 
 func TestFindByExeId(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
 	mongodb.Initialize()

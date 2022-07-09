@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/shopspring/decimal"
-	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
@@ -12,7 +11,7 @@ import (
 )
 
 func TestCanSpotTrade(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old := symbols
 
 	defer func() {
@@ -28,7 +27,7 @@ func TestCanSpotTrade(t *testing.T) {
 }
 
 func TestGetSpotMarketLimits(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old := symbols
 
 	defer func() {
@@ -67,7 +66,7 @@ func TestGetSpotMarketLimits(t *testing.T) {
 }
 
 func TestGetSpotMarketLimits_InvalidValues(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old := symbols
 
 	defer func() {
@@ -125,7 +124,7 @@ func TestGetSpotMarketLimits_InvalidValues(t *testing.T) {
 }
 
 func TestGetSpotMarketLimits_FilterNotFound(t *testing.T) {
-	logger.Initialize(false, logrus.TraceLevel)
+	logger.Initialize(false, true, true)
 	old := symbols
 
 	defer func() {

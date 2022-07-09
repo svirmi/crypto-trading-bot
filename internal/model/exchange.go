@@ -1,28 +1,10 @@
 package model
 
 import (
-	"fmt"
+	"reflect"
 
-	"github.com/sirupsen/logrus"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
+	"github.com/shopspring/decimal"
 )
-
-type Env string
-
-const (
-	SIMULATION Env = "simulation" // Local exchange
-	TESTNET    Env = "testnet"    // Binance testnet
-	MAINNET    Env = "mainnet"    // Binance mainnet
-)
-
-func ParseEnv(s string) Env {
-	if s != string(SIMULATION) && s != string(TESTNET) && s != string(MAINNET) {
-		envs := fmt.Sprintf("[%s,%s,%s]", SIMULATION, TESTNET, MAINNET)
-		err := fmt.Errorf(logger.MODEL_ERR_UNKNOWN_ENV, s, envs)
-		logrus.Panic(err.Error())
-	}
-	return Env(s)
-}
 
 type IExchange interface {
 	Initialize(chan []MiniMarketStats, chan MiniMarketStatsAck) error
@@ -34,4 +16,15 @@ type IExchange interface {
 	SendSpotMarketOrder(Operation) (Operation, error)
 	MiniMarketsStatsServe() error
 	MiniMarketsStatsStop()
+}
+
+type SpotMarketLimits struct {
+	MinBase  decimal.Decimal
+	MaxBase  decimal.Decimal
+	StepBase decimal.Decimal
+	MinQuote decimal.Decimal
+}
+
+func (s SpotMarketLimits) IsEmpty() bool {
+	return reflect.DeepEqual(s, SpotMarketLimits{})
 }
