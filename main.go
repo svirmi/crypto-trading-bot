@@ -91,52 +91,18 @@ func main() {
 func run(flags Flags) {
 	defer handle_panics()
 
-	// Initialize logger
-	logger.Initialize(flags.colors, flags.v, flags.vv)
-
-	// Register interrupt handler
+	init_logger(flags)
 	register_interrupt_handler()
+	parse_config(flags)
+	connect_to_mongodb()
 
-	// Parsing config files
-	err := config.Initialize(flags.config_filepath)
-	if err != nil {
-		logrus.Panic(err.Error())
-	}
-
-	// Initializing mongodb
-	err = mongodb.Initialize()
-	if err != nil {
-		logrus.Panic(err.Error())
-	}
-	terminate_mongodb = func() {
-		mongodb.Disconnect()
-	}
-
-	// Instanciating channels
 	mmsch := make(chan []model.MiniMarketStats)
-
-	// Initializing exchange
 	exchange := binance.GetExchange()
-	err = exchange.Initialize(mmsch, nil)
-	if err != nil {
-		logrus.Panic(err.Error())
-	}
+	init_exchange(exchange, mmsch, nil)
 
-	// Initializing prices
-	prices.Initialize()
-	terminate_prices = func() {
-		prices.Terminate()
-	}
-
-	// Initializing handler
-	handler.Initialize(mmsch, nil, exchange)
-	handler.HandleMiniMarketsStats()
-
-	// Start serving mini markets stats
-	exchange.MiniMarketsStatsServe()
-	terminate_exchange = func() {
-		exchange.MiniMarketsStatsStop()
-	}
+	start_price_service()
+	start_handler(exchange, mmsch, nil)
+	serve_mmss(exchange)
 
 	// Wait until the application is stopped
 	select {}
@@ -145,10 +111,7 @@ func run(flags Flags) {
 func run_simulation(flags Flags, strategyName string, strategyConfig map[string]string) {
 	defer handle_panics()
 
-	// Initialize logger
-	logger.Initialize(flags.colors, flags.v, flags.vv)
-
-	// Register interrupt handler
+	init_logger(flags)
 	register_interrupt_handler()
 
 	// Validating configuration
@@ -161,31 +124,15 @@ func run_simulation(flags Flags, strategyName string, strategyConfig map[string]
 		logrus.Panic(err.Error())
 	}
 
-	// Parsing config files
-	err = config.Initialize(flags.config_filepath)
-	if err != nil {
-		logrus.Panic(err.Error())
-	}
+	parse_config(flags)
+	connect_to_mongodb()
 
-	// Initializing mongodb
-	err = mongodb.Initialize()
-	if err != nil {
-		logrus.Panic(err.Error())
-	}
-	terminate_mongodb = func() {
-		mongodb.Disconnect()
-	}
-
-	// Instanciating channels
 	mmsch := make(chan []model.MiniMarketStats)
 	cllch := make(chan model.MiniMarketStatsAck, 10)
-
-	// Initializing exchange
 	exchange := local.GetExchange()
-	err = exchange.Initialize(mmsch, cllch)
-	if err != nil {
-		logrus.Panic(err.Error())
-	}
+	init_exchange(exchange, mmsch, cllch)
+
+	start_price_service()
 
 	// Retrieving remote account
 	raccount, err := exchange.GetAccout()
@@ -225,25 +172,65 @@ func run_simulation(flags Flags, strategyName string, strategyConfig map[string]
 		logrus.Panic(err.Error())
 	}
 
-	// Initializing prices
+	start_price_service()
+	start_handler(exchange, mmsch, cllch)
+	serve_mmss(exchange)
+
+	// Wait until the application is stopped
+	select {}
+}
+
+/********************* Helpers ************************/
+
+func init_logger(flags Flags) {
+	logger.Initialize(flags.colors, flags.v, flags.vv)
+}
+
+func parse_config(flags Flags) {
+	err := config.Initialize(flags.config_filepath)
+	if err != nil {
+		logrus.Panic(err.Error())
+	}
+}
+
+func connect_to_mongodb() {
+	err := mongodb.Initialize()
+	if err != nil {
+		logrus.Panic(err.Error())
+	}
+	terminate_mongodb = func() {
+		mongodb.Disconnect()
+	}
+}
+
+func init_exchange(exchange model.IExchange, mmsch chan []model.MiniMarketStats, cllch chan model.MiniMarketStatsAck) {
+	err := exchange.Initialize(mmsch, cllch)
+	if err != nil {
+		logrus.Panic(err.Error())
+	}
+}
+
+func start_price_service() {
 	prices.Initialize()
 	terminate_prices = func() {
 		prices.Terminate()
 	}
+}
 
-	// Initializing handler
+func start_handler(exchange model.IExchange, mmsch chan []model.MiniMarketStats, cllch chan model.MiniMarketStatsAck) {
 	handler.Initialize(mmsch, cllch, exchange)
 	handler.HandleMiniMarketsStats()
+}
 
+func serve_mmss(exchange model.IExchange) {
 	// Start serving mini markets stats
 	exchange.MiniMarketsStatsServe()
 	terminate_exchange = func() {
 		exchange.MiniMarketsStatsStop()
 	}
-
-	// Wait until the application is stopped
-	select {}
 }
+
+/********************* Termination handlers ************************/
 
 func register_interrupt_handler() chan os.Signal {
 	sigc := make(chan os.Signal, 1)
