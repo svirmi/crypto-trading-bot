@@ -454,6 +454,8 @@ func (be local_exchange) MiniMarketsStatsServe() error {
 			}
 
 			// Serving mmss through the channel
+			logrus.WithField("comp", "localex").
+				Tracef(logger.BINEX_MMSS_TO_CHANNEL, utils.ToAssets(mmss))
 			mmsCh <- mmss
 			wait_mms_acks(len(mmss))
 

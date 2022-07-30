@@ -8,6 +8,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
 const (
@@ -123,4 +124,13 @@ func PercentageOf(amt decimal.Decimal, perc decimal.Decimal) decimal.Decimal {
 	amt = amt.Abs()
 	perc = perc.Abs()
 	return amt.Div(decimal.NewFromInt(100)).Mul(perc).Round(8)
+}
+
+// mmss vs assets
+func ToAssets(mmss []model.MiniMarketStats) []string {
+	assets := make([]string, 0, len(mmss))
+	for _, mms := range mmss {
+		assets = append(assets, mms.Asset)
+	}
+	return assets
 }

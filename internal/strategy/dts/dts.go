@@ -224,7 +224,7 @@ func (a LocalAccountDTS) GetOperation(props map[string]string, mms model.MiniMar
 	} else {
 		// no op
 		logrus.WithField("comp", "dts").
-			Tracef(logger.DTS_TRADE, _NP_OP, asset, lastOpType, lastOpPrice, currentPrice)
+			Debugf(logger.DTS_TRADE, _NP_OP, asset, lastOpType, lastOpPrice, currentPrice)
 		return model.Operation{}, nil
 	}
 

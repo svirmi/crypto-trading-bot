@@ -198,7 +198,7 @@ func (a LocalAccountPTS) GetOperation(props map[string]string, mms model.MiniMar
 		op = build_buy_op(a.ExeId, asset, _PTS_BUY_DESC, buyAmnt, currentPrice)
 	} else {
 		logrus.WithField("comp", "pts").
-			Tracef(logger.PTS_TRADE, _NP_OP, asset, lastOpPrice, currentPrice)
+			Debugf(logger.PTS_TRADE, _NP_OP, asset, lastOpPrice, currentPrice)
 		return model.Operation{}, nil
 	}
 

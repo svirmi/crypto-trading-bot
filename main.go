@@ -1,15 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime/debug"
 	"syscall"
 
 	"github.com/alecthomas/kong"
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/analytics"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/local"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/handler"
@@ -55,6 +58,7 @@ func (r *Testnet) Run(flags Flags) error {
 	if flags.config_filepath == "" {
 		flags.config_filepath = filepath.Join(config_folder, testnet_config_filepath)
 	}
+	run(flags)
 	return nil
 }
 
@@ -64,6 +68,7 @@ func (r *Mainnet) Run(flags Flags) error {
 	if flags.config_filepath == "" {
 		flags.config_filepath = filepath.Join(config_folder, mainnet_config_filepath)
 	}
+	run(flags)
 	return nil
 }
 
@@ -83,7 +88,63 @@ func main() {
 	ctx.Run(Flags{cli.Debug, cli.Trace, cli.Colors, cli.ConfigFilepath})
 }
 
+func run(flags Flags) {
+	defer handle_panics()
+
+	// Initialize logger
+	logger.Initialize(flags.colors, flags.v, flags.vv)
+
+	// Register interrupt handler
+	register_interrupt_handler()
+
+	// Parsing config files
+	err := config.Initialize(flags.config_filepath)
+	if err != nil {
+		logrus.Panic(err.Error())
+	}
+
+	// Initializing mongodb
+	err = mongodb.Initialize()
+	if err != nil {
+		logrus.Panic(err.Error())
+	}
+	terminate_mongodb = func() {
+		mongodb.Disconnect()
+	}
+
+	// Instanciating channels
+	mmsch := make(chan []model.MiniMarketStats)
+
+	// Initializing exchange
+	exchange := binance.GetExchange()
+	err = exchange.Initialize(mmsch, nil)
+	if err != nil {
+		logrus.Panic(err.Error())
+	}
+
+	// Initializing prices
+	prices.Initialize()
+	terminate_prices = func() {
+		prices.Terminate()
+	}
+
+	// Initializing handler
+	handler.Initialize(mmsch, nil, exchange)
+	handler.HandleMiniMarketsStats()
+
+	// Start serving mini markets stats
+	exchange.MiniMarketsStatsServe()
+	terminate_exchange = func() {
+		exchange.MiniMarketsStatsStop()
+	}
+
+	// Wait until the application is stopped
+	select {}
+}
+
 func run_simulation(flags Flags, strategyName string, strategyConfig map[string]string) {
+	defer handle_panics()
+
 	// Initialize logger
 	logger.Initialize(flags.colors, flags.v, flags.vv)
 
@@ -116,10 +177,8 @@ func run_simulation(flags Flags, strategyName string, strategyConfig map[string]
 	}
 
 	// Instanciating channels
-	var mmsch chan []model.MiniMarketStats
-	var cllch chan model.MiniMarketStatsAck
-	mmsch = make(chan []model.MiniMarketStats)
-	cllch = make(chan model.MiniMarketStatsAck, 10)
+	mmsch := make(chan []model.MiniMarketStats)
+	cllch := make(chan model.MiniMarketStatsAck, 10)
 
 	// Initializing exchange
 	exchange := local.GetExchange()
@@ -196,14 +255,18 @@ func register_interrupt_handler() chan os.Signal {
 
 	go func() {
 		<-sigc
-		terminate_exchange()
-		terminate_prices()
-		terminate_execution()
-		terminate_mongodb()
-		logrus.Info("bye, bye")
-		os.Exit(0)
+		terminate()
 	}()
 	return sigc
+}
+
+func terminate() {
+	terminate_exchange()
+	terminate_prices()
+	terminate_execution()
+	terminate_mongodb()
+	logrus.Info("bye, bye")
+	os.Exit(0)
 }
 
 var terminate_exchange = func() {
@@ -220,4 +283,11 @@ var terminate_execution = func() {
 
 var terminate_mongodb = func() {
 	// Empty implementation
+}
+
+func handle_panics() {
+	if err := recover(); err != nil {
+		fmt.Println(string(debug.Stack()))
+		terminate()
+	}
 }

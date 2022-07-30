@@ -35,6 +35,7 @@ const (
 	BINEX_CLOSING_MMS         = "closing mini market stats"
 	BINEX_DROP_MMS_UPDATE     = "mini markets stats rate too high, dropping update | size=%d"
 	BINEX_ICEBERG_ORDER       = "iceberg order detected | symbol=%s, side=%s, amount_side=%s, split=%d*%s+%s"
+	BINEX_MMSS_TO_CHANNEL     = "sending mmss to mms channel: %v"
 
 	// Binance exchange error
 	BINEX_ERR_SYMBOL_NOT_FOUND     = "exchange symbol %s not found"
@@ -148,11 +149,13 @@ const (
 	PTS_ERR_BAD_QUOTE_CURRENCY   = "bad quote currency | quote=%s"
 
 	// Handler
-	HANDL_SKIP_MMS_UPDATE   = "trading ongoing, skipping mms"
-	HANDL_OPERATION_RESULTS = "operation results | base_diff=%s, quote_diff=%s, actual_price=%s, price_spread=%s, status=%s"
-	HANDL_ZERO_BASE_DIFF    = "base amount unchanged | op_id=%s, base_diff = 0"
-	HANDL_ZERO_QUOTE_DIFF   = "quote amount unchanged | op_id=%s, quote_diff = 0"
-	HANDL_TRADING_DISABLED  = "%s trading disabled, skipping mms"
+	HANDL_SKIP_MMS_UPDATE     = "trading ongoing, skipping mms"
+	HANDL_OPERATION_RESULTS   = "operation results | base_diff=%s, quote_diff=%s, actual_price=%s, price_spread=%s, status=%s"
+	HANDL_ZERO_BASE_DIFF      = "base amount unchanged | op_id=%s, base_diff = 0"
+	HANDL_ZERO_QUOTE_DIFF     = "quote amount unchanged | op_id=%s, quote_diff = 0"
+	HANDL_TRADING_DISABLED    = "%s trading disabled, skipping mms"
+	HANDL_NO_ACTIVE_EXECUTION = "no active execution found, skipping mms"
+	HANDL_MMS_HANDLING        = "handling mms | asset=%s"
 
 	// Hanlder error
 	HANDL_ERR_SKIP_MMSS_UPDATE      = "error detected, skipping mmss | err=%s"

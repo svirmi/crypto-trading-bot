@@ -23,32 +23,35 @@ var mini_markets_stats_serve = func() error {
 	}
 
 	callback := func(rMiniMarketsStats binanceapi.WsAllMiniMarketsStatEvent) {
-		miniMarketsStats := make([]model.MiniMarketStats, 0, len(rMiniMarketsStats))
+		mmss := make([]model.MiniMarketStats, 0, len(rMiniMarketsStats))
 		for _, rMiniMarketStats := range rMiniMarketsStats {
 			if !utils.IsSymbolTradable(rMiniMarketStats.Symbol) {
 				continue
 			}
 
-			miniMarketStats, err := to_mini_market_stats(*rMiniMarketStats)
+			mms, err := to_mini_market_stats(*rMiniMarketStats)
 			if err != nil {
 				logrus.Errorf(logger.BINEX_ERR_SKIPPING_MMS, err.Error())
 				continue
 			}
 
-			miniMarketsStats = append(miniMarketsStats, miniMarketStats)
+			mmss = append(mmss, mms)
 		}
 
 		// Return if no mini markets stats left after filtering
-		if len(miniMarketsStats) == 0 {
+		if len(mmss) == 0 {
 			return
+		} else {
+			logrus.WithField("comp", "binancex").
+				Tracef(logger.BINEX_MMSS_TO_CHANNEL, utils.ToAssets(mmss))
 		}
 
 		// Send a mini markets stats through the channel
 		select {
-		case mmsCh <- miniMarketsStats:
+		case mmsCh <- mmss:
 		default:
 			logrus.WithField("comp", "binancex").
-				Warnf(logger.BINEX_DROP_MMS_UPDATE, len(miniMarketsStats))
+				Warnf(logger.BINEX_DROP_MMS_UPDATE, len(mmss))
 		}
 	}
 

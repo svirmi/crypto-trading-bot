@@ -47,7 +47,8 @@ var handle_mini_markets_stats = func() {
 			continue
 		}
 		// If the execution is not ACTIVE, no action should be applied
-		if exe.Status != model.EXE_ACTIVE {
+		if exe.IsEmpty() || exe.Status != model.EXE_ACTIVE {
+			logrus.Debug(logger.HANDL_NO_ACTIVE_EXECUTION)
 			ack_mmss(len(mmss))
 			continue
 		}
@@ -67,6 +68,7 @@ var handle_mini_markets_stats = func() {
 				ack_mmss(1)
 				continue
 			}
+			logrus.Tracef(logger.HANDL_MMS_HANDLING, mms.Asset)
 
 			// Check that trading is enabled for given asset
 			symbol, err := utils.GetSymbolFromAsset(mms.Asset)

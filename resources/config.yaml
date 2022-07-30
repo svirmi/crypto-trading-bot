@@ -4,7 +4,7 @@
 exchange:
   apiKey: HTqza54XTX09uBANVQOvMO78N478MhDxLbEiBfSRR8Yc7MBIlXGxG2cwK4Ok3KvI
   secretKey: vOZJYqQrYjgwSL5EDUxLYTv7Gh8nQvRqX5IefmnySqSAUdVvgOTfTe6HJsO9tvTY
-  useTestnet: true
+  useTestnet: false
 mongoDb:
   uri: mongodb://localhost:27017
-  database: ctb-testnet
+  database: ctb
