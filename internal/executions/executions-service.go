@@ -10,17 +10,17 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
-func CreateOrRestore(req model.ExecutionInit) (model.Execution, error) {
+func Create(req model.ExecutionInit) (model.Execution, error) {
 	// Get current active execution from DB
-	exe, err := find_currently_active()
+	exe, err := find_latest()
 	if err != nil {
 		return model.Execution{}, err
 	}
 
 	// Active execution found, restoring it
-	if !exe.IsEmpty() {
-		logrus.Infof(logger.EXE_RESTORE, exe.ExeId, exe.Status, exe.Assets)
-		return exe, nil
+	if !exe.IsEmpty() && exe.Status == model.EXE_ACTIVE {
+		err := fmt.Errorf(logger.EXE_ERR_FAILED_TO_CREATE, exe.ExeId)
+		return model.Execution{}, err
 	}
 
 	// No active execution found, starting a new one
@@ -36,12 +36,12 @@ func CreateOrRestore(req model.ExecutionInit) (model.Execution, error) {
 	return exe, nil
 }
 
-func GetLastestByExeId(exeId string) (model.Execution, error) {
-	return find_latest_by_exeId(exeId)
+func GetLatest() (model.Execution, error) {
+	return find_latest()
 }
 
-func GetCurrentlyActive() (model.Execution, error) {
-	return find_currently_active()
+func GetLastestByExeId(exeId string) (model.Execution, error) {
+	return find_latest_by_exeId(exeId)
 }
 
 func GetByExeId(exeId string) ([]model.Execution, error) {

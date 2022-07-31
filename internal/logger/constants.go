@@ -75,20 +75,19 @@ const (
 	EXE_START   = "starting execution | exe_id=%s, status=%s, assets=%v"
 
 	// Execution error
-	EXE_ERR_MORE_THEN_ONE_ACTIVE          = "more then one active execution found"
 	EXE_ERR_NOT_FOUND                     = "execution %s not found"
 	EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED = "execution %s is %s, cannot transition to %s"
 	EXE_ERR_EMPTY_RACC                    = "no tradable crypto assets found"
+	EXE_ERR_FAILED_TO_CREATE              = "an active execution already exists | exeId=%s"
 
 	// Laccount
 	LACC_RESTORE  = "restoring laccount %s"
 	LACC_REGISTER = "registering laccount %s"
 
 	// Laccount error
-	LACC_ERR_UNKNOWN_STRATEGY  = "unknown stretegy type %s"
-	LACC_ERR_STRATEGY_MISMATCH = "mismatching strategy type | creation_exe_id=%s, creation_strategy=%s, lacc_id=%s, lacc_strategy=%s"
-	LACC_ERR_BUILD_FAILURE     = "failed to buid local account"
-	LACC_ERR_EMPTY_RACC        = "no tradable crypto assets found"
+	LACC_ERR_BUILD_FAILURE    = "failed to buid local account"
+	LACC_ERR_EMPTY_RACC       = "no tradable crypto assets found"
+	LACC_ERR_FAILED_TO_CREATE = "an active laccount already exists | exeId=%s, laccId=%s"
 
 	// Strategy error
 	STR_ERR_UNKNOWN_STRATEGY = "unknown stretegy type %s"

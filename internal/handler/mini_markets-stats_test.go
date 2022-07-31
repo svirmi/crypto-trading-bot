@@ -15,7 +15,7 @@ import (
 func TestHandleMiniMarketsStats(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Saving and restoring status
-	old_get_active_exe := get_active_exe
+	old_get_active_exe := get_latest_exe
 	old_get_latest_lacc := get_latest_lacc
 	old_hanlde := handle_operation
 	old_skip := skip_mini_market_stats
@@ -25,7 +25,7 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 	old_get_asset_statuses := get_asset_amounts
 	old_store_prices_deferred := store_prices_deferred
 	defer func() {
-		get_active_exe = old_get_active_exe
+		get_latest_exe = old_get_active_exe
 		get_latest_lacc = old_get_latest_lacc
 		handle_operation = old_hanlde
 		skip_mini_market_stats = old_skip
@@ -37,7 +37,7 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 	}()
 
 	// Mocking dependencies
-	get_active_exe = func() (model.Execution, error) {
+	get_latest_exe = func() (model.Execution, error) {
 		return model.Execution{Status: model.EXE_ACTIVE}, nil
 	}
 
@@ -99,17 +99,17 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 func TestHandleMiniMarketsStats_NonActiveExe(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Saving and restoring status
-	old_get_active_exe := get_active_exe
+	old_get_active_exe := get_latest_exe
 	old_store_prices_deferred := store_prices_deferred
 	old_get_op := get_operation
 	defer func() {
-		get_active_exe = old_get_active_exe
+		get_latest_exe = old_get_active_exe
 		store_prices_deferred = old_store_prices_deferred
 		get_operation = old_get_op
 	}()
 
 	// Mocking dependencies
-	get_active_exe = func() (model.Execution, error) {
+	get_latest_exe = func() (model.Execution, error) {
 		return model.Execution{Status: model.EXE_TERMINATED}, nil
 	}
 
@@ -143,7 +143,7 @@ func TestHandleMiniMarketsStats_NonActiveExe(t *testing.T) {
 func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Saving and restoring status
-	old_get_active_exe := get_active_exe
+	old_get_active_exe := get_latest_exe
 	old_get_latest_lacc := get_latest_lacc
 	old_hanlde := handle_operation
 	old_skip := skip_mini_market_stats
@@ -153,7 +153,7 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 	old_get_asset_statuses := get_asset_amounts
 	old_store_prices_deferred := store_prices_deferred
 	defer func() {
-		get_active_exe = old_get_active_exe
+		get_latest_exe = old_get_active_exe
 		get_latest_lacc = old_get_latest_lacc
 		get_asset_amounts = old_get_asset_statuses
 		handle_operation = old_hanlde
@@ -165,7 +165,7 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 	}()
 
 	// Mocking dependencies
-	get_active_exe = func() (model.Execution, error) {
+	get_latest_exe = func() (model.Execution, error) {
 		return model.Execution{Status: model.EXE_ACTIVE}, nil
 	}
 

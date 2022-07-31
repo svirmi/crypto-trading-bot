@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 )
 
-func ValidateConfig(strategyType model.StrategyType, props map[string]string) error {
+func ValidateStrategyConfig(strategyType model.StrategyType, props map[string]string) error {
 	if strategyType == model.DTS_STRATEGY {
 		return dts.LocalAccountDTS{}.ValidateConfig(props)
 	} else if strategyType == model.PTS_STRATEGY {
@@ -21,6 +21,18 @@ func ValidateConfig(strategyType model.StrategyType, props map[string]string) er
 		err := fmt.Errorf(logger.STR_ERR_UNKNOWN_STRATEGY, strategyType)
 		logrus.Error(err.Error())
 		return err
+	}
+}
+
+func InstanciateLocalAccount(strategyType model.StrategyType) (model.ILocalAccount, error) {
+	if strategyType == model.DTS_STRATEGY {
+		return dts.LocalAccountDTS{}, nil
+	} else if strategyType == model.PTS_STRATEGY {
+		return pts.LocalAccountPTS{}, nil
+	} else {
+		err := fmt.Errorf(logger.STR_ERR_UNKNOWN_STRATEGY, strategyType)
+		logrus.Error(err.Error())
+		return nil, nil
 	}
 }
 

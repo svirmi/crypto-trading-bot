@@ -141,7 +141,7 @@ func TestFindCurrentlyActive(t *testing.T) {
 	mongodb.GetExecutionsCol().InsertMany(context.TODO(), docs, nil)
 
 	// Getting execution object from DB
-	got, err := find_currently_active()
+	got, err := find_latest()
 
 	testutils.AssertNil(t, err, "err")
 	testutils.AssertEq(t, exp, got, "execution")
@@ -160,7 +160,7 @@ func TestFindCurrentlyActive_NoResults(t *testing.T) {
 	}()
 
 	// Getting execution object from DB
-	got, err := find_currently_active()
+	got, err := find_latest()
 
 	testutils.AssertTrue(t, got.IsEmpty(), "execution")
 	testutils.AssertNil(t, err, "err")

@@ -16,6 +16,24 @@ func insert_one(exe model.Execution) error {
 	return err
 }
 
+func find_latest() (model.Execution, error) {
+	collection := mongodb.GetExecutionsCol()
+
+	opts := options.FindOne().SetSort(bson.D{{"timestamp", -1}})
+	sr := collection.FindOne(context.TODO(), bson.D{{}}, opts)
+	if sr.Err() == mongo.ErrNoDocuments {
+		return model.Execution{}, nil
+	}
+
+	var result model.Execution
+	err := sr.Decode(&result)
+	if err != nil {
+		return model.Execution{}, err
+	}
+
+	return result, nil
+}
+
 func find_latest_by_exeId(exeId string) (model.Execution, error) {
 	collection := mongodb.GetExecutionsCol()
 
@@ -48,25 +66,4 @@ func find_by_exeId(exeId string) ([]model.Execution, error) {
 		return nil, err
 	}
 	return results, nil
-}
-
-func find_currently_active() (model.Execution, error) {
-	collection := mongodb.GetExecutionsCol()
-
-	opts := options.FindOne().SetSort(bson.D{{"timestamp", -1}})
-	sr := collection.FindOne(context.TODO(), bson.D{{}}, opts)
-	if sr.Err() == mongo.ErrNoDocuments {
-		return model.Execution{}, nil
-	}
-
-	var result model.Execution
-	err := sr.Decode(&result)
-	if err != nil {
-		return model.Execution{}, err
-	}
-
-	if result.Status != model.EXE_ACTIVE {
-		return model.Execution{}, nil
-	}
-	return result, nil
 }

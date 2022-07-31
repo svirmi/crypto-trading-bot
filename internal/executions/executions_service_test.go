@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func TestCreateOrRestore_Create(t *testing.T) {
+func TestCreate(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
@@ -29,7 +29,7 @@ func TestCreateOrRestore_Create(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	got, err := CreateOrRestore(get_execution_init())
+	got, err := Create(get_execution_init())
 	testutils.AssertNil(t, err, "err")
 	exeIds = append(exeIds, got.ExeId)
 
@@ -40,7 +40,7 @@ func TestCreateOrRestore_Create(t *testing.T) {
 	testutils.AssertEq(t, exp, got, "execution")
 }
 
-func TestCreateOrRestore_Create_EmptyRacc(t *testing.T) {
+func TestCreate_EmptyRacc(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
@@ -55,11 +55,11 @@ func TestCreateOrRestore_Create_EmptyRacc(t *testing.T) {
 	exeReq := get_execution_init()
 	exeReq.Raccount.Balances = []model.RemoteBalance{}
 
-	_, err := CreateOrRestore(exeReq)
+	_, err := Create(exeReq)
 	testutils.AssertNotNil(t, err, "err")
 }
 
-func TestCreateOrRestore_Restore(t *testing.T) {
+func TestCreate_ActiveAlreadyExists(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
@@ -75,14 +75,14 @@ func TestCreateOrRestore_Restore(t *testing.T) {
 		mongodb.Disconnect()
 	}()
 
-	exp := get_execution()
-	insert_one(exp)
-	exeIds = append(exeIds, exp.ExeId)
+	exe := get_execution()
+	insert_one(exe)
+	exeIds = append(exeIds, exe.ExeId)
 
-	got, err := CreateOrRestore(get_execution_init())
+	got, err := Create(get_execution_init())
 
-	testutils.AssertNil(t, err, "err")
-	testutils.AssertEq(t, exp, got, "execution")
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertEq(t, model.Execution{}, got, "execution")
 }
 
 func TestGetLatestByExeId(t *testing.T) {
@@ -155,7 +155,7 @@ func TestGetCurrentlyActive(t *testing.T) {
 	insert_one(exp)
 
 	// Getting latest by exe id
-	got, err := GetCurrentlyActive()
+	got, err := GetLatest()
 
 	testutils.AssertNil(t, err, "err")
 	testutils.AssertEq(t, got, exp, "execution")
@@ -174,7 +174,7 @@ func TestGetCurrentlyActive_None(t *testing.T) {
 	}()
 
 	// Getting latest by exe id
-	got, err := GetCurrentlyActive()
+	got, err := GetLatest()
 
 	testutils.AssertNil(t, err, "err")
 	testutils.AssertTrue(t, got.IsEmpty(), "execution")

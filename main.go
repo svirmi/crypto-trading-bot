@@ -119,7 +119,7 @@ func run_simulation(flags Flags, strategyName string, strategyConfig map[string]
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
-	err = strategy.ValidateConfig(strategyType, strategyConfig)
+	err = strategy.ValidateStrategyConfig(strategyType, strategyConfig)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
@@ -145,7 +145,7 @@ func run_simulation(flags Flags, strategyName string, strategyConfig map[string]
 		Raccount:     raccount,
 		StrategyType: strategyType,
 		Props:        strategyConfig}
-	exe, err := executions.CreateOrRestore(exeReq)
+	exe, err := executions.Create(exeReq)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
@@ -167,7 +167,7 @@ func run_simulation(flags Flags, strategyName string, strategyConfig map[string]
 		RAccount:            raccount,
 		StrategyType:        strategyType,
 		TradableAssetsPrice: assetPrices}
-	_, err = laccount.CreateOrRestore(laccReq)
+	_, err = laccount.Create(laccReq)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}

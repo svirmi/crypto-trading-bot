@@ -40,7 +40,7 @@ var handle_mini_markets_stats = func() {
 		store_prices_deferred(mmss)
 
 		// Getting execution
-		exe, err := get_active_exe()
+		exe, err := get_latest_exe()
 		if err != nil {
 			logrus.Errorf(logger.HANDL_ERR_SKIP_MMSS_UPDATE, err.Error())
 			ack_mmss(len(mmss))
@@ -138,8 +138,8 @@ var ack_mmss = func(size int) {
 	}
 }
 
-var get_active_exe = func() (model.Execution, error) {
-	return executions.GetCurrentlyActive()
+var get_latest_exe = func() (model.Execution, error) {
+	return executions.GetLatest()
 }
 
 var get_latest_lacc = func(exeId string) (model.ILocalAccount, error) {
@@ -236,7 +236,7 @@ var handle_operation = func(lacc model.ILocalAccount, op model.Operation) model.
 		logrus.Panicf(err.Error())
 	}
 
-	err = laccount.Create(lacc)
+	err = laccount.Update(lacc)
 	if err != nil {
 		logrus.Panicf(err.Error())
 	}

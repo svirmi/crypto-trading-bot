@@ -27,7 +27,7 @@ func ParseStr(s string) (StrategyType, error) {
 		return PTS_STRATEGY, nil
 	}
 
-	envs := fmt.Sprintf("[%s|%s,%s|%s]", DTS_STRATEGY, DTS_STRATEGY_SHORT, PTS_STRATEGY, PTS_STRATEGY_SHORT)
+	envs := fmt.Sprintf("[%s|%s, %s|%s]", DTS_STRATEGY, DTS_STRATEGY_SHORT, PTS_STRATEGY, PTS_STRATEGY_SHORT)
 	err := fmt.Errorf(logger.MODEL_ERR_UNKNOWN_ENV, s, envs)
 	return StrategyType(s), err
 }

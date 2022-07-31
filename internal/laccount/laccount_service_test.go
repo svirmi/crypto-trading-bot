@@ -13,7 +13,7 @@ import (
 
 /**************************** DTS ******************************/
 
-func TestCreateOrRestore_Create_DTS(t *testing.T) {
+func TestCreate_DTS(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Setting up test
 	old_mongo_conf := mock_mongo_config()
@@ -32,7 +32,7 @@ func TestCreateOrRestore_Create_DTS(t *testing.T) {
 	local_account_init := get_laccount_init_test(model.DTS_STRATEGY)
 	exeIds = append(exeIds, local_account_init.ExeId)
 
-	got, err := CreateOrRestore(local_account_init)
+	got, err := Create(local_account_init)
 	testutils.AssertNil(t, err, "err")
 
 	exp := get_laccount_test_DTS()
@@ -43,7 +43,7 @@ func TestCreateOrRestore_Create_DTS(t *testing.T) {
 	testutils.AssertEq(t, exp, got, "laccount")
 }
 
-func TestCreateOrRestore_Create_DTS_EmptyRAcc(t *testing.T) {
+func TestCreate_DTS_EmptyRAcc(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Setting up test
 	old_mongo_conf := mock_mongo_config()
@@ -58,11 +58,11 @@ func TestCreateOrRestore_Create_DTS_EmptyRAcc(t *testing.T) {
 	local_account_init := get_laccount_init_test(model.DTS_STRATEGY)
 	local_account_init.RAccount.Balances = make([]model.RemoteBalance, 0)
 
-	_, err := CreateOrRestore(local_account_init)
+	_, err := Create(local_account_init)
 	testutils.AssertNotNil(t, err, "err")
 }
 
-func TestCreateOrRestore_Restore_DTS(t *testing.T) {
+func TestCreate_DTS_AlreadyExists(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
@@ -85,15 +85,15 @@ func TestCreateOrRestore_Restore_DTS(t *testing.T) {
 
 	local_account_init := get_laccount_init_test(model.DTS_STRATEGY)
 	local_account_init.ExeId = exeIds[0]
-	got, err := CreateOrRestore(local_account_init)
+	got, err := Create(local_account_init)
 
-	testutils.AssertNil(t, err, "err")
-	testutils.AssertEq(t, exp, got, "laccount")
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertNil(t, got, "laccount")
 }
 
 /**************************** PTS ******************************/
 
-func TestCreateOrRestore_Create_PTS(t *testing.T) {
+func TestCreate_PTS(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Setting up test
 	old_mongo_conf := mock_mongo_config()
@@ -112,7 +112,7 @@ func TestCreateOrRestore_Create_PTS(t *testing.T) {
 	local_account_init := get_laccount_init_test(model.PTS_STRATEGY)
 	exeIds = append(exeIds, local_account_init.ExeId)
 
-	got, err := CreateOrRestore(local_account_init)
+	got, err := Create(local_account_init)
 	testutils.AssertNil(t, err, "err")
 
 	exp := get_laccount_test_PTS()
@@ -123,7 +123,7 @@ func TestCreateOrRestore_Create_PTS(t *testing.T) {
 	testutils.AssertEq(t, exp, got, "laccount")
 }
 
-func TestCreateOrRestore_Create_PTS_EmptyRAcc(t *testing.T) {
+func TestCreate_PTS_EmptyRAcc(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Setting up test
 	old_mongo_conf := mock_mongo_config()
@@ -138,11 +138,11 @@ func TestCreateOrRestore_Create_PTS_EmptyRAcc(t *testing.T) {
 	local_account_init := get_laccount_init_test(model.PTS_STRATEGY)
 	local_account_init.RAccount.Balances = make([]model.RemoteBalance, 0)
 
-	_, err := CreateOrRestore(local_account_init)
+	_, err := Create(local_account_init)
 	testutils.AssertNotNil(t, err, "err")
 }
 
-func TestCreateOrRestore_Restore_PTS(t *testing.T) {
+func TestCreate_PTS_AlreadyExists(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
@@ -165,8 +165,8 @@ func TestCreateOrRestore_Restore_PTS(t *testing.T) {
 
 	local_account_init := get_laccount_init_test(model.PTS_STRATEGY)
 	local_account_init.ExeId = exeIds[0]
-	got, err := CreateOrRestore(local_account_init)
+	got, err := Create(local_account_init)
 
-	testutils.AssertNil(t, err, "err")
-	testutils.AssertEq(t, exp, got, "laccount")
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertNil(t, got, "laccount")
 }
