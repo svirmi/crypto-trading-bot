@@ -230,7 +230,7 @@ func (a LocalAccountDTS) GetOperation(props map[string]string, mms model.MiniMar
 
 	err = check_spot_market_limits(op, slimts)
 	if err != nil {
-		return model.Operation{}, nil
+		return model.Operation{}, err
 	}
 
 	logrus.WithField("comp", "dts").

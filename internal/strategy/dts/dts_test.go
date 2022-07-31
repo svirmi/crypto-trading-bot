@@ -303,7 +303,7 @@ func TestGetOperation_Sell_MinBaseQtyExceed(t *testing.T) {
 
 	props := get_props("13.45", "13.45", "20", "20")
 	got, err := laccount.GetOperation(props, mms, btcSpotMarketLimits)
-	testutils.AssertNil(t, err, "err")
+	testutils.AssertNotNil(t, err, "err")
 	testutils.AssertTrue(t, got.IsEmpty(), "operation")
 }
 
@@ -371,7 +371,7 @@ func TestGetOperation_Buy_MinQuoteQtyExceeded(t *testing.T) {
 	props := get_props("13.45", "13.45", "20", "20")
 	got, err := laccount.GetOperation(props, mms, dotSpotMarketLimits)
 
-	testutils.AssertNil(t, err, "err")
+	testutils.AssertNotNil(t, err, "err")
 	testutils.AssertTrue(t, got.IsEmpty(), "operation")
 }
 

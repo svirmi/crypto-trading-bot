@@ -239,6 +239,132 @@ func TestRegisterTrading_NegativeBalanceQuote(t *testing.T) {
 
 /********************** Testing GetOperation() *************************/
 
+func TestGetOperation_AssetNotFound(t *testing.T) {
+	logger.Initialize(false, true, true)
+	laccount := get_laccount_test()
+	mms := get_mms("CRO", utils.DecimalFromString("0.55"))
+
+	props := get_props("10", "10", "10", "10")
+	op, err := laccount.GetOperation(props, mms, get_spot_market_limit())
+
+	testutils.AssertTrue(t, op.IsEmpty(), "operation")
+	testutils.AssertNotNil(t, err, "err")
+}
+
+func TestGetOperation_Noop(t *testing.T) {
+	logger.Initialize(false, true, true)
+
+	laccount := get_laccount_test()
+	mms := get_mms("BTC", utils.DecimalFromString("39560.1"))
+
+	props := get_props("10", "10", "10", "10")
+	got, err := laccount.GetOperation(props, mms, get_spot_market_limit())
+
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertTrue(t, got.IsEmpty(), "operation")
+}
+
+func TestGetOperation_Sell(t *testing.T) {
+	logger.Initialize(false, true, true)
+
+	laccount := get_laccount_test()
+	amt := utils.DecimalFromString("1.134")
+	price := utils.DecimalFromString("44881.330525")
+	mms := get_mms("BTC", price)
+
+	props := get_props("10", "10", "10", "10")
+	got, err := laccount.GetOperation(props, mms, get_spot_market_limit())
+	testutils.AssertNil(t, err, "err")
+
+	exp := get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.SELL, price)
+	exp.ExeId = got.ExeId
+	exp.OpId = got.OpId
+	exp.Timestamp = got.Timestamp
+	exp.Status = model.PENDING
+	exp.Results = model.OpResults{}
+	exp.Type = model.AUTO
+	exp.Cause = _PTS_SELL_DESC
+
+	testutils.AssertEq(t, exp, got, "operation")
+}
+
+func TestGetOperation_Sell_MinBaseQtyExceed(t *testing.T) {
+	logger.Initialize(false, true, true)
+
+	laccount := get_laccount_test()
+	btcSpotMarketLimits := get_spot_market_limit()
+	btcSpotMarketLimits.MinBase = utils.DecimalFromString("12.00")
+	btcSpotMarketLimits.MaxBase = utils.DecimalFromString("99999999")
+	btcSpotMarketLimits.StepBase = utils.DecimalFromString("0.00000001")
+	btcSpotMarketLimits.MinQuote = utils.DecimalFromString("0.1")
+
+	price := utils.DecimalFromString("44881.330525")
+	mms := get_mms("BTC", price)
+
+	props := get_props("10", "10", "10", "10")
+	got, err := laccount.GetOperation(props, mms, btcSpotMarketLimits)
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertTrue(t, got.IsEmpty(), "operation")
+}
+
+func TestGetOperation_Buy(t *testing.T) {
+	logger.Initialize(false, true, true)
+
+	laccount := get_laccount_test()
+	amt := utils.DecimalFromString("15.567")
+	price := utils.DecimalFromString("38.798975")
+	mms := get_mms("DOT", price)
+
+	props := get_props("10", "10", "10", "10")
+	got, err := laccount.GetOperation(props, mms, get_spot_market_limit())
+	testutils.AssertNil(t, err, "err")
+
+	exp := get_operation_test(amt, model.QUOTE_AMOUNT, "DOT", "USDT", model.BUY, price)
+	exp.ExeId = got.ExeId
+	exp.OpId = got.OpId
+	exp.Timestamp = got.Timestamp
+	exp.Status = model.PENDING
+	exp.Results = model.OpResults{}
+	exp.Type = model.AUTO
+	exp.Cause = _PTS_BUY_DESC
+
+	testutils.AssertEq(t, exp, got, "operation")
+}
+
+func TestGetOperation_Buy_MinQuoteQtyExceeded(t *testing.T) {
+	logger.Initialize(false, true, true)
+
+	laccount := get_laccount_test()
+	dotSpotMarketLimits := get_spot_market_limit()
+	dotSpotMarketLimits.MinBase = utils.DecimalFromString("0.00000001")
+	dotSpotMarketLimits.MaxBase = utils.DecimalFromString("99999999")
+	dotSpotMarketLimits.StepBase = utils.DecimalFromString("0.00000001")
+	dotSpotMarketLimits.MinQuote = utils.DecimalFromString("1000")
+
+	price := utils.DecimalFromString("38.798975")
+	mms := get_mms("DOT", price)
+
+	props := get_props("10", "10", "10", "10")
+	got, err := laccount.GetOperation(props, mms, dotSpotMarketLimits)
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertTrue(t, got.IsEmpty(), "operation")
+}
+
+func TestGetOperation_ZeroPrice(t *testing.T) {
+	logger.Initialize(false, true, true)
+
+	laccount := get_laccount_test()
+	price := decimal.Zero
+	mms := get_mms("BTC", price)
+
+	props := get_props("13.45", "13.45", "20", "20")
+	got, err := laccount.GetOperation(props, mms, get_spot_market_limit())
+
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertTrue(t, got.IsEmpty(), "operation")
+}
+
 /********************** GetAssetStatuses() *************************/
 
 func TestGetAssetAmounts(t *testing.T) {
@@ -256,6 +382,35 @@ func TestGetAssetAmounts(t *testing.T) {
 }
 
 /********************** Helpers *************************/
+
+func get_spot_market_limit() model.SpotMarketLimits {
+	return model.SpotMarketLimits{
+		MinBase:  utils.DecimalFromString("0.00000001"),
+		MaxBase:  utils.DecimalFromString("99999999"),
+		StepBase: utils.DecimalFromString("0.00000001"),
+		MinQuote: utils.DecimalFromString("0.1")}
+}
+
+func get_props(bp, sp, bap, sap string) map[string]string {
+	return map[string]string{
+		_BUY_PERCENTAGE:         bp,
+		_SELL_PERCENTAGE:        sp,
+		_BUY_AMOUNT_PERCENTAGE:  sap,
+		_SELL_AMOUNT_PERCENTAGE: bap}
+}
+
+func get_mms(asset string, lastPrice decimal.Decimal) model.MiniMarketStats {
+	return model.MiniMarketStats{
+		Event:       "event",
+		Time:        time.Now().UnixMicro(),
+		Asset:       asset,
+		LastPrice:   lastPrice,
+		OpenPrice:   utils.DecimalFromString("105.56"),
+		HighPrice:   utils.DecimalFromString("197.45"),
+		LowPrice:    utils.DecimalFromString("105.56"),
+		QuoteVolume: utils.DecimalFromString("14455678.54"),
+		BaseVolume:  utils.DecimalFromString("65395234.1665")}
+}
 
 func get_operation_test(amt decimal.Decimal, amtSide model.AmountSide, base, quote string,
 	side model.OpSide, price decimal.Decimal) model.Operation {
