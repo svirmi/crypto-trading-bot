@@ -61,6 +61,9 @@ func test_parse_config(test_resource_folder, test_config_filename string) {
 
 func get_mainnet_config() Config {
 	return Config{
+		Server: ServerConfig{
+			Port: 8080,
+		},
 		Exchange: map[string]string{
 			"propA": "propA",
 			"propB": "propB"},
@@ -71,6 +74,9 @@ func get_mainnet_config() Config {
 
 func get_testnet_config() Config {
 	return Config{
+		Server: ServerConfig{
+			Port: 8080,
+		},
 		Exchange: map[string]string{
 			"propA": "propA",
 			"propB": "propB"},

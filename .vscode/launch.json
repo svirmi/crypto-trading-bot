@@ -7,7 +7,7 @@
 			"request": "launch",
 			"mode": "auto",
 			"program": "${workspaceFolder}/main.go",
-			"args": ["-colors", "-vv"]
+			"args": ["testnet", "--debug", "--colors"]
 		},
 		{
 			"name": "Testnet",
@@ -15,15 +15,23 @@
 			"request": "launch",
 			"mode": "auto",
 			"program": "${workspaceFolder}/main.go",
-			"args": ["-env=testnet", "-colors", "-vv"]
+			"args": ["mainnet", "--debug", "--colors"]
 		},
 		{
-			"name": "Simulation",
+			"name": "DTS Simulation",
 			"type": "go",
 			"request": "launch",
 			"mode": "auto",
 			"program": "${workspaceFolder}/main.go",
-			"args": ["-env=simulation", "-colors", "-vv"]
+			"args": ["simulate", "dts", "buyThreshold=5","sellThreshold=5", "missProfitThreshold=10", "stopLossThreshold=10", "--debug", "--colors"]
+		},
+		{
+			"name": "PTS Simulation",
+			"type": "go",
+			"request": "launch",
+			"mode": "auto",
+			"program": "${workspaceFolder}/main.go",
+			"args": ["simulate", "pts", "buyPercentage=5", "sellPercentage=5", "buyAmountPercentage=10", "sellAmountPercentage=10", "--debug", "--colors"]
 		}
 	]
 }

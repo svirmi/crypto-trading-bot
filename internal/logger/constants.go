@@ -4,6 +4,15 @@ const (
 	// Main
 	MAIN_LOGICAL_CORES = "running on %d logical cores"
 
+	// API
+	API_SERVER_STARTUP = "starting up server | url=http://%s:%d"
+
+	// API error
+	API_ERR_NEGATIVE_PORT_NUMBER     = "port number cannot be negative | port=%d"
+	API_ERR_RESERVED_PORT_NUMBER     = "reserved port number | port=%d"
+	API_ERR_PORT_NUMBER_OUT_OF_RANGE = "port number out of range | port=%d"
+	API_ERR_DIAL_UP                  = "failed to dial up %s"
+
 	// Main error
 	MAIN_ERR_UNSUPPORTED_ENV = "env not currently supported | env=%s"
 

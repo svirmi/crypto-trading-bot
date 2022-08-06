@@ -11,6 +11,7 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/analytics"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/api"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/binance"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/local"
@@ -89,8 +90,6 @@ func main() {
 }
 
 func run(flags Flags) {
-	defer handle_panics()
-
 	init_logger(flags)
 	register_interrupt_handler()
 	parse_config(flags)
@@ -104,8 +103,7 @@ func run(flags Flags) {
 	start_handler(exchange, mmsch, nil)
 	serve_mmss(exchange)
 
-	// Wait until the application is stopped
-	select {}
+	api.Initialize()
 }
 
 func run_simulation(flags Flags, strategyName string, strategyConfig map[string]string) {

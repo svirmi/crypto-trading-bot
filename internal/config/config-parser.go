@@ -9,6 +9,10 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+type ServerConfig struct {
+	Port int `yaml:"port"`
+}
+
 type ExchangeConfig interface{}
 
 type MongoDbConfig struct {
@@ -21,6 +25,7 @@ func (m MongoDbConfig) IsEmpty() bool {
 }
 
 type Config struct {
+	Server   ServerConfig
 	Exchange ExchangeConfig `yaml:"exchange"`
 	MongoDb  MongoDbConfig  `yaml:"mongoDb"`
 }
@@ -37,6 +42,10 @@ func Initialize(configFilepath string) error {
 	config, err := parse_config(configFilepath)
 	appConfig = config
 	return err
+}
+
+var GetServerConfig = func() ServerConfig {
+	return appConfig.Server
 }
 
 var GetExchangeConfig = func() ExchangeConfig {
