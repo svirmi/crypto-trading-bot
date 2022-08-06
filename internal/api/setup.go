@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"github.com/thanhpk/randstr"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
 const (
@@ -21,7 +23,13 @@ const (
 	RESOURCE_NOT_FOUND = "resource not found"
 )
 
-func Initialize() *gin.Engine {
+var (
+	exchange model.IExchange
+)
+
+func Initialize(_exchange model.IExchange) *gin.Engine {
+	exchange = _exchange
+
 	gin.DisableConsoleColor()
 	gin.SetMode(gin.ReleaseMode)
 
@@ -30,12 +38,51 @@ func Initialize() *gin.Engine {
 
 	// Ping pong
 	r.GET(API_V1+"/ping", func(c *gin.Context) {
-		status, body, apiError := pong()
-		send_response(c, status, body, apiError)
+		status, body, apiErr := http.StatusOK, ping_pong_dto{"pong"}, error_dto{}
+		send(c, status, body, apiErr)
+	})
+
+	// Start execution
+	r.POST(API_V1+"/executions", func(c *gin.Context) {
+		var req exe_create_req_dto
+		err := c.ShouldBindJSON(&req)
+		if err != nil {
+			send_bad_request(c, err)
+			return
+		}
+
+		err = req.Validate()
+		if err != nil {
+			send_bad_request(c, err)
+			return
+		}
+
+		status, body, apiErr := create_execution(req)
+		send(c, status, body, apiErr)
+	})
+
+	// Terminate execution
+	r.PUT(API_V1+"/executions/:exeId", func(c *gin.Context) {
+		exeId := c.Param("exeId")
+		var req exe_update_req_dto
+		err := c.ShouldBindJSON(&req)
+		if err != nil {
+			send_bad_request(c, err)
+			return
+		}
+
+		err = req.Validate()
+		if err != nil {
+			send_bad_request(c, err)
+			return
+		}
+
+		status, body, apiErr := update_execution(exeId, req)
+		send(c, status, body, apiErr)
 	})
 
 	r.NoRoute(func(c *gin.Context) {
-		c.JSON(404, api_error{RESOURCE_NOT_FOUND})
+		c.JSON(404, error_dto{RESOURCE_NOT_FOUND})
 	})
 
 	return start_server(r)
@@ -68,9 +115,13 @@ func start_server(r *gin.Engine) *gin.Engine {
 	return r
 }
 
-var send_response = func(c *gin.Context, status int, body interface{}, apiError api_error) {
-	if !apiError.IsEmpty() {
-		c.JSON(status, apiError)
+func send_bad_request(c *gin.Context, err error) {
+	send(c, http.StatusBadRequest, nil, error_dto{err.Error()})
+}
+
+func send(c *gin.Context, status int, body interface{}, errDto error_dto) {
+	if !errDto.is_empty() {
+		c.JSON(status, errDto)
 	} else {
 		c.JSON(status, body)
 	}
@@ -78,7 +129,7 @@ var send_response = func(c *gin.Context, status int, body interface{}, apiError 
 
 var log_request = func(c *gin.Context) {
 	// Request received
-	id := uuid.New().String()
+	id := randstr.Hex(8)
 	method := c.Request.Method
 	uri := c.Request.RequestURI
 	agent := c.Request.UserAgent()

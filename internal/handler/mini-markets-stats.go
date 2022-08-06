@@ -60,6 +60,12 @@ var handle_mini_markets_stats = func() {
 			ack_mmss(len(mmss))
 			continue
 		}
+		if lacc == nil {
+			err := fmt.Errorf(logger.HANDL_ERR_LACC_NOT_FOUND, exe.ExeId)
+			logrus.Warnf(logger.HANDL_ERR_SKIP_MMSS_UPDATE, err.Error())
+			ack_mmss(len(mmss))
+			continue
+		}
 
 		for _, mms := range mmss {
 			// Check if asset is in wallet
@@ -236,7 +242,7 @@ var handle_operation = func(lacc model.ILocalAccount, op model.Operation) model.
 		logrus.Panicf(err.Error())
 	}
 
-	err = laccount.Update(lacc)
+	lacc, err = laccount.Update(lacc)
 	if err != nil {
 		logrus.Panicf(err.Error())
 	}

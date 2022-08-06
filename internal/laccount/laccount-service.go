@@ -13,16 +13,19 @@ func Create(req model.LocalAccountInit) (model.ILocalAccount, error) {
 	// Get current local account from DB by execution id
 	laccount, err := find_latest_by_exeId(req.ExeId)
 	if err != nil {
+		logrus.Error(err.Error())
 		return nil, err
 	}
 	if laccount != nil {
 		err := fmt.Errorf(logger.LACC_ERR_FAILED_TO_CREATE, req.ExeId, laccount.GetAccountId())
+		logrus.Error(err.Error())
 		return nil, err
 	}
 
 	// Initialise new local account
 	laccount, err = initialise_local_account(req)
 	if err != nil {
+		logrus.Error(err.Error())
 		return nil, err
 	}
 	if laccount == nil {
@@ -33,28 +36,52 @@ func Create(req model.LocalAccountInit) (model.ILocalAccount, error) {
 
 	// Inseting in mongo db and returning value
 	if err := insert(laccount); err != nil {
+		logrus.Error(err.Error())
 		return nil, err
 	}
 	logrus.Infof(logger.LACC_REGISTER, laccount.GetAccountId())
 	return laccount, nil
 }
 
-func Update(laccount model.ILocalAccount) error {
-	return insert(laccount)
+func Update(update model.ILocalAccount) (model.ILocalAccount, error) {
+	lacc, err := find_latest_by_exeId(update.GetExeId())
+	if err != nil {
+		logrus.Error(err.Error())
+		return nil, err
+	}
+	if lacc == nil {
+		err := fmt.Errorf(logger.LACC_ERR_NOT_FOUND, update.GetExeId())
+		logrus.Error(err.Error())
+		return nil, err
+	}
+
+	err = insert(update)
+	if err != nil {
+		logrus.Error(err.Error())
+		return nil, err
+	}
+	return update, err
 }
 
 func GetLatestByExeId(exeId string) (model.ILocalAccount, error) {
-	return find_latest_by_exeId(exeId)
+	lacc, err := find_latest_by_exeId(exeId)
+	if err != nil {
+		logrus.Error(err.Error())
+	}
+	return lacc, err
 }
 
 func GetByExeId(exeId string) ([]model.ILocalAccount, error) {
-	return find_by_exeId(exeId)
+	laccs, err := find_by_exeId(exeId)
+	if err != nil {
+		logrus.Error(err.Error())
+	}
+	return laccs, err
 }
 
 func initialise_local_account(req model.LocalAccountInit) (model.ILocalAccount, error) {
 	if len(req.RAccount.Balances) == 0 {
 		err := fmt.Errorf(logger.LACC_ERR_EMPTY_RACC)
-		logrus.Error(err.Error())
 		return nil, err
 	}
 

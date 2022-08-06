@@ -42,7 +42,7 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 	}
 
 	get_latest_lacc = func(exeId string) (model.ILocalAccount, error) {
-		return nil, nil
+		return laccount_test{}, nil
 	}
 
 	handled_counter := 0
@@ -170,7 +170,7 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 	}
 
 	get_latest_lacc = func(exeId string) (model.ILocalAccount, error) {
-		return nil, nil
+		return laccount_test{}, nil
 	}
 
 	handled_counter := 0
@@ -661,4 +661,42 @@ func get_remote_account(balances []model.RemoteBalance) model.RemoteAccount {
 		BuyerCommission:  1,
 		SellerCommission: 1,
 		Balances:         balances}
+}
+
+type laccount_test struct{}
+
+func (a laccount_test) GetAccountId() string {
+	return ""
+}
+
+func (a laccount_test) GetExeId() string {
+	return ""
+}
+
+func (a laccount_test) GetStrategyType() model.StrategyType {
+	return ""
+}
+
+func (a laccount_test) GetTimestamp() int64 {
+	return 0
+}
+
+func (a laccount_test) Initialize(model.LocalAccountInit) (model.ILocalAccount, error) {
+	return nil, nil
+}
+
+func (a laccount_test) RegisterTrading(model.Operation) (model.ILocalAccount, error) {
+	return nil, nil
+}
+
+func (a laccount_test) GetOperation(map[string]string, model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
+	return model.Operation{}, nil
+}
+
+func (a laccount_test) GetAssetAmounts() map[string]model.AssetAmount {
+	return nil
+}
+
+func (a laccount_test) ValidateConfig(map[string]string) error {
+	return nil
 }

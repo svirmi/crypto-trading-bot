@@ -103,7 +103,7 @@ func run(flags Flags) {
 	start_handler(exchange, mmsch, nil)
 	serve_mmss(exchange)
 
-	api.Initialize()
+	api.Initialize(exchange)
 }
 
 func run_simulation(flags Flags, strategyName string, strategyConfig map[string]string) {
@@ -133,14 +133,14 @@ func run_simulation(flags Flags, strategyName string, strategyConfig map[string]
 	start_price_service()
 
 	// Retrieving remote account
-	raccount, err := exchange.GetAccout()
+	racc, err := exchange.GetAccout()
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
 
 	// Creating or restoring execution
 	exeReq := model.ExecutionInit{
-		Raccount:     raccount,
+		Raccount:     racc,
 		StrategyType: strategyType,
 		Props:        strategyConfig}
 	exe, err := executions.Create(exeReq)
@@ -148,7 +148,9 @@ func run_simulation(flags Flags, strategyName string, strategyConfig map[string]
 		logrus.Panic(err.Error())
 	}
 	terminate_execution = func() {
-		executions.Terminate(exe.ExeId)
+		executions.Update(model.Execution{
+			ExeId:  exe.ExeId,
+			Status: model.EXE_TERMINATED})
 		analytics.StoreAnalytics(exe.ExeId)
 	}
 
@@ -162,7 +164,7 @@ func run_simulation(flags Flags, strategyName string, strategyConfig map[string]
 	// Creating or restoring local account
 	laccReq := model.LocalAccountInit{
 		ExeId:               exe.ExeId,
-		RAccount:            raccount,
+		RAccount:            racc,
 		StrategyType:        strategyType,
 		TradableAssetsPrice: assetPrices}
 	_, err = laccount.Create(laccReq)

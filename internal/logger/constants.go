@@ -12,6 +12,9 @@ const (
 	API_ERR_RESERVED_PORT_NUMBER     = "reserved port number | port=%d"
 	API_ERR_PORT_NUMBER_OUT_OF_RANGE = "port number out of range | port=%d"
 	API_ERR_DIAL_UP                  = "failed to dial up %s"
+	API_ERR_FIELD_REQUIRED           = "%s is required"
+	API_ERR_COLLECTION_EMPTY         = "%s must not be empty"
+	API_ERR_VALUE_UNKNOWN            = "unknown %s %s"
 
 	// Main error
 	MAIN_ERR_UNSUPPORTED_ENV = "env not currently supported | env=%s"
@@ -97,6 +100,7 @@ const (
 	LACC_ERR_BUILD_FAILURE    = "failed to buid local account"
 	LACC_ERR_EMPTY_RACC       = "no tradable crypto assets found"
 	LACC_ERR_FAILED_TO_CREATE = "an active laccount already exists | exeId=%s, laccId=%s"
+	LACC_ERR_NOT_FOUND        = "laccount not found | exeId=%s"
 
 	// Strategy error
 	STR_ERR_UNKNOWN_STRATEGY = "unknown stretegy type %s"
@@ -166,6 +170,7 @@ const (
 	HANDL_MMS_HANDLING        = "handling mms | asset=%s"
 
 	// Hanlder error
+	HANDL_ERR_LACC_NOT_FOUND        = "laccount not found | exeId=%s"
 	HANDL_ERR_SKIP_MMSS_UPDATE      = "error detected, skipping mmss | err=%s"
 	HANDL_ERR_SKIP_MMS_UPDATE       = "error detected, skipping mms | asset=%s, err=%s"
 	HANDL_ERR_ZERO_EXP_PRICE        = "expected price cannot be zero, skipping mms"

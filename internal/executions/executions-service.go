@@ -14,60 +14,79 @@ func Create(req model.ExecutionInit) (model.Execution, error) {
 	// Get current active execution from DB
 	exe, err := find_latest()
 	if err != nil {
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 
-	// Active execution found, restoring it
+	// Active execution found
 	if !exe.IsEmpty() && exe.Status == model.EXE_ACTIVE {
 		err := fmt.Errorf(logger.EXE_ERR_FAILED_TO_CREATE, exe.ExeId)
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 
 	// No active execution found, starting a new one
 	exe, err = build_execution(req)
 	if err != nil {
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 
 	logrus.Infof(logger.EXE_START, exe.ExeId, exe.Status, exe.Assets)
 	if err = insert_one(exe); err != nil {
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 	return exe, nil
 }
 
 func GetLatest() (model.Execution, error) {
-	return find_latest()
+	exe, err := find_latest()
+	if err != nil {
+		logrus.Error(err.Error())
+	}
+	return exe, err
 }
 
 func GetLastestByExeId(exeId string) (model.Execution, error) {
-	return find_latest_by_exeId(exeId)
+	exe, err := find_latest_by_exeId(exeId)
+	if err != nil {
+		logrus.Error(err.Error())
+	}
+	return exe, err
 }
 
 func GetByExeId(exeId string) ([]model.Execution, error) {
-	return find_by_exeId(exeId)
+	exe, err := find_by_exeId(exeId)
+	if err != nil {
+		logrus.Error(err.Error())
+	}
+	return exe, err
 }
 
-func Terminate(exeId string) (model.Execution, error) {
-	exe, err := find_latest_by_exeId(exeId)
+func Update(update model.Execution) (model.Execution, error) {
+	exe, err := find_latest_by_exeId(update.ExeId)
 	if err != nil {
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 	if exe.IsEmpty() {
-		err = fmt.Errorf(logger.EXE_ERR_NOT_FOUND, exeId)
-		logrus.Error(err.Error())
-		return model.Execution{}, err
-	}
-	if exe.Status == model.EXE_TERMINATED {
-		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
-			exe.ExeId, model.EXE_TERMINATED, model.EXE_TERMINATED)
+		err = fmt.Errorf(logger.EXE_ERR_NOT_FOUND, update.ExeId)
 		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 
-	exe.Status = model.EXE_TERMINATED
+	if update.Status == model.EXE_ACTIVE {
+		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
+			exe.ExeId, exe.Status, model.EXE_ACTIVE)
+		logrus.Error(err.Error())
+		return model.Execution{}, err
+	}
+
+	exe.Status = update.Status
 	exe.Timestamp = time.Now().UnixMicro()
 	if err := insert_one(exe); err != nil {
+		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 	return exe, nil
@@ -78,7 +97,6 @@ func build_execution(req model.ExecutionInit) (model.Execution, error) {
 
 	if len(raccount.Balances) == 0 {
 		err := fmt.Errorf(logger.EXE_ERR_EMPTY_RACC)
-		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 

@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 )
 
@@ -29,6 +30,7 @@ func ParseStr(s string) (StrategyType, error) {
 
 	envs := fmt.Sprintf("[%s|%s, %s|%s]", DTS_STRATEGY, DTS_STRATEGY_SHORT, PTS_STRATEGY, PTS_STRATEGY_SHORT)
 	err := fmt.Errorf(logger.MODEL_ERR_UNKNOWN_ENV, s, envs)
+	logrus.Error(err.Error())
 	return StrategyType(s), err
 }
 

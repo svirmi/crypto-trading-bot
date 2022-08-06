@@ -180,7 +180,7 @@ func TestGetCurrentlyActive_None(t *testing.T) {
 	testutils.AssertTrue(t, got.IsEmpty(), "execution")
 }
 
-func TestStatuses(t *testing.T) {
+func TestUpdate(t *testing.T) {
 	logger.Initialize(false, true, true)
 	// Setting up test
 	old := mock_mongo_config()
@@ -201,8 +201,30 @@ func TestStatuses(t *testing.T) {
 	exe.ExeId = exeIds[0]
 	insert_one(exe)
 
-	// Updating status to TERMINATED
-	got, err := Terminate(exeIds[0])
+	// Update with non exisiting exeId
+	update := model.Execution{
+		ExeId:  "not-existing",
+		Status: model.EXE_ACTIVE,
+	}
+	got, err := Update(update)
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertEq(t, model.Execution{}, got, "execution")
+
+	// Update to status EXE_ECTIVE
+	update = model.Execution{
+		ExeId:  exeIds[0],
+		Status: model.EXE_ACTIVE,
+	}
+	got, err = Update(update)
+	testutils.AssertNotNil(t, err, "err")
+	testutils.AssertEq(t, model.Execution{}, got, "execution")
+
+	// Update to status EXE_TERMINATED
+	update = model.Execution{
+		ExeId:  exeIds[0],
+		Status: model.EXE_TERMINATED,
+	}
+	got, err = Update(update)
 	testutils.AssertNil(t, err, "err")
 	testutils.AssertEq(t, model.EXE_TERMINATED, got.Status, "execution")
 }
