@@ -1,0 +1,149 @@
+{
+	"info": {
+		"_postman_id": "f84619d4-deaf-4c21-a6a4-96c452d58e99",
+		"name": "CryptoTradingBot",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "11125733"
+	},
+	"item": [
+		{
+			"name": "Ping pong",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/ping",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"ping"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Post DTS execution",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"pm.environment.set(\"exeId\", jsonData[\"exeId\"]);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"strategyType\": \"dts\",\n    \"strategyConfig\": {\n        \"buyThreshold\": \"10\",\n        \"sellThreshold\": \"10\",\n        \"missProfitThreshold\": \"20\",\n        \"stopLossThreshold\": \"20\"\n    }\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/executions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"executions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Post PTS execution",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"pm.environment.set(\"exeId\", jsonData[\"exeId\"]);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"strategyType\": \"pts\",\n    \"strategyConfig\": {\n        \"buyPercentage\": \"10\",\n        \"sellPercentage\": \"10\",\n        \"buyAmountPercentage\": \"10\",\n        \"sellAmountPercentage\": \"10\"\n    }\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/executions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"executions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Terminate execution",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"status\": \"EXE_TERMINATED\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/executions/{{exeId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"executions",
+						"{{exeId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
