@@ -76,6 +76,10 @@ func Update(update model.Execution) (model.Execution, error) {
 		return model.Execution{}, err
 	}
 
+	if update.Status == exe.Status {
+		return exe, nil
+	}
+
 	if update.Status == model.EXE_ACTIVE {
 		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
 			exe.ExeId, exe.Status, model.EXE_ACTIVE)

@@ -7,6 +7,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/tevino/abool/v2"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
@@ -19,13 +20,11 @@ import (
 var (
 	mmsChannel      chan []model.MiniMarketStats
 	callbackChannel chan model.MiniMarketStatsAck
-	exchange        model.IExchange
 )
 
-func Initialize(mmsCh chan []model.MiniMarketStats, callbackCh chan model.MiniMarketStatsAck, ex model.IExchange) {
+func Initialize(mmsCh chan []model.MiniMarketStats, callbackCh chan model.MiniMarketStatsAck) {
 	mmsChannel = mmsCh
 	callbackChannel = callbackCh
-	exchange = ex
 }
 
 func HandleMiniMarketsStats() {
@@ -202,7 +201,7 @@ var handle_operation = func(lacc model.ILocalAccount, op model.Operation) model.
 	}
 
 	// Getting remote account before operation
-	raccount1, err := exchange.GetAccout()
+	raccount1, err := exchange.GetAccount()
 	if err != nil {
 		logrus.Errorf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
 		return lacc
@@ -216,7 +215,7 @@ var handle_operation = func(lacc model.ILocalAccount, op model.Operation) model.
 	}
 
 	// Getting remote account after operation
-	raccount2, err := exchange.GetAccout()
+	raccount2, err := exchange.GetAccount()
 	if err != nil {
 		logrus.Panicf(logger.HANDL_ERR_SKIP_MMS_UPDATE, op.Base, err.Error())
 	}

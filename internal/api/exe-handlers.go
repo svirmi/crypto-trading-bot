@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
@@ -20,7 +21,7 @@ func create_execution(req exe_create_req_dto) (int, exe_res_dto, error_dto) {
 		return bad_request(error_dto{err.Error()})
 	}
 
-	racc, err := exchange.GetAccout()
+	racc, err := exchange.GetAccount()
 	if err != nil {
 		return internal_server_error(error_dto{err.Error()})
 	}

@@ -36,6 +36,10 @@ const (
 	MONGO_COLLECTION_HANLDE = "getting handler to mongo %s/%s collection"
 	MONGO_INDEXES_CREATION  = "indexes %v successfully upserted"
 
+	// Exchange error
+	EX_ERR_UNKNOWN_EXTYPE = "unknown exchange type %s"
+	EX_ERR_UNINITIALIZED  = "uninitialized exchange"
+
 	// Binance exchange
 	BINEX_REGISTERING_SYMBOLS = "registering trading symbols"
 	BINEX_NON_TRADABLE_ASSET  = "%s cannot be directly exchanged with USDT, ignored"

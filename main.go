@@ -13,8 +13,7 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/analytics"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/api"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/binance"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange/local"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/handler"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
@@ -96,14 +95,13 @@ func run(flags Flags) {
 	connect_to_mongodb()
 
 	mmsch := make(chan []model.MiniMarketStats)
-	exchange := binance.GetExchange()
-	init_exchange(exchange, mmsch, nil)
+	init_exchange(model.BINANCEX, mmsch, nil)
 
 	start_price_service()
-	start_handler(exchange, mmsch, nil)
-	serve_mmss(exchange)
+	start_handler(mmsch, nil)
+	serve_mmss()
 
-	api.Initialize(exchange)
+	api.Initialize()
 }
 
 func run_simulation(flags Flags, strategyName string, strategyConfig map[string]string) {
@@ -127,13 +125,12 @@ func run_simulation(flags Flags, strategyName string, strategyConfig map[string]
 
 	mmsch := make(chan []model.MiniMarketStats)
 	cllch := make(chan model.MiniMarketStatsAck, 10)
-	exchange := local.GetExchange()
-	init_exchange(exchange, mmsch, cllch)
+	init_exchange(model.LOCALEX, mmsch, cllch)
 
 	start_price_service()
 
 	// Retrieving remote account
-	racc, err := exchange.GetAccout()
+	racc, err := exchange.GetAccount()
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
@@ -173,8 +170,8 @@ func run_simulation(flags Flags, strategyName string, strategyConfig map[string]
 	}
 
 	start_price_service()
-	start_handler(exchange, mmsch, cllch)
-	serve_mmss(exchange)
+	start_handler(mmsch, cllch)
+	serve_mmss()
 
 	// Wait until the application is stopped
 	select {}
@@ -203,8 +200,8 @@ func connect_to_mongodb() {
 	}
 }
 
-func init_exchange(exchange model.IExchange, mmsch chan []model.MiniMarketStats, cllch chan model.MiniMarketStatsAck) {
-	err := exchange.Initialize(mmsch, cllch)
+func init_exchange(extype model.ExchangeType, mmsch chan []model.MiniMarketStats, cllch chan model.MiniMarketStatsAck) {
+	err := exchange.Initialize(extype, mmsch, cllch)
 	if err != nil {
 		logrus.Panic(err.Error())
 	}
@@ -217,12 +214,12 @@ func start_price_service() {
 	}
 }
 
-func start_handler(exchange model.IExchange, mmsch chan []model.MiniMarketStats, cllch chan model.MiniMarketStatsAck) {
-	handler.Initialize(mmsch, cllch, exchange)
+func start_handler(mmsch chan []model.MiniMarketStats, cllch chan model.MiniMarketStatsAck) {
+	handler.Initialize(mmsch, cllch)
 	handler.HandleMiniMarketsStats()
 }
 
-func serve_mmss(exchange model.IExchange) {
+func serve_mmss() {
 	// Start serving mini markets stats
 	exchange.MiniMarketsStatsServe()
 	terminate_exchange = func() {

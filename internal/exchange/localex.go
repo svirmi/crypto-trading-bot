@@ -1,4 +1,4 @@
-package local
+package exchange
 
 import (
 	"encoding/csv"
@@ -24,18 +24,47 @@ import (
 var (
 	raccount *crrmap.ConcurrentMap
 	prices   map[string]*crrqueue.Queue
-
-	mmsCh chan []model.MiniMarketStats
-	cllCh chan model.MiniMarketStatsAck
 )
 
 type local_exchange struct{}
 
-func GetExchange() model.IExchange {
-	return local_exchange{}
+func (le local_exchange) initialize(mmsch chan []model.MiniMarketStats, cllch chan model.MiniMarketStatsAck) error {
+	return localex_initialize(mmsch, cllch)
 }
 
-func (be local_exchange) Initialize(mmsChannel chan []model.MiniMarketStats, cllChannel chan model.MiniMarketStatsAck) error {
+func (le local_exchange) can_spot_trade(symbol string) bool {
+	return localex_can_spot_trade(symbol)
+}
+
+func (le local_exchange) get_spot_market_limits(symbol string) (model.SpotMarketLimits, error) {
+	return localex_get_spot_market_limits(symbol)
+}
+
+func (le local_exchange) filter_tradable_assets(bases []string) []string {
+	return localex_filter_tradable_assets(bases)
+}
+
+func (le local_exchange) get_assets_value(bases []string) (map[string]model.AssetPrice, error) {
+	return localex_get_assets_value(bases)
+}
+
+func (le local_exchange) get_account() (model.RemoteAccount, error) {
+	return localex_get_account()
+}
+
+func (le local_exchange) send_spot_market_order(op model.Operation) (model.Operation, error) {
+	return localex_send_spot_market_order(op)
+}
+
+func (le local_exchange) mini_markets_stats_serve() error {
+	return localex_mini_markets_stats_serve()
+}
+
+func (le local_exchange) mini_markets_stats_stop() {
+	localex_mini_markets_stats_stop()
+}
+
+func localex_initialize(mmsChannel chan []model.MiniMarketStats, cllChannel chan model.MiniMarketStatsAck) error {
 	// Decoding config
 	localExchangeConfig := struct {
 		InitialBalances map[string]string
@@ -265,7 +294,30 @@ func parse_mini_market_stats(line []string, asset string, intre, floatre *regexp
 		QuoteVolume: quoteVolume}, nil
 }
 
-func (be local_exchange) GetAssetsValue(bases []string) (map[string]model.AssetPrice, error) {
+func localex_can_spot_trade(symbol string) bool {
+	return true
+}
+
+func localex_get_spot_market_limits(symbol string) (model.SpotMarketLimits, error) {
+	return model.SpotMarketLimits{
+		MinBase:  utils.DecimalFromString("0.00000001"),
+		MinQuote: utils.DecimalFromString("0.00000001"),
+		MaxBase:  utils.DecimalFromString("99999999"),
+		StepBase: utils.DecimalFromString("0.00000001")}, nil
+}
+
+func localex_filter_tradable_assets(bases []string) []string {
+	tradables := make([]string, 0, len(bases))
+
+	for _, base := range bases {
+		if base != "USDT" {
+			tradables = append(tradables, base)
+		}
+	}
+	return tradables
+}
+
+func localex_get_assets_value(bases []string) (map[string]model.AssetPrice, error) {
 	assetPrices := make(map[string]model.AssetPrice)
 
 	for _, base := range bases {
@@ -299,7 +351,24 @@ func (be local_exchange) GetAssetsValue(bases []string) (map[string]model.AssetP
 	return assetPrices, nil
 }
 
-func (be local_exchange) SendSpotMarketOrder(op model.Operation) (model.Operation, error) {
+func localex_get_account() (model.RemoteAccount, error) {
+	balances := make([]model.RemoteBalance, 0, raccount.Size())
+
+	for itr := raccount.Iterator(); itr.HasNext(); {
+		key, value, ok := itr.Next()
+		if !ok {
+			err := fmt.Errorf(logger.LOCALEX_ERR_RACCOUNT_BUILD_FAILURE)
+			logrus.Error(err.Error())
+			return model.RemoteAccount{}, err
+		}
+
+		rbalance := model.RemoteBalance{Asset: key.(string), Amount: value.(decimal.Decimal)}
+		balances = append(balances, rbalance)
+	}
+	return model.RemoteAccount{Balances: balances}, nil
+}
+
+func localex_send_spot_market_order(op model.Operation) (model.Operation, error) {
 	// Getting price list for symbol
 	values, found := prices[op.Base+op.Quote]
 	if !found {
@@ -409,7 +478,7 @@ func (be local_exchange) SendSpotMarketOrder(op model.Operation) (model.Operatio
 	return op, nil
 }
 
-func (be local_exchange) MiniMarketsStatsServe() error {
+func localex_mini_markets_stats_serve() error {
 	go func() {
 		defer func() {
 			logrus.WithField("comp", "localex").Infof(logger.LOCALEX_DONE)
@@ -480,51 +549,11 @@ func wait_mms_acks(size int) {
 	}
 }
 
-func (be local_exchange) MiniMarketsStatsStop() {
+func localex_mini_markets_stats_stop() {
 	logrus.WithField("comp", "localex").Info(logger.LOCALEX_PRICE_QUEUES_DEALLOCATION)
 	for _, values := range prices {
 		if values != nil && !values.Disposed() {
 			values.Dispose()
 		}
 	}
-}
-
-func (be local_exchange) GetAccout() (model.RemoteAccount, error) {
-	balances := make([]model.RemoteBalance, 0, raccount.Size())
-
-	for itr := raccount.Iterator(); itr.HasNext(); {
-		key, value, ok := itr.Next()
-		if !ok {
-			err := fmt.Errorf(logger.LOCALEX_ERR_RACCOUNT_BUILD_FAILURE)
-			logrus.Error(err.Error())
-			return model.RemoteAccount{}, err
-		}
-
-		rbalance := model.RemoteBalance{Asset: key.(string), Amount: value.(decimal.Decimal)}
-		balances = append(balances, rbalance)
-	}
-	return model.RemoteAccount{Balances: balances}, nil
-}
-
-func (be local_exchange) CanSpotTrade(symbol string) bool {
-	return true
-}
-
-func (be local_exchange) GetSpotMarketLimits(symbol string) (model.SpotMarketLimits, error) {
-	return model.SpotMarketLimits{
-		MinBase:  utils.DecimalFromString("0.00000001"),
-		MinQuote: utils.DecimalFromString("0.00000001"),
-		MaxBase:  utils.DecimalFromString("99999999"),
-		StepBase: utils.DecimalFromString("0.00000001")}, nil
-}
-
-func (be local_exchange) FilterTradableAssets(bases []string) []string {
-	tradables := make([]string, 0, len(bases))
-
-	for _, base := range bases {
-		if base != "USDT" {
-			tradables = append(tradables, base)
-		}
-	}
-	return tradables
 }

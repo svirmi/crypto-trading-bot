@@ -12,7 +12,6 @@ import (
 	"github.com/thanhpk/randstr"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
-	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
 const (
@@ -23,13 +22,7 @@ const (
 	RESOURCE_NOT_FOUND = "resource not found"
 )
 
-var (
-	exchange model.IExchange
-)
-
-func Initialize(_exchange model.IExchange) *gin.Engine {
-	exchange = _exchange
-
+func Initialize() *gin.Engine {
 	gin.DisableConsoleColor()
 	gin.SetMode(gin.ReleaseMode)
 

@@ -6,16 +6,35 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type IExchange interface {
-	Initialize(chan []MiniMarketStats, chan MiniMarketStatsAck) error
-	CanSpotTrade(string) bool
-	GetSpotMarketLimits(string) (SpotMarketLimits, error)
-	FilterTradableAssets([]string) []string
-	GetAssetsValue([]string) (map[string]AssetPrice, error)
-	GetAccout() (RemoteAccount, error)
-	SendSpotMarketOrder(Operation) (Operation, error)
-	MiniMarketsStatsServe() error
-	MiniMarketsStatsStop()
+type ExchangeType string
+
+const (
+	LOCALEX  ExchangeType = "LOCAL"
+	BINANCEX ExchangeType = "BINANCEX"
+)
+
+type MiniMarketStats struct {
+	Event       string
+	Time        int64
+	Asset       string
+	LastPrice   decimal.Decimal
+	OpenPrice   decimal.Decimal
+	HighPrice   decimal.Decimal
+	LowPrice    decimal.Decimal
+	BaseVolume  decimal.Decimal
+	QuoteVolume decimal.Decimal
+}
+
+func (m MiniMarketStats) IsEmpty() bool {
+	return reflect.DeepEqual(m, MiniMarketStats{})
+}
+
+type MiniMarketStatsAck struct {
+	Count int
+}
+
+func (m MiniMarketStatsAck) IsEmpty() bool {
+	return reflect.DeepEqual(m, MiniMarketStatsAck{})
 }
 
 type SpotMarketLimits struct {
