@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/tevino/abool/v2"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/exchange"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
@@ -60,7 +60,7 @@ var handle_mini_markets_stats = func() {
 			continue
 		}
 		if lacc == nil {
-			err := fmt.Errorf(logger.HANDL_ERR_LACC_NOT_FOUND, exe.ExeId)
+			err := errors.NotFound(logger.HANDL_ERR_LACC_NOT_FOUND, exe.ExeId)
 			logrus.Warnf(logger.HANDL_ERR_SKIP_MMSS_UPDATE, err.Error())
 			ack_mmss(len(mmss))
 			continue
@@ -143,11 +143,11 @@ var ack_mmss = func(size int) {
 	}
 }
 
-var get_latest_exe = func() (model.Execution, error) {
+var get_latest_exe = func() (model.Execution, errors.CtbError) {
 	return executions.GetLatest()
 }
 
-var get_latest_lacc = func(exeId string) (model.ILocalAccount, error) {
+var get_latest_lacc = func(exeId string) (model.ILocalAccount, errors.CtbError) {
 	return laccount.GetLatestByExeId(exeId)
 }
 
@@ -173,11 +173,11 @@ var can_spot_trade = func(symbol string) bool {
 	return exchange.CanSpotTrade(symbol)
 }
 
-var get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+var get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 	return exchange.GetSpotMarketLimits(symbol)
 }
 
-var get_operation = func(exe model.Execution, lacc model.ILocalAccount, mms model.MiniMarketStats, slimits model.SpotMarketLimits) (model.Operation, error) {
+var get_operation = func(exe model.Execution, lacc model.ILocalAccount, mms model.MiniMarketStats, slimits model.SpotMarketLimits) (model.Operation, errors.CtbError) {
 	return lacc.GetOperation(exe.Props, mms, slimits)
 }
 
@@ -248,7 +248,7 @@ var handle_operation = func(lacc model.ILocalAccount, op model.Operation) model.
 	return lacc
 }
 
-func compute_op_results(old, new model.RemoteAccount, op model.Operation) (model.Operation, error) {
+func compute_op_results(old, new model.RemoteAccount, op model.Operation) (model.Operation, errors.CtbError) {
 	var oldBaseBalance, newBaseBalance decimal.Decimal
 	var oldQuoteBalance, newQuoteBalance decimal.Decimal
 
@@ -276,7 +276,7 @@ func compute_op_results(old, new model.RemoteAccount, op model.Operation) (model
 	baseDiff := (newBaseBalance.Sub(oldBaseBalance)).Abs().Round(8)
 	quoteDiff := (newQuoteBalance.Sub(oldQuoteBalance)).Abs().Round(8)
 	if baseDiff.Equals(decimal.Zero) && quoteDiff.Equals(decimal.Zero) {
-		err := fmt.Errorf(logger.HANDL_ERR_ZERO_BASE_QUOTE_DIFF)
+		err := errors.Internal(logger.HANDL_ERR_ZERO_BASE_QUOTE_DIFF)
 		logrus.Error(err.Error())
 		op.Status = model.FAILED
 		return op, err

@@ -216,8 +216,8 @@ func TestUpdate(t *testing.T) {
 		Status: model.EXE_ACTIVE,
 	}
 	got, err = Update(update)
-	testutils.AssertNotNil(t, err, "err")
-	testutils.AssertEq(t, model.Execution{}, got, "execution")
+	testutils.AssertNil(t, err, "err")
+	testutils.AssertEq(t, exe, got, "execution")
 
 	// Update to status EXE_TERMINATED
 	update = model.Execution{

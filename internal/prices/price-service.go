@@ -1,12 +1,12 @@
 package prices
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
 	crrqueue "github.com/Workiva/go-datastructures/queue"
 	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
@@ -38,13 +38,13 @@ func Initialize() {
 	}()
 }
 
-func InsertMany(prices []model.SymbolPrice) error {
+func InsertMany(prices []model.SymbolPrice) errors.CtbError {
 	return insert_many(prices)
 }
 
-func InsertManyDeferred(prices []model.SymbolPrice) error {
+func InsertManyDeferred(prices []model.SymbolPrice) errors.CtbError {
 	if priceBuffer == nil {
-		err := fmt.Errorf(logger.ANAL_PRICES_ERR_NO_INITIALIZATION)
+		err := errors.Internal(logger.ANAL_PRICES_ERR_NO_INITIALIZATION)
 		logrus.Error(err.Error())
 		return err
 	}
@@ -57,16 +57,16 @@ func InsertManyDeferred(prices []model.SymbolPrice) error {
 	err := priceBuffer.Put(payload...)
 	if err != nil {
 		logrus.Error(err.Error())
-		return err
+		return errors.WrapInternal(err)
 	}
 	return nil
 }
 
-func Get(symbols []string, start, end int64) ([]model.SymbolPrice, error) {
+func Get(symbols []string, start, end int64) ([]model.SymbolPrice, errors.CtbError) {
 	return find(symbols, start, end)
 }
 
-func GetByTimestamp(symbols []string, start, end int64) ([]model.SymbolPriceByTimestamp, error) {
+func GetByTimestamp(symbols []string, start, end int64) ([]model.SymbolPriceByTimestamp, errors.CtbError) {
 	return find_by_timestamp(symbols, start, end)
 }
 

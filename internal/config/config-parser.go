@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -38,7 +39,7 @@ var (
 	appConfig Config
 )
 
-func Initialize(configFilepath string) error {
+func Initialize(configFilepath string) errors.CtbError {
 	config, err := parse_config(configFilepath)
 	appConfig = config
 	return err
@@ -56,18 +57,19 @@ var GetMongoDbConfig = func() MongoDbConfig {
 	return appConfig.MongoDb
 }
 
-func parse_config(configFilepath string) (config Config, err error) {
+func parse_config(configFilepath string) (Config, errors.CtbError) {
 	f, err := os.Open(configFilepath)
 	if err != nil {
-		return Config{}, err
+		return Config{}, errors.WrapBadRequest(err)
 	}
 	defer f.Close()
 
 	logrus.Infof(logger.CONFIG_PARSING, configFilepath)
 	decoder := yaml.NewDecoder(f)
+	var config Config
 	err = decoder.Decode(&config)
 	if err != nil {
-		return Config{}, err
+		return Config{}, errors.WrapBadRequest(err)
 	}
 	return config, nil
 }

@@ -3,12 +3,13 @@ package analytics
 import (
 	"context"
 
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func insert_many(anas []model.IAnalytics) error {
+func insert_many(anas []model.IAnalytics) errors.CtbError {
 	collection := mongodb.GetAnalyticsCol()
 
 	var payload []interface{}
@@ -18,5 +19,5 @@ func insert_many(anas []model.IAnalytics) error {
 
 	opts := options.InsertMany().SetOrdered(false)
 	_, err := collection.InsertMany(context.TODO(), payload, opts)
-	return err
+	return errors.WrapMongo(err)
 }

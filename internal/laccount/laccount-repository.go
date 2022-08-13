@@ -3,6 +3,7 @@ package laccount
 import (
 	"context"
 
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy"
@@ -11,12 +12,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func insert(laccout model.ILocalAccount) error {
+func insert(laccout model.ILocalAccount) errors.CtbError {
 	_, err := mongodb.GetLocalAccountsCol().InsertOne(context.TODO(), laccout)
-	return err
+	return errors.WrapMongo(err)
 }
 
-func find_latest_by_exeId(exeId string) (model.ILocalAccount, error) {
+func find_latest_by_exeId(exeId string) (model.ILocalAccount, errors.CtbError) {
 	collection := mongodb.GetLocalAccountsCol()
 
 	// Defining query
@@ -35,7 +36,7 @@ func find_latest_by_exeId(exeId string) (model.ILocalAccount, error) {
 	return strategy.DecodeLaccount(raw, mongodb.GetCustomRegistry())
 }
 
-func find_by_exeId(exeId string) ([]model.ILocalAccount, error) {
+func find_by_exeId(exeId string) ([]model.ILocalAccount, errors.CtbError) {
 	collection := mongodb.GetLocalAccountsCol()
 
 	// Defining query
@@ -46,7 +47,7 @@ func find_by_exeId(exeId string) ([]model.ILocalAccount, error) {
 	// Querying DB
 	results, err := collection.Find(context.TODO(), filter, options)
 	if err != nil {
-		return nil, err
+		return nil, errors.WrapMongo(err)
 	}
 
 	// Decoding results

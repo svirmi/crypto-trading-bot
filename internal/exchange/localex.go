@@ -2,7 +2,6 @@ package exchange
 
 import (
 	"encoding/csv"
-	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -16,6 +15,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
@@ -28,7 +28,7 @@ var (
 
 type local_exchange struct{}
 
-func (le local_exchange) initialize(mmsch chan []model.MiniMarketStats, cllch chan model.MiniMarketStatsAck) error {
+func (le local_exchange) initialize(mmsch chan []model.MiniMarketStats, cllch chan model.MiniMarketStatsAck) errors.CtbError {
 	return localex_initialize(mmsch, cllch)
 }
 
@@ -36,7 +36,7 @@ func (le local_exchange) can_spot_trade(symbol string) bool {
 	return localex_can_spot_trade(symbol)
 }
 
-func (le local_exchange) get_spot_market_limits(symbol string) (model.SpotMarketLimits, error) {
+func (le local_exchange) get_spot_market_limits(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 	return localex_get_spot_market_limits(symbol)
 }
 
@@ -44,19 +44,19 @@ func (le local_exchange) filter_tradable_assets(bases []string) []string {
 	return localex_filter_tradable_assets(bases)
 }
 
-func (le local_exchange) get_assets_value(bases []string) (map[string]model.AssetPrice, error) {
+func (le local_exchange) get_assets_value(bases []string) (map[string]model.AssetPrice, errors.CtbError) {
 	return localex_get_assets_value(bases)
 }
 
-func (le local_exchange) get_account() (model.RemoteAccount, error) {
+func (le local_exchange) get_account() (model.RemoteAccount, errors.CtbError) {
 	return localex_get_account()
 }
 
-func (le local_exchange) send_spot_market_order(op model.Operation) (model.Operation, error) {
+func (le local_exchange) send_spot_market_order(op model.Operation) (model.Operation, errors.CtbError) {
 	return localex_send_spot_market_order(op)
 }
 
-func (le local_exchange) mini_markets_stats_serve() error {
+func (le local_exchange) mini_markets_stats_serve() errors.CtbError {
 	return localex_mini_markets_stats_serve()
 }
 
@@ -64,7 +64,7 @@ func (le local_exchange) mini_markets_stats_stop() {
 	localex_mini_markets_stats_stop()
 }
 
-func localex_initialize(mmsChannel chan []model.MiniMarketStats, cllChannel chan model.MiniMarketStatsAck) error {
+func localex_initialize(mmsChannel chan []model.MiniMarketStats, cllChannel chan model.MiniMarketStatsAck) errors.CtbError {
 	// Decoding config
 	localExchangeConfig := struct {
 		InitialBalances map[string]string
@@ -73,7 +73,7 @@ func localex_initialize(mmsChannel chan []model.MiniMarketStats, cllChannel chan
 	err := mapstructure.Decode(config.GetExchangeConfig(), &localExchangeConfig)
 	if err != nil {
 		logrus.WithField("comp", "localex").Error(err.Error())
-		return err
+		return errors.WrapBadRequest(err)
 	}
 
 	// The wallet must be populated with assets, not symbols
@@ -84,7 +84,7 @@ func localex_initialize(mmsChannel chan []model.MiniMarketStats, cllChannel chan
 		}
 
 		if strings.HasSuffix(asset, "USDT") {
-			err := fmt.Errorf(logger.LOCALEX_ERR_INVALID_ASSET, asset)
+			err := errors.BadRequest(logger.LOCALEX_ERR_INVALID_ASSET, asset)
 			logrus.WithField("comp", "localex").Error(err.Error())
 			return err
 		}
@@ -96,7 +96,7 @@ func localex_initialize(mmsChannel chan []model.MiniMarketStats, cllChannel chan
 		}
 
 		if _, found := localExchangeConfig.PriceFilepaths[symbol]; !found {
-			err := fmt.Errorf(logger.LOCALEX_ERR_PRICES_NOT_PROVIDED, symbol)
+			err := errors.BadRequest(logger.LOCALEX_ERR_PRICES_NOT_PROVIDED, symbol)
 			logrus.WithField("comp", "localex").Error(err.Error())
 			return err
 		}
@@ -105,20 +105,16 @@ func localex_initialize(mmsChannel chan []model.MiniMarketStats, cllChannel chan
 	// Prices are to be provided per symbol, the form XXXUSDT
 	// USDTUSDT is not a valid symbol
 	// Skip prices whose corresponding asset is not in the wallet
-	if err != nil {
-		logrus.WithField("comp", "localex").Error(err.Error())
-		return err
-	}
 	for symbol := range localExchangeConfig.PriceFilepaths {
 		if !utils.IsSymbolTradable(symbol) {
-			err := fmt.Errorf(logger.LOCALEX_ERR_INVALID_SYMBOL, symbol)
+			err := errors.BadRequest(logger.LOCALEX_ERR_INVALID_SYMBOL, symbol)
 			logrus.WithField("comp", "localex").Error(err.Error())
 			return err
 		}
 
 		base := strings.TrimSuffix(symbol, "USDT")
 		if base == "USDT" {
-			err := fmt.Errorf(logger.LOCALEX_ERR_INVALID_SYMBOL, symbol)
+			err := errors.BadRequest(logger.LOCALEX_ERR_INVALID_SYMBOL, symbol)
 			logrus.WithField("comp", "localex").Error(err.Error())
 			return err
 		}
@@ -147,7 +143,7 @@ func localex_initialize(mmsChannel chan []model.MiniMarketStats, cllChannel chan
 		_, err := raccount.Put(key, utils.DecimalFromString(value))
 		if err != nil {
 			logrus.WithField("comp", "localex").Error(err.Error())
-			return err
+			return errors.WrapExchange(err)
 		}
 	}
 
@@ -162,7 +158,7 @@ func localex_initialize(mmsChannel chan []model.MiniMarketStats, cllChannel chan
 	return nil
 }
 
-func parse_prices_file(symbol, priceFilepath string) error {
+func parse_prices_file(symbol, priceFilepath string) errors.CtbError {
 	// Parsing priceFilepath
 	priceFilepath = os.ExpandEnv(priceFilepath)
 
@@ -170,7 +166,7 @@ func parse_prices_file(symbol, priceFilepath string) error {
 	file, err := os.Open(priceFilepath)
 	if err != nil {
 		logrus.WithField("comp", "localex").Error(err.Error())
-		return err
+		return errors.WrapBadRequest(err)
 	}
 	defer file.Close()
 
@@ -178,12 +174,12 @@ func parse_prices_file(symbol, priceFilepath string) error {
 	intre, err := regexp.Compile(utils.GetIntegerRegexp())
 	if err != nil {
 		logrus.WithField("comp", "localex").Error(err.Error())
-		return err
+		return errors.WrapExchange(err)
 	}
 	floatre, err := regexp.Compile(utils.GetFloatRegexp())
 	if err != nil {
 		logrus.WithField("comp", "localex").Error(err.Error())
-		return err
+		return errors.WrapExchange(err)
 	}
 
 	// Reading price file
@@ -192,29 +188,29 @@ func parse_prices_file(symbol, priceFilepath string) error {
 	lines, err := csv.NewReader(file).ReadAll()
 	if err != nil {
 		logrus.WithField("comp", "localex").Error(err.Error())
-		return err
+		return errors.WrapBadRequest(err)
 	}
 
 	// Parsing price file
-	asset, err := utils.GetAssetFromSymbol(symbol)
+	asset, ctb_err := utils.GetAssetFromSymbol(symbol)
 	if err != nil {
 		logrus.WithField("comp", "localex").Error(err.Error())
-		return err
+		return ctb_err
 	}
 
 	prices[symbol] = crrqueue.New(int64(len(lines)))
 	for i := len(lines) - 1; i > 0; i-- {
-		mms, err := parse_mini_market_stats(lines[i], asset, intre, floatre)
-		if err != nil {
+		mms, ctb_err := parse_mini_market_stats(lines[i], asset, intre, floatre)
+		if ctb_err != nil {
 			logrus.WithField("comp", "localex").
-				Errorf(logger.LOCALEX_ERR_SKIP_PRICE_UPDATE, err.Error())
+				Errorf(logger.LOCALEX_ERR_SKIP_PRICE_UPDATE, ctb_err.Error())
 			continue
 		}
 
 		err = prices[symbol].Put(mms)
 		if err != nil {
 			logrus.WithField("comp", "localex").Error(err.Error())
-			return err
+			return errors.WrapExchange(err)
 		}
 
 	}
@@ -225,10 +221,10 @@ func parse_prices_file(symbol, priceFilepath string) error {
 
 }
 
-func parse_mini_market_stats(line []string, asset string, intre, floatre *regexp.Regexp) (model.MiniMarketStats, error) {
+func parse_mini_market_stats(line []string, asset string, intre, floatre *regexp.Regexp) (model.MiniMarketStats, errors.CtbError) {
 	matched := intre.Match([]byte(line[0]))
 	if !matched {
-		err := fmt.Errorf(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "unix_timestamp", line[0])
+		err := errors.BadRequest(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "unix_timestamp", line[0])
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return model.MiniMarketStats{}, err
 	}
@@ -236,7 +232,7 @@ func parse_mini_market_stats(line []string, asset string, intre, floatre *regexp
 
 	matched = floatre.Match([]byte(line[3]))
 	if !matched {
-		err := fmt.Errorf(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "open_price", line[3])
+		err := errors.BadRequest(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "open_price", line[3])
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return model.MiniMarketStats{}, err
 	}
@@ -244,7 +240,7 @@ func parse_mini_market_stats(line []string, asset string, intre, floatre *regexp
 
 	matched = floatre.Match([]byte(line[4]))
 	if !matched {
-		err := fmt.Errorf(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "high_price", line[4])
+		err := errors.BadRequest(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "high_price", line[4])
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return model.MiniMarketStats{}, err
 	}
@@ -252,7 +248,7 @@ func parse_mini_market_stats(line []string, asset string, intre, floatre *regexp
 
 	matched = floatre.Match([]byte(line[5]))
 	if !matched {
-		err := fmt.Errorf(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "low_price", line[5])
+		err := errors.BadRequest(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "low_price", line[5])
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return model.MiniMarketStats{}, err
 	}
@@ -260,7 +256,7 @@ func parse_mini_market_stats(line []string, asset string, intre, floatre *regexp
 
 	matched = floatre.Match([]byte(line[6]))
 	if !matched {
-		err := fmt.Errorf(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "close_price", line[6])
+		err := errors.BadRequest(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "close_price", line[6])
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return model.MiniMarketStats{}, err
 	}
@@ -268,7 +264,7 @@ func parse_mini_market_stats(line []string, asset string, intre, floatre *regexp
 
 	matched = floatre.Match([]byte(line[7]))
 	if !matched {
-		err := fmt.Errorf(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "base_volume", line[7])
+		err := errors.BadRequest(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "base_volume", line[7])
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return model.MiniMarketStats{}, err
 	}
@@ -276,7 +272,7 @@ func parse_mini_market_stats(line []string, asset string, intre, floatre *regexp
 
 	matched = floatre.Match([]byte(line[8]))
 	if !matched {
-		err := fmt.Errorf(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "quote_volume", line[8])
+		err := errors.BadRequest(logger.LOCALEX_ERR_FIELD_BAD_FORMAT, "quote_volume", line[8])
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return model.MiniMarketStats{}, err
 	}
@@ -298,7 +294,7 @@ func localex_can_spot_trade(symbol string) bool {
 	return true
 }
 
-func localex_get_spot_market_limits(symbol string) (model.SpotMarketLimits, error) {
+func localex_get_spot_market_limits(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 	return model.SpotMarketLimits{
 		MinBase:  utils.DecimalFromString("0.00000001"),
 		MinQuote: utils.DecimalFromString("0.00000001"),
@@ -317,19 +313,19 @@ func localex_filter_tradable_assets(bases []string) []string {
 	return tradables
 }
 
-func localex_get_assets_value(bases []string) (map[string]model.AssetPrice, error) {
+func localex_get_assets_value(bases []string) (map[string]model.AssetPrice, errors.CtbError) {
 	assetPrices := make(map[string]model.AssetPrice)
 
 	for _, base := range bases {
-		symbol, err := utils.GetSymbolFromAsset(base)
-		if err != nil {
-			logrus.WithField("comp", "localex").Error(err.Error())
-			return nil, err
+		symbol, ctb_err := utils.GetSymbolFromAsset(base)
+		if ctb_err != nil {
+			logrus.WithField("comp", "localex").Error(ctb_err.Error())
+			return nil, ctb_err
 		}
 
 		values, found := prices[symbol]
 		if !found {
-			err := fmt.Errorf(logger.LOCALEX_ERR_UNKNOWN_SYMBOL, symbol)
+			err := errors.Internal(logger.LOCALEX_ERR_UNKNOWN_SYMBOL, symbol)
 			logrus.WithField("comp", "localex").Error(err.Error())
 			return nil, err
 		}
@@ -337,10 +333,10 @@ func localex_get_assets_value(bases []string) (map[string]model.AssetPrice, erro
 		value, err := values.Peek()
 		if err != nil {
 			logrus.WithField("comp", "localex").Error(err.Error())
-			return nil, err
+			return nil, errors.WrapExchange(err)
 		}
 		if value == nil {
-			err := fmt.Errorf(logger.LOCALEX_ERR_SYMBOL_PRICE, symbol)
+			err := errors.Exchange(logger.LOCALEX_ERR_SYMBOL_PRICE, symbol)
 			logrus.WithField("comp", "localex").Error(err.Error())
 			return nil, err
 		}
@@ -351,13 +347,13 @@ func localex_get_assets_value(bases []string) (map[string]model.AssetPrice, erro
 	return assetPrices, nil
 }
 
-func localex_get_account() (model.RemoteAccount, error) {
+func localex_get_account() (model.RemoteAccount, errors.CtbError) {
 	balances := make([]model.RemoteBalance, 0, raccount.Size())
 
 	for itr := raccount.Iterator(); itr.HasNext(); {
 		key, value, ok := itr.Next()
 		if !ok {
-			err := fmt.Errorf(logger.LOCALEX_ERR_RACCOUNT_BUILD_FAILURE)
+			err := errors.Internal(logger.LOCALEX_ERR_RACCOUNT_BUILD_FAILURE)
 			logrus.Error(err.Error())
 			return model.RemoteAccount{}, err
 		}
@@ -368,12 +364,12 @@ func localex_get_account() (model.RemoteAccount, error) {
 	return model.RemoteAccount{Balances: balances}, nil
 }
 
-func localex_send_spot_market_order(op model.Operation) (model.Operation, error) {
+func localex_send_spot_market_order(op model.Operation) (model.Operation, errors.CtbError) {
 	// Getting price list for symbol
 	values, found := prices[op.Base+op.Quote]
 	if !found {
 		op.Status = model.FAILED
-		err := fmt.Errorf(logger.LOCALEX_ERR_UNKNOWN_SYMBOL, op.Base+op.Quote)
+		err := errors.Internal(logger.LOCALEX_ERR_UNKNOWN_SYMBOL, op.Base+op.Quote)
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return op, err
 	}
@@ -383,11 +379,11 @@ func localex_send_spot_market_order(op model.Operation) (model.Operation, error)
 	if err != nil {
 		op.Status = model.FAILED
 		logrus.WithField("comp", "localex").Error(err.Error())
-		return op, err
+		return op, errors.WrapExchange(err)
 	}
 	if value == nil {
 		op.Status = model.FAILED
-		err := fmt.Errorf(logger.LOCALEX_ERR_SYMBOL_PRICE, op.Base+op.Quote)
+		err := errors.Exchange(logger.LOCALEX_ERR_SYMBOL_PRICE, op.Base+op.Quote)
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return op, err
 	}
@@ -401,7 +397,7 @@ func localex_send_spot_market_order(op model.Operation) (model.Operation, error)
 		computedAmt = op.Amount.Mul(utils.DecimalFromString("1").Div(price).Round(8)).Round(8)
 	} else {
 		op.Status = model.FAILED
-		err := fmt.Errorf(logger.LOCALEX_ERR_UNKNOWN_AMOUNT_SIDE, op.AmountSide)
+		err := errors.Internal(logger.LOCALEX_ERR_UNKNOWN_AMOUNT_SIDE, op.AmountSide)
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return op, err
 	}
@@ -411,7 +407,7 @@ func localex_send_spot_market_order(op model.Operation) (model.Operation, error)
 	if err != nil {
 		op.Status = model.FAILED
 		logrus.WithField("comp", "localex").Error(err.Error())
-		return op, err
+		return op, errors.WrapExchange(err)
 	}
 	if value == nil {
 		value = decimal.Zero
@@ -421,7 +417,7 @@ func localex_send_spot_market_order(op model.Operation) (model.Operation, error)
 	if err != nil {
 		op.Status = model.FAILED
 		logrus.WithField("comp", "localex").Error(err.Error())
-		return op, err
+		return op, errors.WrapExchange(err)
 	}
 	if value == nil {
 		value = decimal.Zero
@@ -444,7 +440,7 @@ func localex_send_spot_market_order(op model.Operation) (model.Operation, error)
 		quoteAmtAvailable = quoteAmtAvailable.Sub(op.Amount).Round(8)
 	} else {
 		op.Status = model.FAILED
-		err := fmt.Errorf(logger.LOCALEX_ERR_UNKNOWN_SIDE, op.Side)
+		err := errors.Internal(logger.LOCALEX_ERR_UNKNOWN_SIDE, op.Side)
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return op, err
 	}
@@ -452,13 +448,13 @@ func localex_send_spot_market_order(op model.Operation) (model.Operation, error)
 	// Checking market order results
 	if baseAmtAvailable.LessThan(decimal.Zero) {
 		op.Status = model.FAILED
-		err := fmt.Errorf(logger.LOCALEX_ERR_NEGATIVE_BASE_AMT, op.Base, baseAmtAvailable)
+		err := errors.Internal(logger.LOCALEX_ERR_NEGATIVE_BASE_AMT, op.Base, baseAmtAvailable)
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return op, err
 	}
 	if quoteAmtAvailable.LessThan(decimal.Zero) {
 		op.Status = model.FAILED
-		err := fmt.Errorf(logger.LOCALEX_ERR_NEGATIVE_QUOTE_AMT, op.Quote, quoteAmtAvailable)
+		err := errors.Internal(logger.LOCALEX_ERR_NEGATIVE_QUOTE_AMT, op.Quote, quoteAmtAvailable)
 		logrus.WithField("comp", "localex").Error(err.Error())
 		return op, err
 	}
@@ -468,7 +464,7 @@ func localex_send_spot_market_order(op model.Operation) (model.Operation, error)
 	if err != nil {
 		op.Status = model.FAILED
 		logrus.WithField("comp", "localex").Error(err.Error())
-		return op, err
+		return op, errors.WrapExchange(err)
 	}
 	_, err = raccount.Put(op.Quote, quoteAmtAvailable)
 	if err != nil {
@@ -478,7 +474,7 @@ func localex_send_spot_market_order(op model.Operation) (model.Operation, error)
 	return op, nil
 }
 
-func localex_mini_markets_stats_serve() error {
+func localex_mini_markets_stats_serve() errors.CtbError {
 	go func() {
 		defer func() {
 			logrus.WithField("comp", "localex").Infof(logger.LOCALEX_DONE)
@@ -534,7 +530,6 @@ func localex_mini_markets_stats_serve() error {
 			}
 		}
 	}()
-
 	return nil
 }
 

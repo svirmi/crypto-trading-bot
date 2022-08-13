@@ -18,8 +18,7 @@ const (
 	INCLUSIVE_MIN_PORT = 1024
 	EXCLUSIVE_MAX_PORT = 65354
 
-	API_V1             = "/api/v1"
-	RESOURCE_NOT_FOUND = "resource not found"
+	API_V1 = "/api/v1"
 )
 
 func Initialize() *gin.Engine {
@@ -31,8 +30,10 @@ func Initialize() *gin.Engine {
 
 	// Ping pong
 	r.GET(API_V1+"/ping", func(c *gin.Context) {
-		status, body, apiErr := http.StatusOK, ping_pong_dto{"pong"}, error_dto{}
-		send(c, status, body, apiErr)
+		ctb_res_dto := ctb_response_dto{
+			Status: http.StatusOK,
+			Body:   ping_pong_res_dto{"pong"}}
+		send(c, ctb_res_dto, ctb_error_dto{})
 	})
 
 	// Start execution
@@ -40,18 +41,18 @@ func Initialize() *gin.Engine {
 		var req exe_create_req_dto
 		err := c.ShouldBindJSON(&req)
 		if err != nil {
-			send_bad_request(c, err)
+			send_bad_request(c, err.Error())
 			return
 		}
 
 		err = req.Validate()
 		if err != nil {
-			send_bad_request(c, err)
+			send_bad_request(c, err.Error())
 			return
 		}
 
-		status, body, apiErr := create_execution(req)
-		send(c, status, body, apiErr)
+		ctb_res_dto, ctb_err_dto := create_execution(req)
+		send(c, ctb_res_dto, ctb_err_dto)
 	})
 
 	// Terminate execution
@@ -60,22 +61,22 @@ func Initialize() *gin.Engine {
 		var req exe_update_req_dto
 		err := c.ShouldBindJSON(&req)
 		if err != nil {
-			send_bad_request(c, err)
+			send_bad_request(c, err.Error())
 			return
 		}
 
 		err = req.Validate()
 		if err != nil {
-			send_bad_request(c, err)
+			send_bad_request(c, err.Error())
 			return
 		}
 
-		status, body, apiErr := update_execution(exeId, req)
-		send(c, status, body, apiErr)
+		ctb_res_dto, ctb_err_dto := update_execution(exeId, req)
+		send(c, ctb_res_dto, ctb_err_dto)
 	})
 
 	r.NoRoute(func(c *gin.Context) {
-		c.JSON(404, error_dto{RESOURCE_NOT_FOUND})
+		send_not_found(c, c.Request.RequestURI)
 	})
 
 	return start_server(r)
@@ -108,15 +109,27 @@ func start_server(r *gin.Engine) *gin.Engine {
 	return r
 }
 
-func send_bad_request(c *gin.Context, err error) {
-	send(c, http.StatusBadRequest, nil, error_dto{err.Error()})
+func send_not_found(c *gin.Context, message string) {
+	ctb_err_dto := ctb_error_dto{
+		Status:  http.StatusNotFound,
+		Message: message + "not found",
+	}
+	send(c, ctb_response_dto{}, ctb_err_dto)
 }
 
-func send(c *gin.Context, status int, body interface{}, errDto error_dto) {
-	if !errDto.is_empty() {
-		c.JSON(status, errDto)
+func send_bad_request(c *gin.Context, message string) {
+	ctb_err_dto := ctb_error_dto{
+		Status:  http.StatusBadRequest,
+		Message: message,
+	}
+	send(c, ctb_response_dto{}, ctb_err_dto)
+}
+
+func send(c *gin.Context, res ctb_response_dto, err ctb_error_dto) {
+	if !err.is_empty() {
+		c.JSON(err.Status, err)
 	} else {
-		c.JSON(status, body)
+		c.JSON(res.Status, res.Body)
 	}
 }
 
@@ -127,12 +140,7 @@ var log_request = func(c *gin.Context) {
 	uri := c.Request.RequestURI
 	agent := c.Request.UserAgent()
 	clientIP := c.ClientIP()
-	logrus.WithField("comp", "gin").Infof("request received | id=%s, uri=%s, method=%s, ip=%s, agent=%s",
-		id,
-		uri,
-		method,
-		clientIP,
-		agent)
+	logrus.WithField("comp", "gin").Infof(logger.API_REQUEST_PROCESSED, id, uri, method, clientIP, agent)
 
 	// Processing request
 	startTime := time.Now()
@@ -142,8 +150,5 @@ var log_request = func(c *gin.Context) {
 	// Request processed
 	latency := endTime.Sub(startTime)
 	status := c.Writer.Status()
-	logrus.WithField("comp", "gin").Infof("request processed | id=%s, status=%d, latency=%v",
-		id,
-		status,
-		latency)
+	logrus.WithField("comp", "gin").Infof(logger.API_REQUEST_PROCESSED, id, status, latency)
 }

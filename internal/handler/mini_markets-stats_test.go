@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
@@ -37,11 +38,11 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 	}()
 
 	// Mocking dependencies
-	get_latest_exe = func() (model.Execution, error) {
+	get_latest_exe = func() (model.Execution, errors.CtbError) {
 		return model.Execution{Status: model.EXE_ACTIVE}, nil
 	}
 
-	get_latest_lacc = func(exeId string) (model.ILocalAccount, error) {
+	get_latest_lacc = func(exeId string) (model.ILocalAccount, errors.CtbError) {
 		return laccount_test{}, nil
 	}
 
@@ -57,7 +58,7 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 		skipped_counter++
 	}
 
-	get_operation = func(model.Execution, model.ILocalAccount, model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
+	get_operation = func(model.Execution, model.ILocalAccount, model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, errors.CtbError) {
 		op := model.Operation{}
 		op.OpId = uuid.NewString()
 		return op, nil
@@ -67,7 +68,7 @@ func TestHandleMiniMarketsStats(t *testing.T) {
 		return true
 	}
 
-	get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{}, nil
 	}
 
@@ -109,14 +110,14 @@ func TestHandleMiniMarketsStats_NonActiveExe(t *testing.T) {
 	}()
 
 	// Mocking dependencies
-	get_latest_exe = func() (model.Execution, error) {
+	get_latest_exe = func() (model.Execution, errors.CtbError) {
 		return model.Execution{Status: model.EXE_TERMINATED}, nil
 	}
 
 	store_prices_deferred = func(mmss []model.MiniMarketStats) {}
 
 	get_op_counter := 0
-	get_operation = func(model.Execution, model.ILocalAccount, model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
+	get_operation = func(model.Execution, model.ILocalAccount, model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, errors.CtbError) {
 		get_op_counter++
 		return model.Operation{}, nil
 	}
@@ -165,11 +166,11 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 	}()
 
 	// Mocking dependencies
-	get_latest_exe = func() (model.Execution, error) {
+	get_latest_exe = func() (model.Execution, errors.CtbError) {
 		return model.Execution{Status: model.EXE_ACTIVE}, nil
 	}
 
-	get_latest_lacc = func(exeId string) (model.ILocalAccount, error) {
+	get_latest_lacc = func(exeId string) (model.ILocalAccount, errors.CtbError) {
 		return laccount_test{}, nil
 	}
 
@@ -184,7 +185,7 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 		skipped_counter++
 	}
 
-	get_operation = func(model.Execution, model.ILocalAccount, model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
+	get_operation = func(model.Execution, model.ILocalAccount, model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, errors.CtbError) {
 		return model.Operation{}, nil
 	}
 
@@ -192,7 +193,7 @@ func TestHandleMiniMarketsStats_Noop(t *testing.T) {
 		return true
 	}
 
-	get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{}, nil
 	}
 
@@ -681,15 +682,15 @@ func (a laccount_test) GetTimestamp() int64 {
 	return 0
 }
 
-func (a laccount_test) Initialize(model.LocalAccountInit) (model.ILocalAccount, error) {
+func (a laccount_test) Initialize(model.LocalAccountInit) (model.ILocalAccount, errors.CtbError) {
 	return nil, nil
 }
 
-func (a laccount_test) RegisterTrading(model.Operation) (model.ILocalAccount, error) {
+func (a laccount_test) RegisterTrading(model.Operation) (model.ILocalAccount, errors.CtbError) {
 	return nil, nil
 }
 
-func (a laccount_test) GetOperation(map[string]string, model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, error) {
+func (a laccount_test) GetOperation(map[string]string, model.MiniMarketStats, model.SpotMarketLimits) (model.Operation, errors.CtbError) {
 	return model.Operation{}, nil
 }
 
@@ -697,6 +698,6 @@ func (a laccount_test) GetAssetAmounts() map[string]model.AssetAmount {
 	return nil
 }
 
-func (a laccount_test) ValidateConfig(map[string]string) error {
+func (a laccount_test) ValidateConfig(map[string]string) errors.CtbError {
 	return nil
 }

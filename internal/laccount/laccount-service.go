@@ -1,15 +1,14 @@
 package laccount
 
 import (
-	"fmt"
-
 	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/strategy"
 )
 
-func Create(req model.LocalAccountInit) (model.ILocalAccount, error) {
+func Create(req model.LocalAccountInit) (model.ILocalAccount, errors.CtbError) {
 	// Get current local account from DB by execution id
 	laccount, err := find_latest_by_exeId(req.ExeId)
 	if err != nil {
@@ -17,7 +16,7 @@ func Create(req model.LocalAccountInit) (model.ILocalAccount, error) {
 		return nil, err
 	}
 	if laccount != nil {
-		err := fmt.Errorf(logger.LACC_ERR_FAILED_TO_CREATE, req.ExeId, laccount.GetAccountId())
+		err := errors.Duplicate(logger.LACC_ERR_FAILED_TO_CREATE, req.ExeId, laccount.GetAccountId())
 		logrus.Error(err.Error())
 		return nil, err
 	}
@@ -29,7 +28,7 @@ func Create(req model.LocalAccountInit) (model.ILocalAccount, error) {
 		return nil, err
 	}
 	if laccount == nil {
-		err = fmt.Errorf(logger.LACC_ERR_BUILD_FAILURE)
+		err = errors.Internal(logger.LACC_ERR_BUILD_FAILURE)
 		logrus.Error(err.Error())
 		return nil, err
 	}
@@ -43,14 +42,14 @@ func Create(req model.LocalAccountInit) (model.ILocalAccount, error) {
 	return laccount, nil
 }
 
-func Update(update model.ILocalAccount) (model.ILocalAccount, error) {
+func Update(update model.ILocalAccount) (model.ILocalAccount, errors.CtbError) {
 	lacc, err := find_latest_by_exeId(update.GetExeId())
 	if err != nil {
 		logrus.Error(err.Error())
 		return nil, err
 	}
 	if lacc == nil {
-		err := fmt.Errorf(logger.LACC_ERR_NOT_FOUND, update.GetExeId())
+		err := errors.NotFound(logger.LACC_ERR_NOT_FOUND, update.GetExeId())
 		logrus.Error(err.Error())
 		return nil, err
 	}
@@ -63,7 +62,7 @@ func Update(update model.ILocalAccount) (model.ILocalAccount, error) {
 	return update, err
 }
 
-func GetLatestByExeId(exeId string) (model.ILocalAccount, error) {
+func GetLatestByExeId(exeId string) (model.ILocalAccount, errors.CtbError) {
 	lacc, err := find_latest_by_exeId(exeId)
 	if err != nil {
 		logrus.Error(err.Error())
@@ -71,7 +70,7 @@ func GetLatestByExeId(exeId string) (model.ILocalAccount, error) {
 	return lacc, err
 }
 
-func GetByExeId(exeId string) ([]model.ILocalAccount, error) {
+func GetByExeId(exeId string) ([]model.ILocalAccount, errors.CtbError) {
 	laccs, err := find_by_exeId(exeId)
 	if err != nil {
 		logrus.Error(err.Error())
@@ -79,9 +78,9 @@ func GetByExeId(exeId string) ([]model.ILocalAccount, error) {
 	return laccs, err
 }
 
-func initialise_local_account(req model.LocalAccountInit) (model.ILocalAccount, error) {
+func initialise_local_account(req model.LocalAccountInit) (model.ILocalAccount, errors.CtbError) {
 	if len(req.RAccount.Balances) == 0 {
-		err := fmt.Errorf(logger.LACC_ERR_EMPTY_RACC)
+		err := errors.Internal(logger.LACC_ERR_EMPTY_RACC)
 		return nil, err
 	}
 

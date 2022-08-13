@@ -6,6 +6,7 @@ import (
 
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 )
 
@@ -20,7 +21,7 @@ const (
 	PTS_STRATEGY_SHORT StrategyType = "pts"
 )
 
-func ParseStr(s string) (StrategyType, error) {
+func ParseStr(s string) (StrategyType, errors.CtbError) {
 	if s == string(DTS_STRATEGY) || s == string(DTS_STRATEGY_SHORT) {
 		return DTS_STRATEGY, nil
 	}
@@ -29,7 +30,7 @@ func ParseStr(s string) (StrategyType, error) {
 	}
 
 	envs := fmt.Sprintf("[%s|%s, %s|%s]", DTS_STRATEGY, DTS_STRATEGY_SHORT, PTS_STRATEGY, PTS_STRATEGY_SHORT)
-	err := fmt.Errorf(logger.MODEL_ERR_UNKNOWN_ENV, s, envs)
+	err := errors.Internal(logger.MODEL_ERR_UNKNOWN_ENV, s, envs)
 	logrus.Error(err.Error())
 	return StrategyType(s), err
 }
@@ -79,11 +80,11 @@ type ILocalAccount interface {
 	GetExeId() string
 	GetStrategyType() StrategyType
 	GetTimestamp() int64
-	Initialize(LocalAccountInit) (ILocalAccount, error)
-	RegisterTrading(Operation) (ILocalAccount, error)
-	GetOperation(map[string]string, MiniMarketStats, SpotMarketLimits) (Operation, error)
+	Initialize(LocalAccountInit) (ILocalAccount, errors.CtbError)
+	RegisterTrading(Operation) (ILocalAccount, errors.CtbError)
+	GetOperation(map[string]string, MiniMarketStats, SpotMarketLimits) (Operation, errors.CtbError)
 	GetAssetAmounts() map[string]AssetAmount
-	ValidateConfig(map[string]string) error
+	ValidateConfig(map[string]string) errors.CtbError
 }
 
 // Abstract local account representation

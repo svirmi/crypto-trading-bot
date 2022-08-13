@@ -1,13 +1,13 @@
 package pts
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
@@ -48,7 +48,7 @@ const (
 	_PTS_SELL_DESC = "pts_sell"
 )
 
-func (a LocalAccountPTS) Initialize(req model.LocalAccountInit) (model.ILocalAccount, error) {
+func (a LocalAccountPTS) Initialize(req model.LocalAccountInit) (model.ILocalAccount, errors.CtbError) {
 	var ignored = make(map[string]decimal.Decimal)
 	var assets = make(map[string]AssetStatusPTS)
 	var usdt = decimal.Zero
@@ -100,7 +100,7 @@ func (a LocalAccountPTS) GetAssetAmounts() map[string]model.AssetAmount {
 	return assets
 }
 
-func (a LocalAccountPTS) RegisterTrading(op model.Operation) (model.ILocalAccount, error) {
+func (a LocalAccountPTS) RegisterTrading(op model.Operation) (model.ILocalAccount, errors.CtbError) {
 	// Check execution ids
 	if op.ExeId != a.ExeId {
 		logrus.WithField("comp", "pts").
@@ -109,14 +109,14 @@ func (a LocalAccountPTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 
 	// If the result status is failed, NOP
 	if op.Status == model.FAILED {
-		err := fmt.Errorf(logger.XXX_ERR_FAILED_OP, op.OpId)
+		err := errors.Internal(logger.XXX_ERR_FAILED_OP, op.OpId)
 		logrus.WithField("comp", "pts").Error(err.Error())
 		return a, err
 	}
 
 	// DTS only handle operation back and forth USDT
 	if op.Quote != "USDT" {
-		err := fmt.Errorf(logger.PTS_ERR_BAD_QUOTE_CURRENCY, op.Quote)
+		err := errors.Internal(logger.PTS_ERR_BAD_QUOTE_CURRENCY, op.Quote)
 		logrus.WithField("comp", "pts").Error(err.Error())
 		return a, err
 	}
@@ -124,7 +124,7 @@ func (a LocalAccountPTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	// Getting asset status
 	assetStatus, found := a.Assets[op.Base]
 	if !found {
-		err := fmt.Errorf(logger.XXX_ERR_ASSET_NOT_FOUND, op.Base)
+		err := errors.Internal(logger.XXX_ERR_ASSET_NOT_FOUND, op.Base)
 		logrus.WithField("comp", "pts").Error(err.Error())
 		return a, err
 	}
@@ -140,7 +140,7 @@ func (a LocalAccountPTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 		assetStatus.Amount = assetStatus.Amount.Sub(baseAmount).Round(8)
 		currentAmntUsdt = currentAmntUsdt.Add(quoteAmount).Round(8)
 	} else {
-		err := fmt.Errorf(logger.XXX_ERR_UNKNWON_OP_TYPE, op.Type)
+		err := errors.Internal(logger.XXX_ERR_UNKNWON_OP_TYPE, op.Type)
 		logrus.WithField("comp", "pts").Error(err.Error())
 		return a, err
 	}
@@ -162,11 +162,11 @@ func (a LocalAccountPTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	return a, nil
 }
 
-func (a LocalAccountPTS) GetOperation(props map[string]string, mms model.MiniMarketStats, slimts model.SpotMarketLimits) (model.Operation, error) {
+func (a LocalAccountPTS) GetOperation(props map[string]string, mms model.MiniMarketStats, slimts model.SpotMarketLimits) (model.Operation, errors.CtbError) {
 	asset := mms.Asset
 	assetStatus, found := a.Assets[asset]
 	if !found {
-		err := fmt.Errorf(logger.XXX_ERR_ASSET_NOT_FOUND, asset)
+		err := errors.Internal(logger.XXX_ERR_ASSET_NOT_FOUND, asset)
 		logrus.WithField("comp", "pts").Error(err.Error())
 		return model.Operation{}, err
 	}
@@ -176,7 +176,7 @@ func (a LocalAccountPTS) GetOperation(props map[string]string, mms model.MiniMar
 	currentAmntUsdt := a.Usdt
 	currentPrice := mms.LastPrice
 	if currentPrice.Equals(decimal.Zero) {
-		err := fmt.Errorf(logger.XXX_ERR_ZERO_EXP_PRICE, asset)
+		err := errors.Internal(logger.XXX_ERR_ZERO_EXP_PRICE, asset)
 		logrus.WithField("comp", "pts").Errorf(err.Error())
 		return model.Operation{}, err
 	}
@@ -212,15 +212,15 @@ func (a LocalAccountPTS) GetOperation(props map[string]string, mms model.MiniMar
 	return op, nil
 }
 
-func check_spot_market_limits(op model.Operation, slimits model.SpotMarketLimits) error {
+func check_spot_market_limits(op model.Operation, slimits model.SpotMarketLimits) errors.CtbError {
 	if op.AmountSide == model.QUOTE_AMOUNT && op.Amount.LessThan(slimits.MinQuote) {
-		err := fmt.Errorf(logger.XXX_BELOW_QUOTE_LIMIT,
+		err := errors.Internal(logger.XXX_BELOW_QUOTE_LIMIT,
 			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, slimits.MinQuote)
 		logrus.WithField("comp", "dts").Error(err.Error())
 		return err
 	}
 	if op.AmountSide == model.BASE_AMOUNT && op.Amount.LessThan(slimits.MinBase) {
-		err := fmt.Errorf(logger.XXX_BELOW_BASE_LIMIT,
+		err := errors.Internal(logger.XXX_BELOW_BASE_LIMIT,
 			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, slimits.MinBase)
 		logrus.WithField("comp", "dts").Error(err.Error())
 		return err

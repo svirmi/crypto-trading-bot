@@ -1,13 +1,13 @@
 package exchange
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
 	binanceapi "github.com/adshao/go-binance/v2"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/testutils"
@@ -184,7 +184,7 @@ func TestGetAssetsValue(t *testing.T) {
 	}()
 
 	index := 0
-	binance_get_price = func(*binanceapi.ListPricesService) ([]*binanceapi.SymbolPrice, error) {
+	binance_get_price = func(*binanceapi.ListPricesService) ([]*binanceapi.SymbolPrice, errors.CtbError) {
 		rprices := []*binanceapi.SymbolPrice{
 			{Symbol: "BTCUSDT", Price: "35998.34"},
 			{Symbol: "ETHUSDT", Price: "44978.12"},
@@ -215,7 +215,7 @@ func TestGetAccount(t *testing.T) {
 		binance_get_account = old
 	}()
 
-	binance_get_account = func(*binanceapi.GetAccountService) (*binanceapi.Account, error) {
+	binance_get_account = func(*binanceapi.GetAccountService) (*binanceapi.Account, errors.CtbError) {
 		raccount := get_remote_binance_account()
 		raccount.Balances = append(raccount.Balances, binanceapi.Balance{
 			Asset:  "SHIBA",
@@ -264,13 +264,13 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt(t *testing.T) {
 
 	exchange := binance_exchange{}
 	symbols = get_symbols()
-	binance_create_order = func(*binanceapi.CreateOrderService) (*binanceapi.CreateOrderResponse, error) {
+	binance_create_order = func(*binanceapi.CreateOrderService) (*binanceapi.CreateOrderResponse, errors.CtbError) {
 		return &binanceapi.CreateOrderResponse{
 			Symbol: "BTCUSDT",
 			Side:   binanceapi.SideTypeBuy,
 			Status: binanceapi.OrderStatusTypeFilled}, nil
 	}
-	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{
 			MinBase:  utils.DecimalFromString("0.00000001"),
 			MaxBase:  utils.DecimalFromString("99999999"),
@@ -299,7 +299,7 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_SpotDisabled(t *testing.T) {
 
 	exchange := binance_exchange{}
 	symbols = get_symbols()
-	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{
 			MinBase:  utils.DecimalFromString("0.00000001"),
 			MaxBase:  utils.DecimalFromString("99999999"),
@@ -326,7 +326,7 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_BelowMinBase(t *testing.T) {
 
 	exchange := binance_exchange{}
 	symbols = get_symbols()
-	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{
 			MinBase:  utils.DecimalFromString("100.1"),
 			MaxBase:  utils.DecimalFromString("99999999"),
@@ -356,7 +356,7 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_Iceberg(t *testing.T) {
 	// No reminder
 	exchange := binance_exchange{}
 	symbols = get_symbols()
-	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{
 			MinBase:  utils.DecimalFromString("10"),
 			MaxBase:  utils.DecimalFromString("100"),
@@ -364,7 +364,7 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_Iceberg(t *testing.T) {
 			MinQuote: utils.DecimalFromString("0.00000001")}, nil
 	}
 	totalAmt := decimal.Zero
-	do_do_send_spot_market_order = func(op model.Operation) error {
+	do_do_send_spot_market_order = func(op model.Operation) errors.CtbError {
 		totalAmt = totalAmt.Add(op.Amount)
 		return nil
 	}
@@ -410,7 +410,7 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_IcebergWithFailures(t *testing.T) {
 	// Partially filled
 	exchange := binance_exchange{}
 	symbols = get_symbols()
-	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{
 			MinBase:  utils.DecimalFromString("10"),
 			MaxBase:  utils.DecimalFromString("100"),
@@ -419,10 +419,10 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_IcebergWithFailures(t *testing.T) {
 	}
 	totalAmt := decimal.Zero
 	failureCount := utils.DecimalFromString("1")
-	do_do_send_spot_market_order = func(op model.Operation) error {
+	do_do_send_spot_market_order = func(op model.Operation) errors.CtbError {
 		if failureCount.GreaterThan(utils.DecimalFromString("0")) {
 			failureCount = failureCount.Sub(utils.DecimalFromString("1"))
-			return fmt.Errorf("order failed")
+			return errors.Internal("order failed")
 		}
 		totalAmt = totalAmt.Add(op.Amount)
 		return nil
@@ -438,8 +438,8 @@ func TestSendMarketOrder_Direct_Buy_BaseAmt_IcebergWithFailures(t *testing.T) {
 	testutils.AssertEq(t, exp, totalAmt, "operation amount")
 
 	// Failed
-	do_do_send_spot_market_order = func(op model.Operation) error {
-		return fmt.Errorf("order failed")
+	do_do_send_spot_market_order = func(op model.Operation) errors.CtbError {
+		return errors.Internal("order failed")
 	}
 
 	op = get_operation_test(amt, model.BASE_AMOUNT, "BTC", "USDT", model.BUY, price)
@@ -461,13 +461,13 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt(t *testing.T) {
 
 	exchange := binance_exchange{}
 	symbols = get_symbols()
-	binance_create_order = func(*binanceapi.CreateOrderService) (*binanceapi.CreateOrderResponse, error) {
+	binance_create_order = func(*binanceapi.CreateOrderService) (*binanceapi.CreateOrderResponse, errors.CtbError) {
 		return &binanceapi.CreateOrderResponse{
 			Symbol: "BTCUSDT",
 			Side:   binanceapi.SideTypeBuy,
 			Status: binanceapi.OrderStatusTypeFilled}, nil
 	}
-	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{
 			MinBase:  utils.DecimalFromString("0.00000001"),
 			MaxBase:  utils.DecimalFromString("99999999"),
@@ -496,7 +496,7 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt_BelowMinQuote(t *testing.T) {
 
 	exchange := binance_exchange{}
 	symbols = get_symbols()
-	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{
 			MinBase:  utils.DecimalFromString("0.00000001"),
 			MaxBase:  utils.DecimalFromString("99999999"),
@@ -526,7 +526,7 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt_Iceberg(t *testing.T) {
 	// No reminder
 	exchange := binance_exchange{}
 	symbols = get_symbols()
-	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{
 			MinBase:  utils.DecimalFromString("0.00000001"),
 			MaxBase:  utils.DecimalFromString("100"),
@@ -534,7 +534,7 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt_Iceberg(t *testing.T) {
 			MinQuote: utils.DecimalFromString("10")}, nil
 	}
 	totalAmt := decimal.Zero
-	do_do_send_spot_market_order = func(op model.Operation) error {
+	do_do_send_spot_market_order = func(op model.Operation) errors.CtbError {
 		totalAmt = totalAmt.Add(op.Amount)
 		return nil
 	}
@@ -580,7 +580,7 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt_IcebergWithFailures(t *testing.T) 
 	// Partially filled
 	exchange := binance_exchange{}
 	symbols = get_symbols()
-	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{
 			MinBase:  utils.DecimalFromString("0.00000001"),
 			MaxBase:  utils.DecimalFromString("100"),
@@ -589,10 +589,10 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt_IcebergWithFailures(t *testing.T) 
 	}
 	failureCount := utils.DecimalFromString("1")
 	totalAmt := decimal.Zero
-	do_do_send_spot_market_order = func(op model.Operation) error {
+	do_do_send_spot_market_order = func(op model.Operation) errors.CtbError {
 		if failureCount.GreaterThan(decimal.Zero) {
 			failureCount = failureCount.Sub(utils.DecimalFromString("1"))
-			return fmt.Errorf("order failed")
+			return errors.Internal("order failed")
 		}
 		totalAmt = totalAmt.Add(op.Amount)
 		return nil
@@ -608,8 +608,8 @@ func TestSendMarketOrder_Direct_Sell_QuoteAmt_IcebergWithFailures(t *testing.T) 
 	testutils.AssertEq(t, exp, totalAmt, "operation amount")
 
 	// Failed
-	do_do_send_spot_market_order = func(op model.Operation) error {
-		return fmt.Errorf("order failed")
+	do_do_send_spot_market_order = func(op model.Operation) errors.CtbError {
+		return errors.Internal("order failed")
 	}
 
 	op = get_operation_test(amt, model.QUOTE_AMOUNT, "BTC", "USDT", model.SELL, price)
@@ -631,13 +631,13 @@ func TestSendMarketOrder_Indirect_Buy_BaseAmt(t *testing.T) {
 
 	exchange := binance_exchange{}
 	symbols = get_symbols()
-	binance_create_order = func(*binanceapi.CreateOrderService) (*binanceapi.CreateOrderResponse, error) {
+	binance_create_order = func(*binanceapi.CreateOrderService) (*binanceapi.CreateOrderResponse, errors.CtbError) {
 		return &binanceapi.CreateOrderResponse{
 			Symbol: "BTCUSDT",
 			Side:   binanceapi.SideTypeBuy,
 			Status: binanceapi.OrderStatusTypeFilled}, nil
 	}
-	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{
 			MinBase:  utils.DecimalFromString("0.00000001"),
 			MaxBase:  utils.DecimalFromString("99999999"),
@@ -672,13 +672,13 @@ func TestSendMarketOrder_Indirect_Sell_QuoteAmt(t *testing.T) {
 
 	exchange := binance_exchange{}
 	symbols = get_symbols()
-	binance_create_order = func(*binanceapi.CreateOrderService) (*binanceapi.CreateOrderResponse, error) {
+	binance_create_order = func(*binanceapi.CreateOrderService) (*binanceapi.CreateOrderResponse, errors.CtbError) {
 		return &binanceapi.CreateOrderResponse{
 			Symbol: "BTCUSDT",
 			Side:   binanceapi.SideTypeBuy,
 			Status: binanceapi.OrderStatusTypeFilled}, nil
 	}
-	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+	binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 		return model.SpotMarketLimits{
 			MinBase:  utils.DecimalFromString("0.00000001"),
 			MaxBase:  utils.DecimalFromString("99999999"),

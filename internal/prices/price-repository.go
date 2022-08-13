@@ -3,13 +3,14 @@ package prices
 import (
 	"context"
 
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func insert_many(prices []model.SymbolPrice) error {
+func insert_many(prices []model.SymbolPrice) errors.CtbError {
 	collection := mongodb.GetPriceCol()
 
 	var payload []interface{}
@@ -19,10 +20,10 @@ func insert_many(prices []model.SymbolPrice) error {
 
 	opts := options.InsertMany().SetOrdered(false)
 	_, err := collection.InsertMany(context.TODO(), payload, opts)
-	return err
+	return errors.WrapMongo(err)
 }
 
-func find(symbols []string, start, end int64) ([]model.SymbolPrice, error) {
+func find(symbols []string, start, end int64) ([]model.SymbolPrice, errors.CtbError) {
 	collection := mongodb.GetPriceCol()
 
 	// Defining query
@@ -39,19 +40,19 @@ func find(symbols []string, start, end int64) ([]model.SymbolPrice, error) {
 	// Executing query
 	cursor, err := collection.Find(context.TODO(), filter, options)
 	if err != nil {
-		return nil, err
+		return nil, errors.WrapMongo(err)
 	}
 
 	// parsing results
 	prices := make([]model.SymbolPrice, 0)
 	err = cursor.All(context.TODO(), &prices)
 	if err != nil {
-		return nil, err
+		return nil, errors.WrapInternal(err)
 	}
 	return prices, nil
 }
 
-func find_by_timestamp(symbols []string, start, end int64) ([]model.SymbolPriceByTimestamp, error) {
+func find_by_timestamp(symbols []string, start, end int64) ([]model.SymbolPriceByTimestamp, errors.CtbError) {
 	collection := mongodb.GetPriceCol()
 
 	// Defining query
@@ -73,14 +74,14 @@ func find_by_timestamp(symbols []string, start, end int64) ([]model.SymbolPriceB
 	// Executing query
 	cursor, err := collection.Aggregate(context.TODO(), filter)
 	if err != nil {
-		return nil, err
+		return nil, errors.WrapMongo(err)
 	}
 
 	// parsing results
 	pricesByTimestamp := make([]model.SymbolPriceByTimestamp, 0)
 	err = cursor.All(context.TODO(), &pricesByTimestamp)
 	if err != nil {
-		return nil, err
+		return nil, errors.WrapInternal(err)
 	}
 	return pricesByTimestamp, nil
 }

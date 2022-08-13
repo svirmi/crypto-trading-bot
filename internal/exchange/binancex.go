@@ -10,6 +10,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
@@ -23,7 +24,7 @@ var (
 
 type binance_exchange struct{}
 
-func (be binance_exchange) initialize(mmsch chan []model.MiniMarketStats, _ chan model.MiniMarketStatsAck) error {
+func (be binance_exchange) initialize(mmsch chan []model.MiniMarketStats, _ chan model.MiniMarketStatsAck) errors.CtbError {
 	return binancex_initialize(mmsch)
 }
 
@@ -31,7 +32,7 @@ func (be binance_exchange) can_spot_trade(symbol string) bool {
 	return binancex_can_spot_trade(symbol)
 }
 
-func (be binance_exchange) get_spot_market_limits(symbol string) (model.SpotMarketLimits, error) {
+func (be binance_exchange) get_spot_market_limits(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 	return binancex_get_spot_market_limits(symbol)
 }
 
@@ -39,19 +40,19 @@ func (be binance_exchange) filter_tradable_assets(bases []string) []string {
 	return binancex_filter_tradable_assets(bases)
 }
 
-func (be binance_exchange) get_assets_value(bases []string) (map[string]model.AssetPrice, error) {
+func (be binance_exchange) get_assets_value(bases []string) (map[string]model.AssetPrice, errors.CtbError) {
 	return binancex_get_assets_value(bases)
 }
 
-func (be binance_exchange) get_account() (model.RemoteAccount, error) {
+func (be binance_exchange) get_account() (model.RemoteAccount, errors.CtbError) {
 	return binancex_get_account()
 }
 
-func (be binance_exchange) send_spot_market_order(op model.Operation) (model.Operation, error) {
+func (be binance_exchange) send_spot_market_order(op model.Operation) (model.Operation, errors.CtbError) {
 	return binancex_send_spot_market_order(op)
 }
 
-func (be binance_exchange) mini_markets_stats_serve() error {
+func (be binance_exchange) mini_markets_stats_serve() errors.CtbError {
 	return binancex_mini_markets_stats_serve()
 }
 
@@ -59,7 +60,7 @@ func (be binance_exchange) mini_markets_stats_stop() {
 	binancex_mini_markets_stats_stop()
 }
 
-func binancex_initialize(mmsch chan []model.MiniMarketStats) error {
+func binancex_initialize(mmsch chan []model.MiniMarketStats) errors.CtbError {
 	// Decoding config
 	binanceConfig := struct {
 		ApiKey     string
@@ -68,7 +69,7 @@ func binancex_initialize(mmsch chan []model.MiniMarketStats) error {
 	}{}
 	err := mapstructure.Decode(config.GetExchangeConfig(), &binanceConfig)
 	if err != nil {
-		return err
+		return errors.WrapBadRequest(err)
 	}
 
 	// Web socket keep alive set up
@@ -83,7 +84,7 @@ func binancex_initialize(mmsch chan []model.MiniMarketStats) error {
 	// Init exchange symbols
 	res, err := httpClient.NewExchangeInfoService().Do(context.Background())
 	if err != nil {
-		return err
+		return errors.WrapExchange(err)
 	}
 
 	logrus.WithField("comp", "binancex").Info(logger.BINEX_REGISTERING_SYMBOLS)
@@ -103,7 +104,7 @@ var binancex_can_spot_trade = func(symbol string) bool {
 	return status.Status == string(binanceapi.SymbolStatusTypeTrading) && status.IsSpotTradingAllowed
 }
 
-var binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, error) {
+var binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 	iLotSize, err := get_spot_limit_sizes(symbol)
 	if err != nil {
 		return model.SpotMarketLimits{}, err
@@ -128,18 +129,18 @@ var binancex_get_spot_market_limits = func(symbol string) (model.SpotMarketLimit
 		MinQuote: iNotional}, nil
 }
 
-func get_min_notional(symbol string) (decimal.Decimal, error) {
+func get_min_notional(symbol string) (decimal.Decimal, errors.CtbError) {
 	status, found := symbols[symbol]
 
 	if !found {
-		err := fmt.Errorf("exchange symbol %s not found", symbol)
+		err := errors.Internal(logger.BINEX_ERR_SYMBOL_NOT_FOUND, symbol)
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return decimal.Zero, err
 	}
 
 	iNotional := extract_filter(status.Filters, "MIN_NOTIONAL")
 	if iNotional == nil {
-		err := fmt.Errorf("MIN_NOTIONAL filter not found for %s", symbol)
+		err := errors.Internal(logger.BINEX_ERR_FILTER_NOT_FOUND, "MIN_NOTIONAL", symbol)
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return decimal.Zero, err
 	}
@@ -147,18 +148,18 @@ func get_min_notional(symbol string) (decimal.Decimal, error) {
 	return parse_number(iNotional["minNotional"], decimal.Zero), nil
 }
 
-func get_spot_market_sizes(symbol string) (model.SpotMarketLimits, error) {
+func get_spot_market_sizes(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 	status, found := symbols[symbol]
 
 	if !found {
-		err := fmt.Errorf(logger.BINEX_ERR_SYMBOL_NOT_FOUND, symbol)
+		err := errors.Internal(logger.BINEX_ERR_SYMBOL_NOT_FOUND, symbol)
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return model.SpotMarketLimits{}, err
 	}
 
 	iMarketLotSize := extract_filter(status.Filters, "MARKET_LOT_SIZE")
 	if iMarketLotSize == nil {
-		err := fmt.Errorf(logger.BINEX_ERR_FILTER_NOT_FOUND, "MARKET_LOT_SIZE", symbol)
+		err := errors.Internal(logger.BINEX_ERR_FILTER_NOT_FOUND, "MARKET_LOT_SIZE", symbol)
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return model.SpotMarketLimits{}, err
 	}
@@ -169,18 +170,18 @@ func get_spot_market_sizes(symbol string) (model.SpotMarketLimits, error) {
 		StepBase: parse_number(iMarketLotSize["stepSize"], decimal.Zero)}, nil
 }
 
-func get_spot_limit_sizes(symbol string) (model.SpotMarketLimits, error) {
+func get_spot_limit_sizes(symbol string) (model.SpotMarketLimits, errors.CtbError) {
 	status, found := symbols[symbol]
 
 	if !found {
-		err := fmt.Errorf(logger.BINEX_ERR_SYMBOL_NOT_FOUND, symbol)
+		err := errors.Internal(logger.BINEX_ERR_SYMBOL_NOT_FOUND, symbol)
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return model.SpotMarketLimits{}, err
 	}
 
 	iLotSize := extract_filter(status.Filters, "LOT_SIZE")
 	if iLotSize == nil {
-		err := fmt.Errorf(logger.BINEX_ERR_FILTER_NOT_FOUND, "LOT_SIZE", symbol)
+		err := errors.Internal(logger.BINEX_ERR_FILTER_NOT_FOUND, "LOT_SIZE", symbol)
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return model.SpotMarketLimits{}, err
 	}
@@ -238,7 +239,7 @@ var binancex_filter_tradable_assets = func(bases []string) []string {
 	return tradables
 }
 
-var binancex_get_assets_value = func(bases []string) (map[string]model.AssetPrice, error) {
+var binancex_get_assets_value = func(bases []string) (map[string]model.AssetPrice, errors.CtbError) {
 	lprices := make(map[string]model.AssetPrice)
 	bases = binancex_filter_tradable_assets(bases)
 
@@ -262,7 +263,7 @@ var binancex_get_assets_value = func(bases []string) (map[string]model.AssetPric
 	return lprices, nil
 }
 
-var binancex_get_account = func() (model.RemoteAccount, error) {
+var binancex_get_account = func() (model.RemoteAccount, errors.CtbError) {
 	account, err := binance_get_account(httpClient.NewGetAccountService())
 	if err != nil {
 		return model.RemoteAccount{}, err
@@ -270,12 +271,12 @@ var binancex_get_account = func() (model.RemoteAccount, error) {
 	return to_CCTB_remote_account(account)
 }
 
-var binancex_send_spot_market_order = func(op model.Operation) (model.Operation, error) {
+var binancex_send_spot_market_order = func(op model.Operation) (model.Operation, errors.CtbError) {
 	// Check if symbol or its inverse exists
 	_, dfound := symbols[op.Base+op.Quote]
 	_, ifound := symbols[op.Quote+op.Base]
 	if !dfound && !ifound {
-		err := fmt.Errorf(logger.BINEX_ERR_INVALID_SYMBOL,
+		err := errors.Internal(logger.BINEX_ERR_INVALID_SYMBOL,
 			op.Base, op.Quote, op.Quote, op.Base)
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return model.Operation{}, err
@@ -288,7 +289,7 @@ var binancex_send_spot_market_order = func(op model.Operation) (model.Operation,
 
 	// Checking if symbol can be traded
 	if !binancex_can_spot_trade(op.Base + op.Quote) {
-		err := fmt.Errorf(logger.BINEX_TRADING_DISABLED, op.Base+op.Quote)
+		err := errors.Exchange(logger.BINEX_TRADING_DISABLED, op.Base+op.Quote)
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return op, err
 	}
@@ -303,7 +304,7 @@ var binancex_send_spot_market_order = func(op model.Operation) (model.Operation,
 	return op, nil
 }
 
-func do_send_spot_market_order(op model.Operation) error {
+func do_send_spot_market_order(op model.Operation) errors.CtbError {
 	// Get spot market limits
 	limits, err := binancex_get_spot_market_limits(op.Base + op.Quote)
 	if err != nil {
@@ -312,13 +313,13 @@ func do_send_spot_market_order(op model.Operation) error {
 
 	// Check market order lower bounds
 	if op.AmountSide == model.QUOTE_AMOUNT && op.Amount.LessThan(limits.MinQuote) {
-		err = fmt.Errorf(logger.BINEX_BELOW_QUOTE_LIMIT,
+		err = errors.Internal(logger.BINEX_BELOW_QUOTE_LIMIT,
 			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, limits.MinQuote.String())
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return err
 	}
 	if op.AmountSide == model.BASE_AMOUNT && op.Amount.LessThan(limits.MinBase) {
-		err := fmt.Errorf(logger.BINEX_BELOW_BASE_LIMIT,
+		err := errors.Internal(logger.BINEX_BELOW_BASE_LIMIT,
 			op.Base+op.Quote, op.Side, op.Amount, op.AmountSide, limits.MinBase.String())
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return err
@@ -375,7 +376,7 @@ func do_send_spot_market_order(op model.Operation) error {
 
 	if failed {
 		amount := decimal.NewFromInt(int64(intdiv)).Mul(max).Add(reminder)
-		err := fmt.Errorf(logger.BINEX_ERR_ICEBERG_ORDER_FAILED,
+		err := errors.Exchange(logger.BINEX_ERR_ICEBERG_ORDER_FAILED,
 			op.Base+op.Quote, op.Side, amount, op.AmountSide)
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return err
@@ -383,7 +384,7 @@ func do_send_spot_market_order(op model.Operation) error {
 	return nil
 }
 
-var do_do_send_spot_market_order = func(op model.Operation) error {
+var do_do_send_spot_market_order = func(op model.Operation) errors.CtbError {
 	ordersvc := httpClient.NewCreateOrderService().
 		Symbol(op.Base + op.Quote).
 		Type(binanceapi.OrderTypeMarket)
@@ -393,7 +394,7 @@ var do_do_send_spot_market_order = func(op model.Operation) error {
 	} else if op.Side == model.SELL {
 		ordersvc.Side(binanceapi.SideTypeSell)
 	} else {
-		err := fmt.Errorf(logger.BINEX_ERR_UNKNOWN_SIDE, op.Side)
+		err := errors.Internal(logger.BINEX_ERR_UNKNOWN_SIDE, op.Side)
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return err
 	}
@@ -419,9 +420,9 @@ var do_do_send_spot_market_order = func(op model.Operation) error {
 	return nil
 }
 
-var binancex_mini_markets_stats_serve = func() error {
+var binancex_mini_markets_stats_serve = func() errors.CtbError {
 	if mmsCh == nil {
-		err := fmt.Errorf(logger.BINEX_ERR_NIL_MMS_CH)
+		err := errors.Internal(logger.BINEX_ERR_NIL_MMS_CH)
 		logrus.WithField("comp", "binancex").Error(err.Error())
 		return err
 	}
@@ -468,7 +469,7 @@ var binancex_mini_markets_stats_serve = func() error {
 	done, stop, err := binanceapi.WsAllMiniMarketsStatServe(callback, errorHandler)
 	if err != nil {
 		logrus.WithField("comp", "binancex").Error(err.Error())
-		return err
+		return errors.WrapExchange(err)
 	} else {
 		mmsDoneCh = done
 		mmsStopCh = stop
@@ -492,7 +493,7 @@ var binancex_mini_markets_stats_stop = func() {
 
 /********************** Mapping to local representation **********************/
 
-func to_CCTB_symbol_price(rprice *binanceapi.SymbolPrice) (model.AssetPrice, error) {
+func to_CCTB_symbol_price(rprice *binanceapi.SymbolPrice) (model.AssetPrice, errors.CtbError) {
 	amount := utils.DecimalFromString(rprice.Price)
 	asset, err := utils.GetAssetFromSymbol(rprice.Symbol)
 	if err != nil {
@@ -502,7 +503,7 @@ func to_CCTB_symbol_price(rprice *binanceapi.SymbolPrice) (model.AssetPrice, err
 	return model.AssetPrice{Asset: asset, Price: amount}, nil
 }
 
-func to_CCTB_remote_account(account *binanceapi.Account) (model.RemoteAccount, error) {
+func to_CCTB_remote_account(account *binanceapi.Account) (model.RemoteAccount, errors.CtbError) {
 	balances := make([]model.RemoteBalance, 0, len(account.Balances))
 	for _, rbalance := range account.Balances {
 		amount := utils.DecimalFromString(rbalance.Free)
@@ -523,7 +524,7 @@ func to_CCTB_remote_account(account *binanceapi.Account) (model.RemoteAccount, e
 		Balances:         balances}, nil
 }
 
-func to_mini_market_stats(rMiniMarketStat binanceapi.WsMiniMarketsStatEvent) (model.MiniMarketStats, error) {
+func to_mini_market_stats(rMiniMarketStat binanceapi.WsMiniMarketsStatEvent) (model.MiniMarketStats, errors.CtbError) {
 	lastPrice := utils.DecimalFromString(rMiniMarketStat.LastPrice)
 	openPrice := utils.DecimalFromString(rMiniMarketStat.OpenPrice)
 	lowPrice := utils.DecimalFromString(rMiniMarketStat.LowPrice)
@@ -549,14 +550,26 @@ func to_mini_market_stats(rMiniMarketStat binanceapi.WsMiniMarketsStatEvent) (mo
 
 /********************** Binance calls **********************/
 
-var binance_get_price = func(b *binanceapi.ListPricesService) ([]*binanceapi.SymbolPrice, error) {
-	return b.Do(context.TODO())
+var binance_get_price = func(b *binanceapi.ListPricesService) ([]*binanceapi.SymbolPrice, errors.CtbError) {
+	p, err := b.Do(context.TODO())
+	if err != nil {
+		return nil, errors.WrapExchange(err)
+	}
+	return p, nil
 }
 
-var binance_get_account = func(b *binanceapi.GetAccountService) (*binanceapi.Account, error) {
-	return b.Do(context.TODO())
+var binance_get_account = func(b *binanceapi.GetAccountService) (*binanceapi.Account, errors.CtbError) {
+	a, err := b.Do(context.TODO())
+	if err != nil {
+		return nil, errors.WrapExchange(err)
+	}
+	return a, nil
 }
 
-var binance_create_order = func(b *binanceapi.CreateOrderService) (*binanceapi.CreateOrderResponse, error) {
-	return b.Do(context.TODO())
+var binance_create_order = func(b *binanceapi.CreateOrderService) (*binanceapi.CreateOrderResponse, errors.CtbError) {
+	o, err := b.Do(context.TODO())
+	if err != nil {
+		return nil, errors.WrapExchange(err)
+	}
+	return o, nil
 }

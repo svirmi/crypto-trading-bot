@@ -6,6 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/config"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -37,7 +38,7 @@ type mongo_connection struct {
 
 var mongoConnection mongo_connection
 
-func Initialize() error {
+func Initialize() errors.CtbError {
 	mongoDbConfig := config.GetMongoDbConfig()
 	logrus.Infof(logger.MONGO_CONNECTING, mongoDbConfig.Uri)
 	clientOptions := options.Client().
@@ -45,13 +46,13 @@ func Initialize() error {
 		SetRegistry(GetCustomRegistry())
 	mongoClient, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
-		return err
+		return errors.WrapMongo(err)
 	}
 
 	// Pinging db to test connection
 	err = mongoClient.Ping(context.TODO(), readpref.Primary())
 	if err != nil {
-		return err
+		return errors.WrapMongo(err)
 	}
 
 	// Getting collection handles
@@ -65,15 +66,15 @@ func Initialize() error {
 
 	executionIndexes := get_execution_indexes()
 	laccountIndexes := get_laccount_indexes()
-	err = create_indexes(mongoConnection.executionsCol, executionIndexes)
-	if err != nil {
+	ctb_err := create_indexes(mongoConnection.executionsCol, executionIndexes)
+	if ctb_err != nil {
 		logrus.Error(err.Error())
-		return err
+		return ctb_err
 	}
-	err = create_indexes(mongoConnection.laccountsCol, laccountIndexes)
-	if err != nil {
+	ctb_err = create_indexes(mongoConnection.laccountsCol, laccountIndexes)
+	if ctb_err != nil {
 		logrus.Error(err.Error())
-		return err
+		return ctb_err
 	}
 	return nil
 }
@@ -118,11 +119,11 @@ func get_laccount_indexes() []mongo.IndexModel {
 		Options: options.Index().SetName(_LATEST_LACCOUNT_INDEX)}}
 }
 
-func create_indexes(coll *mongo.Collection, indexes []mongo.IndexModel) error {
+func create_indexes(coll *mongo.Collection, indexes []mongo.IndexModel) errors.CtbError {
 	opts := options.CreateIndexes().SetMaxTime(2 * time.Second)
 	names, err := coll.Indexes().CreateMany(context.TODO(), indexes, opts)
 	if err != nil {
-		return err
+		return errors.WrapMongo(err)
 	}
 
 	logrus.Infof(logger.MONGO_INDEXES_CREATION, names)

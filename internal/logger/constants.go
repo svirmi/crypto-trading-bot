@@ -5,7 +5,9 @@ const (
 	MAIN_LOGICAL_CORES = "running on %d logical cores"
 
 	// API
-	API_SERVER_STARTUP = "starting up server | url=http://%s:%d"
+	API_SERVER_STARTUP    = "starting up server | url=http://%s:%d"
+	API_REQUEST_RECEIVED  = "request received | id=%s, uri=%s, method=%s, ip=%s, agent=%s"
+	API_REQUEST_PROCESSED = "request processed | id=%s, status=%d, latency=%v"
 
 	// API error
 	API_ERR_NEGATIVE_PORT_NUMBER     = "port number cannot be negative | port=%d"
@@ -133,6 +135,8 @@ const (
 
 	// Utils error
 	UTILS_ERR_FAILED_TO_DECODE_DECIMAL = "failed to decode \"%v\" to a number"
+	UTILS_ERR_ASSET_TO_SYMBOL          = "cannot convert asset %s to symbol"
+	UTILS_ERR_SYMBOL_TO_ASSET          = "cannot convert symbol %s to asset"
 
 	// Strategy
 	XXX_IGNORED_ASSET = "%s will be ignored"

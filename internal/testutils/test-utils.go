@@ -40,6 +40,7 @@ func AssertNil(t *testing.T, value interface{}, comp string) {
 	t.Helper()
 	if value != nil {
 		t.Errorf("%s | exp=nil, got=%v", comp, format(value))
+		return
 	}
 }
 

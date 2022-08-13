@@ -1,10 +1,9 @@
 package analytics
 
 import (
-	"fmt"
-
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/executions"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/laccount"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
@@ -67,8 +66,7 @@ func StoreAnalytics(exeId string) {
 	// Collection operations
 	ops, err := operations.GetByExeId(exeId)
 	if err != nil {
-		err := fmt.Errorf(logger.ANAL_ERR_FAILED_TO_GENERATE, err.Error())
-		logrus.Error(err.Error())
+		logrus.Errorf(logger.ANAL_ERR_FAILED_TO_GENERATE, err.Error())
 		return
 	}
 
@@ -140,10 +138,10 @@ func init_wallet_analytics(exeId string, assets []string) model.WalletAnalytics 
 	return wanal
 }
 
-func build_wallet_analytics(lacc model.ILocalAccount, spricesByTs model.SymbolPriceByTimestamp, wanal model.WalletAnalytics) (model.WalletAnalytics, error) {
+func build_wallet_analytics(lacc model.ILocalAccount, spricesByTs model.SymbolPriceByTimestamp, wanal model.WalletAnalytics) (model.WalletAnalytics, errors.CtbError) {
 	// Checking execution id
 	if wanal.ExeId != lacc.GetExeId() {
-		err := fmt.Errorf(logger.ANAL_ERR_MISMATCHING_EXE_IDS, wanal.ExeId, lacc.GetExeId())
+		err := errors.Internal(logger.ANAL_ERR_MISMATCHING_EXE_IDS, wanal.ExeId, lacc.GetExeId())
 		logrus.Errorf(err.Error())
 		return wanal, err
 	}
@@ -166,7 +164,7 @@ func build_wallet_analytics(lacc model.ILocalAccount, spricesByTs model.SymbolPr
 
 		assetStatus, found := assetStatuses[asset]
 		if !found || assetStatus.IsEmpty() {
-			err := fmt.Errorf(logger.ANAL_ERR_ASSET_NOT_FOUND, asset)
+			err := errors.Internal(logger.ANAL_ERR_ASSET_NOT_FOUND, asset)
 			logrus.Errorf(err.Error())
 			return wanal, err
 		}

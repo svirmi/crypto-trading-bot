@@ -1,16 +1,16 @@
 package executions
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
-func Create(req model.ExecutionInit) (model.Execution, error) {
+func Create(req model.ExecutionInit) (model.Execution, errors.CtbError) {
 	// Get current active execution from DB
 	exe, err := find_latest()
 	if err != nil {
@@ -20,7 +20,7 @@ func Create(req model.ExecutionInit) (model.Execution, error) {
 
 	// Active execution found
 	if !exe.IsEmpty() && exe.Status == model.EXE_ACTIVE {
-		err := fmt.Errorf(logger.EXE_ERR_FAILED_TO_CREATE, exe.ExeId)
+		err := errors.Duplicate(logger.EXE_ERR_FAILED_TO_CREATE, exe.ExeId)
 		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
@@ -40,7 +40,7 @@ func Create(req model.ExecutionInit) (model.Execution, error) {
 	return exe, nil
 }
 
-func GetLatest() (model.Execution, error) {
+func GetLatest() (model.Execution, errors.CtbError) {
 	exe, err := find_latest()
 	if err != nil {
 		logrus.Error(err.Error())
@@ -48,7 +48,7 @@ func GetLatest() (model.Execution, error) {
 	return exe, err
 }
 
-func GetLastestByExeId(exeId string) (model.Execution, error) {
+func GetLastestByExeId(exeId string) (model.Execution, errors.CtbError) {
 	exe, err := find_latest_by_exeId(exeId)
 	if err != nil {
 		logrus.Error(err.Error())
@@ -56,7 +56,7 @@ func GetLastestByExeId(exeId string) (model.Execution, error) {
 	return exe, err
 }
 
-func GetByExeId(exeId string) ([]model.Execution, error) {
+func GetByExeId(exeId string) ([]model.Execution, errors.CtbError) {
 	exe, err := find_by_exeId(exeId)
 	if err != nil {
 		logrus.Error(err.Error())
@@ -64,14 +64,14 @@ func GetByExeId(exeId string) ([]model.Execution, error) {
 	return exe, err
 }
 
-func Update(update model.Execution) (model.Execution, error) {
+func Update(update model.Execution) (model.Execution, errors.CtbError) {
 	exe, err := find_latest_by_exeId(update.ExeId)
 	if err != nil {
 		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
 	if exe.IsEmpty() {
-		err = fmt.Errorf(logger.EXE_ERR_NOT_FOUND, update.ExeId)
+		err = errors.NotFound(logger.EXE_ERR_NOT_FOUND, update.ExeId)
 		logrus.Error(err.Error())
 		return model.Execution{}, err
 	}
@@ -81,7 +81,7 @@ func Update(update model.Execution) (model.Execution, error) {
 	}
 
 	if update.Status == model.EXE_ACTIVE {
-		err = fmt.Errorf(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
+		err = errors.Internal(logger.EXE_ERR_STATUS_TRANSITION_NOT_ALLOWED,
 			exe.ExeId, exe.Status, model.EXE_ACTIVE)
 		logrus.Error(err.Error())
 		return model.Execution{}, err
@@ -96,11 +96,11 @@ func Update(update model.Execution) (model.Execution, error) {
 	return exe, nil
 }
 
-func build_execution(req model.ExecutionInit) (model.Execution, error) {
+func build_execution(req model.ExecutionInit) (model.Execution, errors.CtbError) {
 	raccount := req.Raccount
 
 	if len(raccount.Balances) == 0 {
-		err := fmt.Errorf(logger.EXE_ERR_EMPTY_RACC)
+		err := errors.Internal(logger.EXE_ERR_EMPTY_RACC)
 		return model.Execution{}, err
 	}
 

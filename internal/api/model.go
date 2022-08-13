@@ -2,24 +2,66 @@ package api
 
 import (
 	"fmt"
+	"net/http"
 	"reflect"
 
 	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
 
 // Errors
-type error_dto struct {
-	ErrorMessage string `json:"errorMessage"`
+type ctb_error_dto struct {
+	Message string `json:"message"`
+	Status  int    `json:"-"`
 }
 
-func (a error_dto) is_empty() bool {
-	return reflect.DeepEqual(a, error_dto{})
+func (e ctb_error_dto) is_empty() bool {
+	return reflect.DeepEqual(e, ctb_error_dto{})
+}
+
+func to_ctb_error_dto(err errors.CtbError) ctb_error_dto {
+	var httpStatus int
+	switch err.Code() {
+	case errors.BAD_REQUEST_ERROR:
+		httpStatus = http.StatusBadRequest
+	case errors.DUPLICATE_ERROR:
+		httpStatus = http.StatusConflict
+	case errors.NOT_FOUND_ERROR:
+		httpStatus = http.StatusNotFound
+	default:
+		httpStatus = http.StatusInternalServerError
+	}
+
+	return ctb_error_dto{
+		Message: err.Error(),
+		Status:  httpStatus,
+	}
+}
+
+type ctb_response_dto struct {
+	Body   interface{}
+	Status int
+}
+
+func exe_to_ctb_response_dto(httpStatus int, exe model.Execution) ctb_response_dto {
+	var exe_dto exe_res_dto
+	exe_dto.ExeId = exe.ExeId
+	exe_dto.Assets = exe.Assets
+	exe_dto.Status = string(exe.Status)
+	exe_dto.StrategyType = string(exe.StrategyType)
+	exe_dto.Props = exe.Props
+	exe_dto.Timestamp = exe.Timestamp
+
+	var response ctb_response_dto
+	response.Status = httpStatus
+	response.Body = exe_dto
+	return response
 }
 
 // Ping pong
-type ping_pong_dto struct {
+type ping_pong_res_dto struct {
 	Ping string `json:"ping"`
 }
 
@@ -74,15 +116,4 @@ type exe_res_dto struct {
 	StrategyType string            `json:"strategyType"`
 	Props        map[string]string `json:"props"`
 	Timestamp    int64             `json:"timestamp"`
-}
-
-func to_exe_res_dto(exe model.Execution) exe_res_dto {
-	var e exe_res_dto
-	e.ExeId = exe.ExeId
-	e.Assets = exe.Assets
-	e.Status = string(exe.Status)
-	e.StrategyType = string(exe.StrategyType)
-	e.Props = exe.Props
-	e.Timestamp = exe.Timestamp
-	return e
 }

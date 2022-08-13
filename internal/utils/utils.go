@@ -1,12 +1,12 @@
 package utils
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/valerioferretti92/crypto-trading-bot/internal/errors"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/logger"
 	"github.com/valerioferretti92/crypto-trading-bot/internal/model"
 )
@@ -25,19 +25,19 @@ func IsSymbolTradable(symbol string) bool {
 	return symbolre.Match([]byte(symbol))
 }
 
-func GetSymbolFromAsset(base string) (string, error) {
+func GetSymbolFromAsset(base string) (string, errors.CtbError) {
 	// base is already a symbol
 	symbolre, _ := regexp.Compile(`^.*USDT$`)
 	if symbolre.Match([]byte(base)) {
-		return "", fmt.Errorf("cannot convert asset %s to symbol", base)
+		return "", errors.Internal(logger.UTILS_ERR_ASSET_TO_SYMBOL, base)
 	}
 
 	return base + "USDT", nil
 }
 
-func GetSymbolsFromAssets(bases []string) ([]string, []error) {
+func GetSymbolsFromAssets(bases []string) ([]string, []errors.CtbError) {
 	symbols := make([]string, 0, len(bases))
-	errors := make([]error, 0)
+	errors := make([]errors.CtbError, 0)
 	for _, base := range bases {
 		symbol, err := GetSymbolFromAsset(base)
 		if err != nil {
@@ -49,17 +49,17 @@ func GetSymbolsFromAssets(bases []string) ([]string, []error) {
 	return symbols, errors
 }
 
-func GetAssetFromSymbol(symbol string) (string, error) {
+func GetAssetFromSymbol(symbol string) (string, errors.CtbError) {
 	if !IsSymbolTradable(symbol) {
-		return "", fmt.Errorf("cannot convert symbol %s to asset", symbol)
+		return "", errors.Internal(logger.UTILS_ERR_SYMBOL_TO_ASSET, symbol)
 	}
 
 	return strings.TrimSuffix(symbol, "USDT"), nil
 }
 
-func GetAssetsFromSymbols(symbols []string) ([]string, []error) {
+func GetAssetsFromSymbols(symbols []string) ([]string, []errors.CtbError) {
 	assets := make([]string, 0, len(symbols))
-	errors := make([]error, 0)
+	errors := make([]errors.CtbError, 0)
 	for _, symbol := range symbols {
 		asset, err := GetAssetFromSymbol(symbol)
 		if err != nil {
