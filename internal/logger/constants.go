@@ -170,6 +170,7 @@ const (
 
 	// Handler
 	HANDL_SKIP_MMS_UPDATE     = "trading ongoing, skipping mms"
+	HANDL_OPERATION           = "handling operation | base=%s, quote=%s, side=%s, amount_side=%s, amount=%s"
 	HANDL_OPERATION_RESULTS   = "operation results | base_diff=%s, quote_diff=%s, actual_price=%s, price_spread=%s, status=%s"
 	HANDL_ZERO_BASE_DIFF      = "base amount unchanged | op_id=%s, base_diff = 0"
 	HANDL_ZERO_QUOTE_DIFF     = "quote amount unchanged | op_id=%s, quote_diff = 0"

@@ -190,6 +190,8 @@ var get_asset_amounts = func(lacc model.ILocalAccount) map[string]model.AssetAmo
 }
 
 var handle_operation = func(lacc model.ILocalAccount, op model.Operation) model.ILocalAccount {
+	logrus.Infof(logger.HANDL_OPERATION, op.Base, op.Quote, op.Side, op.AmountSide, op.Amount.String())
+
 	// Price equals to zero
 	if op.Amount.Equals(decimal.Zero) {
 		logrus.Errorf(logger.HANDL_ERR_ZERO_REQUESTED_AMOUNT)

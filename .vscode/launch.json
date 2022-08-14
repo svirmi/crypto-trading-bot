@@ -7,7 +7,7 @@
 			"request": "launch",
 			"mode": "auto",
 			"program": "${workspaceFolder}/main.go",
-			"args": ["testnet", "--debug", "--colors"]
+			"args": ["mainnet", "--debug", "--colors"]
 		},
 		{
 			"name": "Testnet",
@@ -15,7 +15,7 @@
 			"request": "launch",
 			"mode": "auto",
 			"program": "${workspaceFolder}/main.go",
-			"args": ["mainnet", "--debug", "--colors"]
+			"args": ["testnet", "--debug", "--colors"]
 		},
 		{
 			"name": "DTS Simulation",
