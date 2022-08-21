@@ -15,10 +15,12 @@ type StrategyType string
 
 // Strategies
 const (
-	DTS_STRATEGY       StrategyType = "DEMO_TRADING_STRATEGY"
-	DTS_STRATEGY_SHORT StrategyType = "dts"
-	PTS_STRATEGY       StrategyType = "PERCENTAGE_TRADING_STRATEGY"
-	PTS_STRATEGY_SHORT StrategyType = "pts"
+	DTS_STRATEGY        StrategyType = "DEMO_TRADING_STRATEGY"
+	DTS_STRATEGY_SHORT  StrategyType = "dts"
+	PTS_STRATEGY        StrategyType = "PERCENTAGE_TRADING_STRATEGY"
+	PTS_STRATEGY_SHORT  StrategyType = "pts"
+	EPTS_STRATEGY       StrategyType = "EXPONENTIAL_PERCENTAGE_TRADING_STRATEGY"
+	EPTS_STRATEGY_SHORT StrategyType = "epts"
 )
 
 func ParseStr(s string) (StrategyType, errors.CtbError) {
@@ -27,6 +29,9 @@ func ParseStr(s string) (StrategyType, errors.CtbError) {
 	}
 	if s == string(PTS_STRATEGY) || s == string(PTS_STRATEGY_SHORT) {
 		return PTS_STRATEGY, nil
+	}
+	if s == string(EPTS_STRATEGY) || s == string(EPTS_STRATEGY_SHORT) {
+		return EPTS_STRATEGY, nil
 	}
 
 	envs := fmt.Sprintf("[%s|%s, %s|%s]", DTS_STRATEGY, DTS_STRATEGY_SHORT, PTS_STRATEGY, PTS_STRATEGY_SHORT)

@@ -1,4 +1,4 @@
-package pts
+package epts
 
 import (
 	"reflect"
@@ -13,44 +13,55 @@ import (
 	"github.com/valerioferretti92/crypto-trading-bot/internal/utils"
 )
 
-// PTS config props
 const (
-	_BUY_PERCENTAGE         = "buyPercentage"
-	_SELL_PERCENTAGE        = "sellPercentage"
-	_BUY_AMOUNT_PERCENTAGE  = "buyAmountPercentage"
-	_SELL_AMOUNT_PERCENTAGE = "sellAmountPercentage"
+	_NP_OP          = "NO_OP"
+	_NP_OP_FUNDS    = "NO_OP(funds)"
+	_EPTS_BUY_DESC  = "epts_buy"
+	_EPTS_SELL_DESC = "epts_sell"
 )
 
-type AssetStatusPTS struct {
-	Asset              string          `bson:"asset"`              // Asset being tracked
-	Amount             decimal.Decimal `bson:"amount"`             // Amount of that asset currently owned
-	LastOperationPrice decimal.Decimal `bson:"lastOperationPrice"` // Asset value at the time last op was executed
+const (
+	_BUY_PERCENTAGE              = "buyPercentage"
+	_SELL_PERCENTAGE             = "sellPercentage"
+	_INIT_BUY_AMOUNT_PERCENTAGE  = "initBuyAmountPercentage"
+	_INIT_SELL_AMOUNT_PERCENTAGE = "initSellAmountPercentage"
+	_EXPONENTIAL_BASE            = "exponentialBase"
+)
+
+type OperationTypeEPTS string
+
+const (
+	_OP_INIT_EPTS OperationTypeEPTS = "OP_INIT_EPTS"
+	_OP_BUY_EPTS  OperationTypeEPTS = "OP_BUY_EPTS"
+	_OP_SELL_EPTS OperationTypeEPTS = "OP_SELL_EPTS"
+)
+
+type AssetStatusEPTS struct {
+	Asset               string            `bson:"asset"`
+	Amount              decimal.Decimal   `bson:"amount"`
+	LastOperationPrice  decimal.Decimal   `bson:"lastOperationPrice"`
+	LastOperationAmount decimal.Decimal   `bson:"lastOperationAmount"`
+	LastOperationType   OperationTypeEPTS `bson:"lastOperationType"`
 }
 
-func (a AssetStatusPTS) IsEmpty() bool {
-	return reflect.DeepEqual(a, AssetStatusPTS{})
+func (a AssetStatusEPTS) IsEmpty() bool {
+	return reflect.DeepEqual(a, AssetStatusEPTS{})
 }
 
-type LocalAccountPTS struct {
+type LocalAccountEPTS struct {
 	model.LocalAccountMetadata `bson:"metadata"`
-	Ignored                    map[string]decimal.Decimal `bson:"ignored"` // Ignored assets
-	Assets                     map[string]AssetStatusPTS  `bson:"assets"`  // Value allocation across assets
-	Usdt                       decimal.Decimal            `bson:"usdt"`    // Usdt available to invested
+	Ignored                    map[string]decimal.Decimal `bson:"ignored"`
+	Assets                     map[string]AssetStatusEPTS `bson:"assets"`
+	Usdt                       decimal.Decimal            `bson:"usdt"`
 }
 
-func (a LocalAccountPTS) IsEmpty() bool {
-	return reflect.DeepEqual(a, LocalAccountPTS{})
+func (a LocalAccountEPTS) IsEmpty() bool {
+	return reflect.DeepEqual(a, LocalAccountEPTS{})
 }
 
-const (
-	_NP_OP         = "NO_OP"
-	_PTS_BUY_DESC  = "pts_buy"
-	_PTS_SELL_DESC = "pts_sell"
-)
-
-func (a LocalAccountPTS) Initialize(req model.LocalAccountInit) (model.ILocalAccount, errors.CtbError) {
+func (a LocalAccountEPTS) Initialize(req model.LocalAccountInit) (model.ILocalAccount, errors.CtbError) {
 	var ignored = make(map[string]decimal.Decimal)
-	var assets = make(map[string]AssetStatusPTS)
+	var assets = make(map[string]AssetStatusEPTS)
 	var usdt = decimal.Zero
 
 	for _, rbalance := range req.RAccount.Balances {
@@ -64,19 +75,21 @@ func (a LocalAccountPTS) Initialize(req model.LocalAccountInit) (model.ILocalAcc
 		}
 		price, found := req.TradableAssetsPrice[rbalance.Asset]
 		if !found {
-			logrus.WithField("comp", "pts").
+			logrus.WithField("comp", "epts").
 				Warnf(logger.XXX_IGNORED_ASSET, rbalance.Asset)
 			ignored[rbalance.Asset] = rbalance.Amount
 			continue
 		}
-		assetStatus := AssetStatusPTS{
-			Asset:              rbalance.Asset,
-			Amount:             rbalance.Amount,
-			LastOperationPrice: price.Price}
+		assetStatus := AssetStatusEPTS{
+			Asset:               rbalance.Asset,
+			Amount:              rbalance.Amount,
+			LastOperationType:   _OP_INIT_EPTS,
+			LastOperationPrice:  price.Price,
+			LastOperationAmount: rbalance.Amount}
 		assets[rbalance.Asset] = assetStatus
 	}
 
-	return LocalAccountPTS{
+	return LocalAccountEPTS{
 		LocalAccountMetadata: model.LocalAccountMetadata{
 			AccountId:    uuid.NewString(),
 			ExeId:        req.ExeId,
@@ -87,36 +100,36 @@ func (a LocalAccountPTS) Initialize(req model.LocalAccountInit) (model.ILocalAcc
 		Usdt:    usdt}, nil
 }
 
-func (a LocalAccountPTS) GetAssetAmounts() map[string]model.AssetAmount {
+func (a LocalAccountEPTS) GetAssetAmounts() map[string]model.AssetAmount {
 	assets := make(map[string]model.AssetAmount)
 	for asset, amount := range a.Ignored {
 		assets[asset] = model.AssetAmount{asset, amount}
 	}
-	for asset, assetStatusPTS := range a.Assets {
-		assets[asset] = model.AssetAmount{asset, assetStatusPTS.Amount}
+	for asset, assetStatusEPTS := range a.Assets {
+		assets[asset] = model.AssetAmount{asset, assetStatusEPTS.Amount}
 	}
 	assets["USDT"] = model.AssetAmount{"USDT", a.Usdt}
 	return assets
 }
 
-func (a LocalAccountPTS) RegisterTrading(op model.Operation) (model.ILocalAccount, errors.CtbError) {
+func (a LocalAccountEPTS) RegisterTrading(op model.Operation) (model.ILocalAccount, errors.CtbError) {
 	// Check execution ids
 	if op.ExeId != a.ExeId {
-		logrus.WithField("comp", "pts").
+		logrus.WithField("comp", "epts").
 			Panicf(logger.XXX_ERR_MISMATCHING_EXE_IDS, a.ExeId, op.ExeId)
 	}
 
 	// If the result status is failed, NOP
 	if op.Status == model.FAILED {
 		err := errors.Internal(logger.XXX_ERR_FAILED_OP, op.OpId)
-		logrus.WithField("comp", "pts").Error(err.Error())
+		logrus.WithField("comp", "epts").Error(err.Error())
 		return a, err
 	}
 
 	// DTS only handle operation back and forth USDT
 	if op.Quote != "USDT" {
 		err := errors.Internal(logger.PTS_ERR_BAD_QUOTE_CURRENCY, op.Quote)
-		logrus.WithField("comp", "pts").Error(err.Error())
+		logrus.WithField("comp", "epts").Error(err.Error())
 		return a, err
 	}
 
@@ -124,7 +137,7 @@ func (a LocalAccountPTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	assetStatus, found := a.Assets[op.Base]
 	if !found {
 		err := errors.Internal(logger.XXX_ERR_ASSET_NOT_FOUND, op.Base)
-		logrus.WithField("comp", "pts").Error(err.Error())
+		logrus.WithField("comp", "epts").Error(err.Error())
 		return a, err
 	}
 
@@ -134,21 +147,25 @@ func (a LocalAccountPTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	quoteAmount := op.Results.QuoteDiff
 	if op.Side == model.BUY {
 		assetStatus.Amount = assetStatus.Amount.Add(baseAmount).Round(8)
+		assetStatus.LastOperationType = _OP_BUY_EPTS
+		assetStatus.LastOperationAmount = quoteAmount
 		currentAmntUsdt = currentAmntUsdt.Sub(quoteAmount).Round(8)
 	} else if op.Side == model.SELL {
 		assetStatus.Amount = assetStatus.Amount.Sub(baseAmount).Round(8)
+		assetStatus.LastOperationType = _OP_SELL_EPTS
+		assetStatus.LastOperationAmount = baseAmount
 		currentAmntUsdt = currentAmntUsdt.Add(quoteAmount).Round(8)
 	} else {
 		err := errors.Internal(logger.XXX_ERR_UNKNWON_OP_TYPE, op.Type)
-		logrus.WithField("comp", "pts").Error(err.Error())
+		logrus.WithField("comp", "epts").Error(err.Error())
 		return a, err
 	}
 	if assetStatus.Amount.LessThan(decimal.Zero) {
-		logrus.WithField("comp", "pts").
+		logrus.WithField("comp", "epts").
 			Panicf(logger.XXX_ERR_NEGATIVE_BALANCE, assetStatus.Asset, assetStatus.Amount)
 	}
 	if currentAmntUsdt.LessThan(decimal.Zero) {
-		logrus.WithField("comp", "pts").
+		logrus.WithField("comp", "epts").
 			Panicf(logger.XXX_ERR_NEGATIVE_BALANCE, "USDT", currentAmntUsdt)
 	}
 	assetStatus.LastOperationPrice = op.Results.ActualPrice
@@ -161,22 +178,24 @@ func (a LocalAccountPTS) RegisterTrading(op model.Operation) (model.ILocalAccoun
 	return a, nil
 }
 
-func (a LocalAccountPTS) GetOperation(props map[string]string, mms model.MiniMarketStats, slimts model.SpotMarketLimits) (model.Operation, errors.CtbError) {
+func (a LocalAccountEPTS) GetOperation(props map[string]string, mms model.MiniMarketStats, slimts model.SpotMarketLimits) (model.Operation, errors.CtbError) {
 	asset := mms.Asset
 	assetStatus, found := a.Assets[asset]
 	if !found {
 		err := errors.Internal(logger.XXX_ERR_ASSET_NOT_FOUND, asset)
-		logrus.WithField("comp", "pts").Error(err.Error())
+		logrus.WithField("comp", "epts").Error(err.Error())
 		return model.Operation{}, err
 	}
 
+	lastOpAmnt := assetStatus.LastOperationAmount
+	lastOpType := assetStatus.LastOperationType
 	lastOpPrice := assetStatus.LastOperationPrice
 	currentAmnt := assetStatus.Amount
 	currentAmntUsdt := a.Usdt
 	currentPrice := mms.LastPrice
 	if currentPrice.Equals(decimal.Zero) {
 		err := errors.Internal(logger.XXX_ERR_ZERO_EXP_PRICE, asset)
-		logrus.WithField("comp", "pts").Errorf(err.Error())
+		logrus.WithField("comp", "epts").Errorf(err.Error())
 		return model.Operation{}, err
 	}
 
@@ -187,17 +206,38 @@ func (a LocalAccountPTS) GetOperation(props map[string]string, mms model.MiniMar
 
 	sellPrice := utils.IncrementByPercentage(lastOpPrice, config.SellPercentage)
 	buyPrice := utils.IncrementByPercentage(lastOpPrice, utils.SignChangeDecimal(config.BuyPercentage))
-	sellAmnt := utils.PercentageOf(currentAmnt, config.SellAmountPercentage)
-	buyAmnt := utils.PercentageOf(currentAmntUsdt, config.BuyAmountPercentage)
+	sellAmnt := utils.PercentageOf(currentAmnt, config.InitSellAmountPercentage)
+	buyAmnt := utils.PercentageOf(currentAmntUsdt, config.InitBuyAmountPercentage)
+	expAmnt := lastOpAmnt.Mul(config.ExponentialBase).Round(8)
 
 	var op model.Operation
-	if currentPrice.GreaterThanOrEqual(sellPrice) {
-		op = build_sell_op(a.ExeId, asset, _PTS_SELL_DESC, sellAmnt, currentPrice)
-	} else if currentPrice.LessThanOrEqual(buyPrice) {
-		op = build_buy_op(a.ExeId, asset, _PTS_BUY_DESC, buyAmnt, currentPrice)
+	if currentPrice.GreaterThanOrEqual(sellPrice) && lastOpType == _OP_INIT_EPTS {
+		op = build_sell_op(a.ExeId, asset, _EPTS_SELL_DESC, sellAmnt, currentPrice)
+	} else if currentPrice.GreaterThanOrEqual(sellPrice) && lastOpType == _OP_BUY_EPTS {
+		op = build_sell_op(a.ExeId, asset, _EPTS_SELL_DESC, sellAmnt, currentPrice)
+	} else if currentPrice.GreaterThanOrEqual(sellPrice) && lastOpType == _OP_SELL_EPTS {
+		op = build_sell_op(a.ExeId, asset, _EPTS_SELL_DESC, expAmnt, currentPrice)
+	} else if currentPrice.LessThanOrEqual(buyPrice) && lastOpType == _OP_INIT_EPTS {
+		op = build_buy_op(a.ExeId, asset, _EPTS_BUY_DESC, buyAmnt, currentPrice)
+	} else if currentPrice.LessThanOrEqual(buyPrice) && lastOpType == _OP_SELL_EPTS {
+		op = build_buy_op(a.ExeId, asset, _EPTS_BUY_DESC, buyAmnt, currentPrice)
+	} else if currentPrice.LessThanOrEqual(buyPrice) && lastOpType == _OP_BUY_EPTS {
+		op = build_buy_op(a.ExeId, asset, _EPTS_BUY_DESC, expAmnt, currentPrice)
 	} else {
-		logrus.WithField("comp", "pts").
-			Debugf(logger.PTS_TRADE, _NP_OP, asset, lastOpPrice, currentPrice)
+		logrus.WithField("comp", "epts").
+			Debugf(logger.EPTS_TRADE, _NP_OP, asset, lastOpType, lastOpPrice, currentPrice)
+		return model.Operation{}, nil
+	}
+
+	if op.Side == model.SELL && op.Amount.GreaterThan(currentAmnt) {
+		op.Amount = currentAmnt
+	}
+	if op.Side == model.BUY && op.Amount.GreaterThan(currentAmntUsdt) {
+		op.Amount = currentAmntUsdt
+	}
+	if op.Amount.Equals(decimal.Zero) {
+		logrus.WithField("comp", "epts").
+			Debugf(logger.EPTS_TRADE, _NP_OP_FUNDS, asset, lastOpType, lastOpPrice, currentPrice)
 		return model.Operation{}, nil
 	}
 
@@ -206,8 +246,8 @@ func (a LocalAccountPTS) GetOperation(props map[string]string, mms model.MiniMar
 		return model.Operation{}, err
 	}
 
-	logrus.WithField("comp", "pts").
-		Infof(logger.PTS_TRADE, op.Cause, asset, lastOpPrice, currentPrice)
+	logrus.WithField("comp", "epts").
+		Infof(logger.EPTS_TRADE, op.Cause, asset, lastOpType, lastOpPrice, currentPrice)
 	return op, nil
 }
 

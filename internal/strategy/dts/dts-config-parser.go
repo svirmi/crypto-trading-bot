@@ -57,7 +57,7 @@ func parse_config(props map[string]string) (s strategy_config_dts, err errors.Ct
 		s.MissProfitThreshold.LessThanOrEqual(decimal.Zero) ||
 		s.StopLossThreshold.LessThanOrEqual(decimal.Zero) {
 
-		err = errors.BadRequest(logger.DTS_ERR_NEGATIVE_THRESHOLDS)
+		err = errors.BadRequest(logger.XXX_ERR_NEGATIVE_PERCENTAGES)
 		logrus.WithField("comp", "dts").Error(err.Error())
 		return strategy_config_dts{}, err
 	}

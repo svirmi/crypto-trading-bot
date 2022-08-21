@@ -100,10 +100,10 @@ func (a LocalAccountDTS) GetAssetAmounts() map[string]model.AssetAmount {
 	for asset, amount := range a.Ignored {
 		assets[asset] = model.AssetAmount{asset, amount}
 	}
-	for asset, assetStatusDts := range a.Assets {
-		assets[asset] = model.AssetAmount{asset, assetStatusDts.Amount}
+	for asset, assetStatusDTS := range a.Assets {
+		assets[asset] = model.AssetAmount{asset, assetStatusDTS.Amount}
 		usdtStatus := assets["USDT"]
-		usdtStatus.Amount = usdtStatus.Amount.Add(assetStatusDts.Usdt)
+		usdtStatus.Amount = usdtStatus.Amount.Add(assetStatusDTS.Usdt)
 		assets["USDT"] = usdtStatus
 	}
 	return assets

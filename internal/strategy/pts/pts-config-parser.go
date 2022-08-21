@@ -57,7 +57,7 @@ func parse_config(props map[string]string) (s strategy_config_pts, err errors.Ct
 		s.BuyAmountPercentage.LessThanOrEqual(decimal.Zero) ||
 		s.SellAmountPercentage.LessThanOrEqual(decimal.Zero) {
 
-		err = errors.BadRequest(logger.PTS_ERR_NEGATIVE_PERCENTAGES)
+		err = errors.BadRequest(logger.XXX_ERR_NEGATIVE_PERCENTAGES)
 		logrus.WithField("comp", "pts").Error(err.Error())
 		return strategy_config_pts{}, err
 	}

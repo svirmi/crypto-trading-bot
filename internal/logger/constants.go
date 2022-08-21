@@ -153,20 +153,25 @@ const (
 	XXX_ERR_FAILED_OP              = "cannot register failed operation | op_id=%s"
 	XXX_ERR_UNKNWON_OP_TYPE        = "unknown opweration type %s"
 	XXX_ERR_NEGATIVE_BALANCE       = "negative balance detected | asset=%s, balance=%s"
+	XXX_ERR_NEGATIVE_PERCENTAGES   = "parcentages must be strictly positive"
 
 	// DTS
-	DTS_TRADE = "%s condition verified | asset=%s, last_op=%s, last_op_price=%s, curr_price=%s"
+	DTS_TRADE = "%s condition verified | asset=%s, last_op_type=%s, last_op_price=%s, curr_price=%s"
 
 	// DTS error
-	DTS_ERR_NEGATIVE_THRESHOLDS = "thresholds must be strictly positive"
-	DTS_ERR_BAD_QUOTE_CURRENCY  = "bad quote currency | quote=%s"
+	DTS_ERR_BAD_QUOTE_CURRENCY = "bad quote currency | quote=%s"
 
 	// PTS
 	PTS_TRADE = "%s condition verified | asset=%s, last_op_price=%s, curr_price=%s"
 
 	// PTS error
-	PTS_ERR_NEGATIVE_PERCENTAGES = "parcentages must be strictly positive"
-	PTS_ERR_BAD_QUOTE_CURRENCY   = "bad quote currency | quote=%s"
+	PTS_ERR_BAD_QUOTE_CURRENCY = "bad quote currency | quote=%s"
+
+	// EPTS
+	EPTS_TRADE = "%s condition verified | asset=%s, last_op_type=%s, last_op_price=%s, curr_price=%s"
+
+	// EPTS error
+	EPTS_ERR_EXPONENTIAL_BASE = "exponential base must greater then 1 | eb=%s"
 
 	// Handler
 	HANDL_SKIP_MMS_UPDATE     = "trading ongoing, skipping mms"

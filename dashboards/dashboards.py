@@ -1,4 +1,5 @@
 from audioop import avg
+from distutils import errors
 import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
@@ -19,7 +20,9 @@ WALLET = 'wallet-analytics'
 st.set_page_config(layout="wide")
 
 st.title('Simulation Dashboards')
-st.write('-'*20)  # ----------------------------------------------------------------------------------------------
+st.write('-'*20) 
+
+# -----------------------------------------------------------------------------------------------------------------
 # LOAD DATA 
 # -----------------------------------------------------------------------------------------------------------------
 
@@ -69,7 +72,7 @@ for col in ['amount', 'price']:
     operations[col] = operations[col].astype(float)
 operations.loc[operations['amountSide'] == 'QUOTE_AMOUNT', 'amount'] = \
     operations.loc[operations['amountSide'] == 'QUOTE_AMOUNT', 'amount'] / \
-        operations.loc[operations['amountSide'] == 'QUOTE_AMOUNT', 'price']
+    operations.loc[operations['amountSide'] == 'QUOTE_AMOUNT', 'price']
 operations.loc[operations['side'] == 'SELL', 'amount'] *= -1
 operations = operations.drop(columns=['amountSide'])
 
@@ -107,7 +110,8 @@ with col3:
     st.text(get_amount_and_prices(len(wallet)-1))
 
 
-st.write('-'*20)  # ----------------------------------------------------------------------------------------------
+st.write('-'*20)  
+# -----------------------------------------------------------------------------------------------------------------
 # WALLET VS BASELINE
 # -----------------------------------------------------------------------------------------------------------------
 
@@ -136,7 +140,8 @@ with col2:
                   line_width=0, fillcolor="green", opacity=0.2)
     st.plotly_chart(fig)
 
-st.write('-'*20)  # ----------------------------------------------------------------------------------------------
+st.write('-'*20)  
+# -----------------------------------------------------------------------------------------------------------------
 # OPERATIONS
 # -----------------------------------------------------------------------------------------------------------------
 
